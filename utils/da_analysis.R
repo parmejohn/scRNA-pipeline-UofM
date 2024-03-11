@@ -76,16 +76,16 @@ DifferentialAbundanceMilo <- function(se.integrated, sample, condition, k, d, pl
   sc.integrated.milo.traj <- buildNhoodGraph(sc.integrated.milo.traj)
   
   # finding DEGs in DA neighborhoods
-  da.results <- annotateNhoods(sc.integrated.milo.traj, da.results, coldata_col = da.clusters)
+  da.results <- annotateNhoods(sc.integrated.milo.traj, da.results, coldata_col = "da.clusters")
   logcounts(sc.integrated.milo.traj) <- log1p(counts(sc.integrated.milo.traj))
 
   print("Finding DEGs for DA neighborhoods, this may take a while")
-  for (i in levels(droplevels(se.integrated@meta.data[[da.clusters]]))){
+  for (i in levels(droplevels(se.integrated@meta.data[["da.clusters"]]))){
     print(paste0("Working on DA DE heatmap for cluster ", i))
     dge_smp <- findNhoodMarkers(sc.integrated.milo.traj, da.results,
                                 assay = "counts", gene.offset = FALSE, da.fdr = 0.1,
                                 aggregate.samples = TRUE, sample_col = "sample",
-                                subset.nhoods = eval(parse(text=paste0("da.results", "$", da.clusters))) %in% c(i) # seeing if this paste method works
+                                subset.nhoods = eval(parse(text=paste0("da.results", "$", "da.clusters"))) %in% c(i) # seeing if this paste method works
     )
     dge.smp.filt <- dge_smp %>%
       filter_at(vars(starts_with("adj.P.Val_")), any_vars(. <= 0.01))
@@ -93,11 +93,11 @@ DifferentialAbundanceMilo <- function(se.integrated, sample, condition, k, d, pl
     markers <- dge.smp.filt[, "GeneID"]
     sc.integrated.milo.traj <- calcNhoodExpression(sc.integrated.milo.traj, subset.row=markers)
     
-    da.results.filt <- filter(da.results, celltype == i & SpatialFDR < 0.1) # Error in hclust(dist(expr_mat)) : must have n >= 2 objects to cluster -> filtered sets mustve had nothing
+    da.results.filt <- filter(da.results, da.clusters == i & SpatialFDR < 0.1) # Error in hclust(dist(expr_mat)) : must have n >= 2 objects to cluster -> filtered sets mustve had nothing
     
     if (dim(da.results.filt)[1] >= 2 & length(markers) >= 2){ # have to check if there are any that meet the spatialFDR or marker cutoff to begin with
       p5 <- plotNhoodExpressionDA(sc.integrated.milo.traj, da.results.filt, features = markers,
-                            subset.nhoods = eval(parse(text=paste0("da.results.filt", "$", da.clusters))) %in% c(i),
+                            subset.nhoods = eval(parse(text=paste0("da.results.filt", "$", "da.clusters"))) %in% c(i),
                             assay="logcounts",
                             scale_to_1 = TRUE, cluster_features = TRUE, show_rownames = FALSE
       )
@@ -113,8 +113,8 @@ DifferentialAbundanceMilo <- function(se.integrated, sample, condition, k, d, pl
   # also can look at the your design -> should be ordered correspondingly; https://github.com/MarioniLab/miloR/issues/81
   
   
-  da.results <- annotateNhoods(sc.integrated.milo.traj, da.results, coldata_col = da.clusters)
-  p4 <- plotDAbeeswarm(da.results, group.by = da.clusters) # gives a distribution view instead of UMAP
+  da.results <- annotateNhoods(sc.integrated.milo.traj, da.results, coldata_col = "da.clusters")
+  p4 <- plotDAbeeswarm(da.results, group.by = "da.clusters") # gives a distribution view instead of UMAP
   
   dir.create(paste(plot.path, "da", sep=""))
   PrintSave(p1, "milo_pval_distribution.pdf", paste(plot.path, '/da/', sep=''))

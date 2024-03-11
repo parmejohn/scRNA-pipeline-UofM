@@ -1,4 +1,5 @@
 #!/usr/bin/env Rscript
+set.seed(333) # ensure that results are reproducible when using the same data
 
 #### Libraries ####
 #library(argparse)
@@ -6,7 +7,7 @@ packages <- c("argparse", "dplyr", "ggplot2", "ggpubr", "ggrepel", "Seurat", "Se
               "SingleCellExperiment", "SoupX", "scDblFinder", "tibble", "tidyverse",
               "org.Hs.eg.db", "hdf5r", "DropletUtils", "SeuratWrappers", "presto", "scCustomize",
               "pheatmap", "msigdbr", "fgsea", "slingshot", "tradeSeq", "gam", "ComplexHeatmap",
-              "RColorBrewer", "escape", "NbClust")
+              "RColorBrewer", "escape", "NbClust", "glmGamPoi")
 
 invisible(lapply(packages, library, character.only = TRUE))
 
@@ -145,7 +146,8 @@ print("External mapping")
 #se.michalski <- readRDS(paste0(outdata, "/se_michalski.rds"))
 
 if (length(args$reference_seurat) != 0) {
-  se.integrated <- ReferenceMarkerMapping(args$reference_seurat, se.integrated, opt.clusters, plotpdf) # active.ident should correlate to the cluster identification
+  se.reference <- readRDS(args$reference_seurat)
+  se.integrated <- ReferenceMarkerMapping(se.reference, se.integrated, opt.clusters, plotpdf) # active.ident should correlate to the cluster identification
   saveRDS(se.integrated, "/home/projects/sc_pipelines/analysis/data/se_integrated_auto_label.rds")
 }
 

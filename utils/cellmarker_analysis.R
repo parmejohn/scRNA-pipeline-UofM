@@ -46,7 +46,7 @@ ReferenceMarkerMapping <- function(reference, query, dims, plot.path){
   #https://satijalab.org/seurat/reference/transferdata
   se.anchors <- FindTransferAnchors(reference = reference, query = query, dims = 1:dims)
   reference$reference.cell.meta <- Idents(reference)
-  se.predictions <- TransferData(anchorset = se.anchors, refdata = reference@meta.data[[reference.cell.meta]], dims = 1:dims)
+  se.predictions <- TransferData(anchorset = se.anchors, refdata = reference$reference.cell.meta, dims = 1:dims)
   query <- AddMetaData(query, metadata = se.predictions)
   
   prediction.scores <- query@meta.data[, grepl("^prediction|RNA_snn_res.1", names(query@meta.data))]
@@ -64,7 +64,7 @@ ReferenceMarkerMapping <- function(reference, query, dims, plot.path){
   query$celltype <- Idents(query)
   # query$celltype <- factor(query$celltype, levels = c(cluster.names))
   Idents(query) <- 'celltype'
-  query$ident <- queryc$celltype
+  query$ident <- query$celltype
   
   umap.labelled <- DimPlot(query, reduction = "umap", group.by = "celltype")
   PrintSave(umap.labelled, "integrated_umap_labelled.pdf", plot.path)

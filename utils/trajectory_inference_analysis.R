@@ -6,18 +6,18 @@ TrajectoryInferenceSlingshot <- function(se.integrated, plot.path, data.path, st
   pal <- c(RColorBrewer::brewer.pal(9, "Set1"), RColorBrewer::brewer.pal(8, "Set2"))
   
   dim.red<- se.integrated@reductions[["umap"]]@cell.embeddings
-  clustering <- se.integrated@meta.data[[ti.clusters]]
+  clustering <- se.integrated$ti.clusters
   counts <- as.matrix(se.integrated@assays[["RNA"]]@layers[["counts"]])
   
   if(is.null(start.clus)){
     
-    lineages <- getLineages(data = dim.red, clusterLabels = clustering)
+    lineages <- getLineages(data = dim.red, clusterLabels = ti.clusters)
     par(mfrow = c(1, 2))
-    plot(dim.red[, 1:2], col = pal[clustering], cex = 0.5, pch = 16)
-    for (i in levels(clustering)) {
-      text(mean(dim.red[clustering == i, 1]), mean(dim.red[clustering == i, 2]), labels = i, font = 2)
+    plot(dim.red[, 1:2], col = pal[ti.clusters], cex = 0.5, pch = 16)
+    for (i in levels(ti.clusters)) {
+      text(mean(dim.red[ti.clusters == i, 1]), mean(dim.red[ti.clusters == i, 2]), labels = i, font = 2)
     }
-    plot(dim.red[, 1:2], col = pal[clustering], cex = 0.5, pch = 16)
+    plot(dim.red[, 1:2], col = pal[ti.clusters], cex = 0.5, pch = 16)
     lines(as.SlingshotDataSet(lineages), lwd = 3, col = "black")
     p1 <- recordPlot()
     PrintSave(p1, 'ti_no_start_not_smooth.pdf', paste0(plot.path, '/ti/'))
@@ -36,25 +36,25 @@ TrajectoryInferenceSlingshotCurved <- function(se.integrated, start.clus, plot.p
   # so <- SetAssayData(se.integrated, "data", new.data = log_mat)
   # test <- as.SingleCellExperiment(so)
   se.integrated$ti.clusters <- Idents(se.integrated)
-  rcl.list <- NA
-  out <- NA
+  #rcl.list <- NA
+  #out <- NA
   sce <- as.SingleCellExperiment(se.integrated)
   sce <- suppressWarnings(slingshot(
     sce,
     reducedDim = 'UMAP',
-    clusterLabels = ti.clusters,
+    clusterLabels = 'ti.clusters',
     start.clus = start.clus
   ))
   
   # slo <- SlingshotDataSet(sce) look at the different lineages
-  plot(reducedDims(sce)$UMAP, col = brewer.pal(9,'Set1')[sce$celltype], pch=16)
+  plot(reducedDims(sce)$UMAP, col = brewer.pal(9,'Set1')[sce$ti.clusters], pch=16)
   lines(SlingshotDataSet(sce), lwd=2, col='black')
   p1 <- recordPlot()
   PrintSave(p1, 'ti_start_smooth.pdf', paste0(plot.path, '/ti/'))
   
   
   # iterate over the number of lineages -> output DEG heatmap for each
-  for (i in 1: ncol(sce@colData@listData[["slingshot"]])){
+  for (i in 1:ncol(sce@colData@listData[["slingshot"]])){
     ptime.str <- paste0("slingPseudotime_", i)
     print(paste0("plotting DEGs for TI for ", ptime.str))
     ptime <- sce@colData@listData[[ptime.str]]
@@ -90,7 +90,7 @@ TrajectoryInferenceSlingshotCurved <- function(se.integrated, start.clus, plot.p
     # add useful annotations
     annotations <- colData(sce)[lineage_cells, 
                                 c(ptime.str, 
-                                  ti.clusters)] %>% as.data.frame()
+                                  "ti.clusters")] %>% as.data.frame()
     
     ha <- HeatmapAnnotation(df = annotations)
     p2 <- Heatmap(to_plot,
@@ -99,23 +99,37 @@ TrajectoryInferenceSlingshotCurved <- function(se.integrated, start.clus, plot.p
                   show_column_names = FALSE,
                   show_row_names = FALSE,
                   top_annotation = ha)
-    PrintSave(p2, paste0('ti_de', ptime.str, ".pdf"), paste0(plot.path, '/ti/'))
+    PrintSave(p2, paste0('ti_de_', ptime.str, ".pdf"), paste0(plot.path, '/ti/'))
     
-    
+    p2 <- draw(p2)
     rcl.list <- row_order(p2)
     
-    for (j in 1:length(row_order(p2))){
-      if (j == 1) {
-        clu <- t(t(row.names(to_plot[row_order(p2)[[j]],])))
-        out <- cbind(clu, paste("cluster", j, sep=""))
-        colnames(out) <- c("GeneID", "Cluster")
-      } else {
-        clu <- t(t(row.names(to_plot[row_order(p2)[[j]],])))
-        clu <- cbind(clu, paste("cluster", j, sep=""))
-        out <- rbind(out, clu)
-      }
-    }
-    write.table(out, file= paste0(data.path, "/ti_gene_clusters_", ptime.str, ".txt"), sep="\t", quote=F, row.names=FALSE)
+    print("Printing gene + cluster table for DEGs in TI")
+    print(lapply(rcl.list, function(x) length(x)))
+    print(class(to_plot))
+    print(sum(duplicated(rownames(to_plot))))
+    # for (j in 1:length(rcl.list)){
+    #   if (j == 1) {
+    #     clu <- t(t(row.names(to_plot[rcl.list[[j]],])))
+    #     out <- cbind(clu, paste("cluster", j, sep=""))
+    #     colnames(out) <- c("GeneID", "Cluster")
+    #   } else {
+    #     clu <- t(t(row.names(to_plot[rcl.list[[j]],])))
+    #     clu <- cbind(clu, paste("cluster", j, sep=""))
+    #     out <- rbind(out, clu)
+    #   }
+    # }
+    library(magrittr)
+    
+    clu_df <- lapply(names(rcl.list), function(j){
+      out <- data.frame(GeneID = rownames(to_plot[rcl.list[[j]],]),
+                        Cluster = paste0("cluster", j),
+                        stringsAsFactors = FALSE)
+      return(out)
+    }) %>%  #pipe (forward) the output 'out' to the function rbind to create 'clu_df'
+      do.call(rbind, .) # was an error due to initializng out in the beginning before = had 0 rows to bind on
+    
+    write.table(clu_df, file= paste0(data.path, "/ti_gene_clusters_", ptime.str, ".txt"), sep="\t", quote=F, row.names=FALSE)
   }
   se.integrated$ti.clusters <- NULL
   out

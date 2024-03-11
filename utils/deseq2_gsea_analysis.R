@@ -4,22 +4,22 @@ DESeq2ConditionPerCluster <-  function(se.integrated, plot.path, species){
   se.integrated$de.clusters <- Idents(se.integrated)
   bulk <- AggregateExpression(se.integrated, return.seurat = T, 
                               assays = "RNA", 
-                              group.by = c(de.clusters, "sample", "group"))
+                              group.by = c("de.clusters", "sample", "group"))
   m_df<- msigdbr(species = species, category = "C5") # dont need to reload the dataset every time for GSEA
   fgsea_sets <- m_df %>% split(x = .$gene_symbol, f = .$gs_name)
   
-  for (i in 1:nlevels(se.integrated@meta.data[[de.clusters]])){
+  for (i in 1:nlevels(se.integrated@meta.data[["de.clusters"]])){
     #print(paste, 'Performing DE analysis on cluster:', i)
     cluster.bulk <- NA
     cluster.name <- NA
-    if (de.clusters == 'seurat_clusters'){
+    if (se.integrated$de.clusters == se.integrated$seurat_clusters){
       cluster.name <- paste0("g", i-1)
       #cluster.bulk <- subset(bulk, eval(as.symbol(clusters) == cluster.name)) # seurat subset doesnt seem to like string args
-      expr <- FetchData(bulk, vars = de.clusters)
+      expr <- FetchData(bulk, vars = "de.clusters")
       cluster.bulk <- bulk[, which(expr == cluster.name)]
     } else {
-      cluster.name <- levels(droplevels(se.integrated@meta.data[[de.clusters]]))[i] ### NEED TO SEE IF THIS WORKS
-      expr <- FetchData(bulk, vars = de.clusters)
+      cluster.name <- levels(droplevels(se.integrated@meta.data[["de.clusters"]]))[i] ### NEED TO SEE IF THIS WORKS
+      expr <- FetchData(bulk, vars = "de.clusters")
       cluster.bulk <- bulk[, which(expr == cluster.name)]
     }
     
