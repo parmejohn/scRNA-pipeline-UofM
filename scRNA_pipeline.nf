@@ -24,10 +24,11 @@ process INITIALIZEFOLDERS {
     //plotdata_ch = Channel.value('${params.outdir}/analysis/plots/')
 
     """
+    #!/bin/bash
+
     if [! -d ${params.outdir}/analysis/]; then
         mkdir ${params.outdir}/analysis/
         mkdir ${params.outdir}/analysis/data/
-        mkdir ${params.outdir}/analysis/data/qc
 
         mkdir ${params.outdir}/analysis/plots
     fi
@@ -35,19 +36,31 @@ process INITIALIZEFOLDERS {
 }
 
 process AMBIENTRNAREMOVAL {
+    debug true
+    publishDir (
+        path: "$params.outdir/analysis/data/",
+        mode: 'copy',
+        overwrite: true
+    )
+
+    containerOptions '--bind /home/projects/,/home/projects/CIO/yard/run_cellranger_count'
+
     input:
     val params.indir
 
     output:
-    path '${params.outdir}/analysis/qc/*'
+    path '*'
     
     script:
        """
-
+        ${projectDir}/src/AmbientRNARemovalMain.R --i ${params.indir}
        """
 }
 
 workflow {
     INITIALIZEFOLDERS(params.outdir)
+    ambient_ch = AMBIENTRNAREMOVAL(params.indir) // array of conditions
+    ambient_ch.view()
 
+    
 }

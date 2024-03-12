@@ -1,6 +1,6 @@
 ##### fxns for QC #####
-AmbientRNARemoval <- function(pair_list, outdir){
-  save.loc <- paste(outdir, '/analysis/data/qc/', sep='')
+AmbientRNARemoval <- function(pair_list){
+  #save.loc <- paste(outdir, '/analysis/data/qc/', sep='')
   
   print(paste("Loading ", pair_list[1], "and ", pair_list[2], sep=''))
   filt.matrix <- Read10X_h5(pair_list[1],use.names = T)
@@ -26,17 +26,19 @@ AmbientRNARemoval <- function(pair_list, outdir){
   soup.channel <- setDR(soup.channel, umap) # used for visualizations if wanted; could remove
   
   print("Writing")
-  soup.channel  <- autoEstCont(soup.channel)   # automatically estimates the contamination fraction
+  soup.channel  <- autoEstCont(soup.channel, doPlot=FALSE)   # automatically estimates the contamination fraction
   adj.matrix  <- adjustCounts(soup.channel, roundToInt = T)   # calculate the resulting corrected count matrix with background contamination removed
   
   # should work with cellranger outputs -> just back tracks a set amount of times, so as long as folder struc is correct
   sample.name <- sub(".*\\/(.*)\\/.*\\/.*", "\\1", pair_list[1])
   group.name <- sub(".*\\/(.*)\\/.*\\/.*\\/.*", "\\1", pair_list[1])
-  dir.create(paste0(save.loc, group.name))
+  dir.create(paste0("./qc/"))
+  dir.create(paste0("./qc/", group.name))
   
-  
-  DropletUtils:::write10xCounts(paste(save.loc, group.name, '/', sample.name, "_soupx",sep=''), adj.matrix, overwrite = TRUE) # name will be the fo;der before the /outs/ folder
-  print(paste("Saved under ", save.loc, group.name, '/', sample.name, "_soupx",sep=''))
+  print(paste("Saving under ./qc/", group.name, '/', sample.name, "_soupx",sep=''))
+  DropletUtils:::write10xCounts(paste('./qc/', group.name, '/', sample.name, "_soupx",sep=''), adj.matrix, overwrite = TRUE) # name will be the fo;der before the /outs/ folder
+  #DropletUtils:::write10xCounts(paste(save.loc, group.name, '/', sample.name, "_soupx",sep=''), adj.matrix, overwrite = TRUE) # name will be the fo;der before the /outs/ folder
+  #print(paste("Saved under ", save.loc, group.name, '/', sample.name, "_soupx",sep=''))
 }
 
 BasicQC <- function(seurat_obj, plot.path){
