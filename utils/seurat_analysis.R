@@ -1,4 +1,5 @@
-source("./utils/misc.R")
+source(paste0(dirname(dirname(dirname(getwd()))),"/utils/misc.R"))
+set.seed(333)
 
 PreprocessingSeurat <- function(seurat_object){
   seurat_object <- NormalizeData(seurat_object) # feature counts for each cell is divided by total counts for the cell; not based on sample
@@ -32,15 +33,15 @@ IntegrateSamples <- function(seurat_obj_list, group){
 
 # perform dimenstional reduction and clustering
 # results are saved 
-SeuratDimReduction <- function(se.integrated, dims, plot.path, group, res = 1, reduction = "integrated.cca"){
+SeuratDimReduction <- function(se.integrated, dims, group, res = 1, reduction = "integrated.cca"){
   se.integrated[["RNA"]] <- JoinLayers(se.integrated[["RNA"]])
   se.integrated <- FindNeighbors(se.integrated, reduction = reduction, dims = dims) # returns KNN graph using the PC or CCA
   se.integrated <- FindClusters(se.integrated, resolution = res) # find clusters of cells by shared SNN
   se.integrated <- RunUMAP(se.integrated, dims = dims, reduction = reduction) # optimizes the low-dimensional graph representaiton to be as similar to og graph
   
-  DimPlot(se.integrated, reduction = "umap", group.by = group) %>% PrintSave("integrated_umap_grouped.pdf", plot.path)
-  DimPlot(se.integrated, reduction = "umap", split.by = group) %>% PrintSave("integrated_umap_split.pdf", plot.path)
-  DimPlot(se.integrated, reduction = "umap", group.by = "seurat_clusters") %>% PrintSave("integrated_umap_unlabelled.pdf", plot.path)
+  DimPlot(se.integrated, reduction = "umap", group.by = group) %>% PrintSave("integrated_umap_grouped.pdf")
+  DimPlot(se.integrated, reduction = "umap", split.by = group) %>% PrintSave("integrated_umap_split.pdf")
+  DimPlot(se.integrated, reduction = "umap", group.by = "seurat_clusters") %>% PrintSave("integrated_umap_unlabelled.pdf")
   
   se.integrated <- se.integrated
 }

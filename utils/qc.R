@@ -41,7 +41,7 @@ AmbientRNARemoval <- function(pair_list){
   #print(paste("Saved under ", save.loc, group.name, '/', sample.name, "_soupx",sep=''))
 }
 
-BasicQC <- function(seurat_obj, plot.path){
+BasicQC <- function(seurat_obj){
   
   print("Removing low quality cells based on MAD thresholds")
   seurat_obj[["percent.mt"]] <- PercentageFeatureSet(seurat_obj, pattern = "^mt-")
@@ -60,9 +60,9 @@ BasicQC <- function(seurat_obj, plot.path){
     annotate(geom = "text", label = paste0(as.numeric(table(Cell.QC.Stat$percent.mt > max.mito.thr)[2])," cells removed\n",
                                            as.numeric(table(Cell.QC.Stat$percent.mt > max.mito.thr)[1])," cells remain"), x = 6000, y = 0.1)
   
-  dir.create(paste0(plot.path, "/qc/"), showWarnings = FALSE)
-  dir.create(paste0(plot.path, "/qc/", seurat_obj@misc[[1]]), showWarnings = FALSE)
-  ggsave(paste(plot.path, "/qc/", seurat_obj@misc[[1]], '/',seurat_obj@misc[[1]], "_percent_mt.pdf",sep=""), plot=p1)
+  # dir.create(paste0(plot.path, "/qc/"), showWarnings = FALSE)
+  # dir.create(paste0(plot.path, "/qc/", seurat_obj@misc[[1]]), showWarnings = FALSE)
+  ggsave(paste0(seurat_obj@misc[[1]], "_percent_mt.pdf"), plot=p1)
   
   Cell.QC.Stat <- Cell.QC.Stat %>% filter(percent.mt < max.mito.thr)
   
@@ -83,7 +83,7 @@ BasicQC <- function(seurat_obj, plot.path){
     geom_hline(aes(yintercept = max.Genes.thr), colour = "green", linetype = 2) +
     geom_vline(aes(xintercept = min.nUMI.thr), colour = "red", linetype = 2) +
     geom_vline(aes(xintercept = max.nUMI.thr), colour = "red", linetype = 2)
-  ggsave(paste(plot.path, "/qc/", seurat_obj@misc[[1]], '/',seurat_obj@misc[[1]], "_nGenes_nUMI.pdf",sep=""), plot=p2)
+  ggsave(paste0(seurat_obj@misc[[1]], "_nGenes_nUMI.pdf"), plot=p2)
   
   
   Cell.QC.Stat <- Cell.QC.Stat %>% # removing the low quality cells
@@ -93,7 +93,7 @@ BasicQC <- function(seurat_obj, plot.path){
     filter(log10(nCount_RNA) < max.nUMI.thr)
   
   print("Filtered low-quality cells based of MAD")
-  print(paste("QC plots saved under ", plot.path, seurat_obj@misc[[1]],sep=''))
+  #print(paste("QC plots saved under ", seurat_obj@misc[[1]],sep=''))
   
   Cell.QC.Stat.bc <- rownames_to_column(Cell.QC.Stat, "barcode")
   filtered.seurat <- subset(seurat_obj, cells = Cell.QC.Stat.bc$barcode)   # filtering in Seurat object

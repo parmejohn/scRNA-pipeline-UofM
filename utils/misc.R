@@ -1,11 +1,4 @@
-PrintSave <- function(plot, title, path,  w=8, h=6){
-  print(plot)
-  pdf(paste(path, title, sep=""), width = w, height = h)
-  print(plot)
-  dev.off()
-}
-
-PrintSaveHide <- function(plot, title, path,  w=8, h=6){
+PrintSave <- function(plot, title, path="",  w=8, h=6){
   print(plot)
   pdf(paste(path, title, sep=""), width = w, height = h)
 }

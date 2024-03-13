@@ -19,25 +19,30 @@ indir <- args$i
 
 ##### Loading data as Seurat Objects #####
 print("Loading data as Seurat Objects")
-foldernames <- list.dirs(path = paste0(args$i), full.names = TRUE, recursive = T)
+foldernames <- list.dirs(path = paste0(indir), full.names = TRUE, recursive = T)
 foldernames <- foldernames[grepl("soupx", foldernames)]
 
+print(indir)
 se.list <- lapply(foldernames, Read10X) %>% lapply(CreateSeuratObject) # load the SoupX corrected data as a adj.matrix and then convert it into a SeuratObject
-
+print(se.list)
 #filenames.filt <- filenames[grepl("filtered", filenames)]
 
 # set up sample and conditions
+print("Setting up se objects")
 for (i in 1:length(se.list)){
   se.list[[i]]@misc <- list(sub(".*\\/(.*)", "\\1", foldernames[i])) # save sample folder name in SeuratObject metadata
   se.list[[i]] <- SetIdent(se.list[[i]], value = sub(".*\\/(.*)", "\\1", foldernames[i]))
   se.list[[i]]$sample <- sub(".*\\/(.*)", "\\1", foldernames[i])
   se.list[[i]]$group <- sub(".*\\/(.*)\\/.*", "\\1", foldernames[i]) # save condition folder name under group
 }
+saveRDS(se.list, "se_list_raw.rds")
 
 ##### Basic QC #####
 print("Basic QC")
-se.filtered.list <- lapply(se.list, BasicQC, plotpdf) # removal of low quality cells by percentage of mitochondrial reads, number of genes, and number of UMIs
+se.filtered.list <- lapply(se.list, BasicQC) # removal of low quality cells by percentage of mitochondrial reads, number of genes, and number of UMIs
+saveRDS(se.filtered.list, "se_filtered_list.rds")
 
 ##### Doublet Removal #####
 print("Doublet removal")
 se.filtered.singlets.list <- lapply(se.filtered.list, DoubletQC)
+saveRDS(se.filtered.singlets.list, "se_filtered_singlets_list.rds")
