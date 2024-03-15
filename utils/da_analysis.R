@@ -1,6 +1,7 @@
-source("./utils/misc.R")
+source(paste0(dirname(dirname(dirname(getwd()))),"/utils/misc.R"))
+set.seed(333)
 
-CellProportionByCluster <- function(se.integrated, plot.path){
+CellProportionByCluster <- function(se.integrated){
   conditions <- unique(se.integrated@meta.data[["group"]])
   group.num <- data.frame(.=character(),
                           Freq=character(), 
@@ -27,10 +28,10 @@ CellProportionByCluster <- function(se.integrated, plot.path){
     geom_col(aes(color = group, fill = group), position = position_dodge(0.8), width = 0.7) + 
     theme(axis.text.x = element_text(angle = 90)) +
     ylim(0, 1)
-  PrintSave(cond.prop.plot, 'condition_proportion_per_cluster.pdf', plot.path)
+  PrintSave(cond.prop.plot, 'condition_proportion_per_cluster.pdf')
 }
 
-DifferentialAbundanceMilo <- function(se.integrated, sample, condition, k, d, plot.path, reduced.dims, prop = 0.15){
+DifferentialAbundanceMilo <- function(se.integrated, sample, condition, k, d, reduced.dims, prop = 0.15){
 
   DefaultAssay(se.integrated) <- "RNA"
   se.integrated$da.clusters <- Idents(se.integrated)
@@ -101,7 +102,7 @@ DifferentialAbundanceMilo <- function(se.integrated, sample, condition, k, d, pl
                             assay="logcounts",
                             scale_to_1 = TRUE, cluster_features = TRUE, show_rownames = FALSE
       )
-      PrintSave(p5, paste0("milo_DA_DE_heatmap_", i, ".pdf"), paste(plot.path, '/da/', sep=''))
+      PrintSave(p5, paste0("milo_DA_DE_heatmap_", i, ".pdf"))
     }
   }
   # plots the Differential abundance -> uses UMAP reduction from seurat object
@@ -116,11 +117,12 @@ DifferentialAbundanceMilo <- function(se.integrated, sample, condition, k, d, pl
   da.results <- annotateNhoods(sc.integrated.milo.traj, da.results, coldata_col = "da.clusters")
   p4 <- plotDAbeeswarm(da.results, group.by = "da.clusters") # gives a distribution view instead of UMAP
   
-  dir.create(paste(plot.path, "da", sep=""))
-  PrintSave(p1, "milo_pval_distribution.pdf", paste(plot.path, '/da/', sep=''))
-  PrintSave(p2, "milo_volcano_plot.pdf", paste(plot.path, '/da/', sep=''))
-  PrintSave(p3, "milo_DA_umap.pdf", paste(plot.path, '/da/', sep=''))
-  PrintSave(p4, "milo_DA_fc_distribution.pdf", paste(plot.path, '/da/', sep=''))
+  #dir.create(paste(plot.path, "da", sep=""))
+  PrintSave(p1, "milo_pval_distribution.pdf")
+  PrintSave(p2, "milo_volcano_plot.pdf")
+  PrintSave(p3, "milo_DA_umap.pdf")
+  PrintSave(p4, "milo_DA_fc_distribution.pdf")
   #sc.integrated.milo.traj
   se.integrated$da.clusters <- NULL
+  saveRDS(sc.integrated.milo.traj, "sc_integrated_milo_traj.rds")
 }

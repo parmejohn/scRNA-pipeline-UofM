@@ -5,6 +5,7 @@ library(argparse)
 library(Seurat)
 library(dplyr)
 library(tidyverse)
+library(NbClust)
 
 set.seed(333)
 
@@ -15,23 +16,28 @@ parser$add_argument('-resolution', type="integer", nargs=1, help='Change resolut
 args <- parser$parse_args()
 
 input <- args$i
+se.integrated <- readRDS(input)
+opt.clusters <- 0
 
 print("Dimensional reduction")
-if (length(args$clusters_optimal) == 0) {
+if (args$clusters_optimal == 0) {
   opt.clusters <- NbClust(se.integrated@reductions[["integrated.cca"]]@feature.loadings, distance = "euclidean", min.nc=10, max.nc = 20,
                           method = "complete", index = "ch")$Best.nc[1] %>% unname()
 } else {
   opt.clusters <- args$clusters_optimal
 }
 
-integrated_elbow <- ElbowPlot(input) # have to use visual check to find optimal # of clusters for now
-# this can always be increased if want to seperate clusters more ie. finding rare cell populations
-PrintSave(integrated_elbow, "integrated_elbow_plot.pdf")
-
-if (length(args$resolution) == 1) {
+if (args$resolution == 1) {
   se.integrated <- SeuratDimReduction(se.integrated, 1:opt.clusters, 'group')
 } else {
   se.integrated <- SeuratDimReduction(se.integrated, 1:opt.clusters, 'group', args$resolution)
 }
 
+# have to use visual check to find optimal # of clusters for now
+# this can always be increased if want to seperate clusters more ie. finding rare cell populations
+ElbowPlot(se.integrated) %>% PrintSave("integrated_elbow_plot.pdf")
+
+read.table("/home/projects/sc_pipelines/test_run_nf_1/analysis/data/optimal_clusters.txt")
+write.table(opt.clusters, "optimal_clusters.txt", quote=FALSE, sep = '', 
+            row.names = F, col.names = F, eol='')
 saveRDS(se.integrated, "se_integrated_dimred.rds")

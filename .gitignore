@@ -1,6 +1,7 @@
 *.log
 *.txt
 .Rhistory
+*.Rhistory
 *.pdf
 work/
 .git/

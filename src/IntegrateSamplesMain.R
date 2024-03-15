@@ -13,7 +13,7 @@ parser$add_argument('-input', '--i',  type="character", required=TRUE, nargs=1, 
 args <- parser$parse_args()
 
 input <- args$i
-
 se.filtered.singlets.list <- readRDS(input)
+
 se.integrated <- IntegrateSamples(se.filtered.singlets.list, group)
 saveRDS(se.integrated, "se_integrated.rds")

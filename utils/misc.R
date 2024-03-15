@@ -1,6 +1,9 @@
+set.seed(333)
+
 PrintSave <- function(plot, title, path="",  w=8, h=6){
-  print(plot)
   pdf(paste(path, title, sep=""), width = w, height = h)
+  print(plot)
+  dev.off()
 }
 
 Correcth5SeuratFile <- function(file){

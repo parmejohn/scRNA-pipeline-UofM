@@ -1,7 +1,8 @@
-source("./utils/misc.R")
+source(paste0(dirname(dirname(dirname(getwd()))),"/utils/misc.R"))
+set.seed(333)
 
-EscapeGSEA <- function(se.integrated, species, plot.path, data.path){
-  dir.create(paste(plot.path, 'escape', sep=''))
+EscapeGSEA <- function(se.integrated, species){
+  dir.create('escape')
   geneset.c5 <- getGeneSets(species = species, library = 'C5')
   #geneset.c5.bp <- getGeneSets(species = 'Mus musculus', library = 'C5', subcategory = "BP")
   
@@ -22,7 +23,7 @@ EscapeGSEA <- function(se.integrated, species, plot.path, data.path){
                              normalize = FALSE,
                              groups = 5000,
                              new.assay.name = "escape.UCell")
-  #saveRDS(se.integrated, "/home/projects/sc_pipelines/analysis/data/se_integrated_auto_label_escape.rds")
+  saveRDS(se.integrated, "se_integrated_escape.rds")
   
   # takes over 8+ hours
   print("Normalizing UCell values")
@@ -30,8 +31,8 @@ EscapeGSEA <- function(se.integrated, species, plot.path, data.path){
                                         assay = "escape.UCell", 
                                         gene.sets = geneset.c5, 
                                         scale.factor = se.integrated$nFeature_RNA)
-  saveRDS(se.integrated, paste0(out.path, "/se_integrated_auto_label_escape_norm.rds"))
-  print(paste0("Saved object under ", out.path, "/se_integrated_escape_norm.rds"))
+  saveRDS(se.integrated, "/se_integrated_escape_norm.rds")
+  #print(paste0("Saved object under ", out.path, "/se_integrated_escape_norm.rds"))
   
   print("Performing DE analysis for the pathways")
   ucell.markers <- FindAllMarkers(se.integrated, assay = "escape.UCell_normalized")
@@ -43,7 +44,7 @@ EscapeGSEA <- function(se.integrated, species, plot.path, data.path){
                           assay = "escape.UCell_normalized",
                           scale = TRUE) +
     theme(legend.position = "right", axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
-  ggsave(paste0(plotpdf, "escape/", "escape_heatmap_top5.pdf"), p1, width = 20, height = 10)
+  ggsave(paste0("escape/", "escape_heatmap_top5.pdf"), p1, width = 20, height = 10)
   
   for (i in 1:nrow(ucell.markers.top5)){
     p2 <- geyserEnrichment(se.integrated, 
@@ -53,7 +54,7 @@ EscapeGSEA <- function(se.integrated, species, plot.path, data.path){
                            facet.by = "group",
                            scale = TRUE) +
       theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
-    tar.dir <- paste0(plotpdf, 'escape/', levels(droplevels(ucell.markers.top5[i,6])), "/")
+    tar.dir <- paste0("escape/", levels(droplevels(ucell.markers.top5[i,6])), "/")
     dir.create(tar.dir)
     ggsave(paste0(tar.dir, ucell.markers.top5[i,7], "_geyser.pdf"), p2, width = 12, height = 12)
   }

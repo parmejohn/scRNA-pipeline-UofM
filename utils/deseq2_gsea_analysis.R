@@ -1,10 +1,14 @@
-source("./utils/misc.R")
+source(paste0(dirname(dirname(dirname(getwd()))),"/utils/misc.R"))
+set.seed(333)
 
-DESeq2ConditionPerCluster <-  function(se.integrated, plot.path, species){
+se.integrated <- readRDS("/home/projects/sc_pipelines/test_run_nf_1/analysis/data/se_integrated_auto_label.rds")
+
+DESeq2ConditionPerCluster <-  function(se.integrated, species){
   se.integrated$de.clusters <- Idents(se.integrated)
   bulk <- AggregateExpression(se.integrated, return.seurat = T, 
                               assays = "RNA", 
                               group.by = c("de.clusters", "sample", "group"))
+  #bulk$de.clusters <- Idents(bulk)
   m_df<- msigdbr(species = species, category = "C5") # dont need to reload the dataset every time for GSEA
   fgsea_sets <- m_df %>% split(x = .$gene_symbol, f = .$gs_name)
   
@@ -12,15 +16,18 @@ DESeq2ConditionPerCluster <-  function(se.integrated, plot.path, species){
     #print(paste, 'Performing DE analysis on cluster:', i)
     cluster.bulk <- NA
     cluster.name <- NA
-    if (se.integrated$de.clusters == se.integrated$seurat_clusters){
+    if (all(as.character(se.integrated$de.clusters) == as.character(se.integrated$seurat_clusters))){
       cluster.name <- paste0("g", i-1)
-      #cluster.bulk <- subset(bulk, eval(as.symbol(clusters) == cluster.name)) # seurat subset doesnt seem to like string args
-      expr <- FetchData(bulk, vars = "de.clusters")
-      cluster.bulk <- bulk[, which(expr == cluster.name)]
+      print(cluster.name)
+      cluster.bulk <- subset(bulk, de.clusters == cluster.name) # seurat subset doesnt seem to like string args
+      # expr <- FetchData(bulk, vars = "de.clusters")
+      # cluster.bulk <- bulk[, which(expr == cluster.name)]
     } else {
       cluster.name <- levels(droplevels(se.integrated@meta.data[["de.clusters"]]))[i] ### NEED TO SEE IF THIS WORKS
-      expr <- FetchData(bulk, vars = "de.clusters")
-      cluster.bulk <- bulk[, which(expr == cluster.name)]
+      print(cluster.name)
+      cluster.bulk <- subset(bulk, de.clusters == cluster.name)
+      # expr <- FetchData(bulk, vars = "de.clusters")
+      # cluster.bulk <- bulk[, which(expr == cluster.name)]
     }
     
     Idents(cluster.bulk) <- "group"
@@ -35,23 +42,23 @@ DESeq2ConditionPerCluster <-  function(se.integrated, plot.path, species){
                                 verbose = T, min.cells.feature = 0, min.cells.group = 0)
       # start GSEA analysis here too since will be doing all the comparisons here
       de_markers$gene <- rownames(de_markers)
-      GseaComparison(de_markers, species, cluster.name, target[1], target[2], plot.path)
+      GseaComparison(de_markers, cluster.name, target[1], target[2])
       
       #print('plot')
       p <- ggplot(de_markers, aes(avg_log2FC, -log10(p_val))) + geom_point(size = 0.5, alpha = 0.5) + theme_bw() +
         ylab("-log10(unadjusted p-value)") + geom_text_repel(aes(label = ifelse(((p_val_adj < 0.05 & avg_log2FC >= 2)|(p_val_adj < 0.05 & avg_log2FC <= -2)), gene,
                                                                                 "")), colour = "red", size = 3)
-      dir.create(paste(plot.path, 'deseq2', sep=''))
+      #dir.create(paste('deseq2', sep=''))
       #deseq2.folder <- paste(plot.path, 'deseq2/')
       #print('save')
-      PrintSave(p, paste0("deseq2_cluster_", cluster.name, "_", target[1], "_vs_", target[2], '.pdf'), paste(plot.path, 'deseq2/', sep=''))
+      PrintSave(p, paste0("deseq2_cluster_", cluster.name, "_", target[1], "_vs_", target[2], '.pdf'))
     }
   }
   se.integrated$de.clusters <- NULL
   
 }
 
-GseaComparison <- function(de.markers, species, cluster.name, ident.1, ident.2, plot.path, fgsea.sets = fgsea_sets){
+GseaComparison <- function(de.markers, cluster.name, ident.1, ident.2, fgsea.sets = fgsea_sets){
   cluster.genes<- de.markers %>%
     arrange(desc(avg_log2FC)) %>% 
     dplyr::select(gene, avg_log2FC) # use avg_log2FC as ranking for now; https://www.biostars.org/p/9526168/
@@ -72,6 +79,6 @@ GseaComparison <- function(de.markers, species, cluster.name, ident.1, ident.2, 
     coord_flip() +
     labs(x="Pathway", y="Normalized Enrichment Score")
   
-  dir.create(paste(plot.path, 'gsea', sep=''))
-  PrintSave(p1, paste0("gsea_cluster_", cluster.name, "_", ident.1, "_vs_", ident.2, '.pdf'), paste(plot.path, 'gsea/', sep=''), w=12)
+  #dir.create(paste(plot.path, 'gsea', sep=''))
+  PrintSave(p1, paste0("gsea_cluster_", cluster.name, "_", ident.1, "_vs_", ident.2, '.pdf'), w=12)
 }

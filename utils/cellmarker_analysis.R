@@ -1,4 +1,5 @@
-source("./utils/misc.R")
+source(paste0(dirname(dirname(dirname(getwd()))),"/utils/seurat_analysis.R"))
+set.seed(333)
 
 # code source: https://hbctraining.github.io/scRNA-seq_online/lessons/09_merged_SC_marker_identification.html
 GetConserved <- function(cluster){ # replace or edit function?, 
@@ -10,14 +11,14 @@ GetConserved <- function(cluster){ # replace or edit function?,
     cbind(cluster_id = cluster, .)
 }
 
-IdentifyCellMarkers <- function(se.integrated, outdir, plot.path){
+IdentifyCellMarkers <- function(se.integrated){
   se.markers.presto <- RunPrestoAll(se.integrated, only.pos = T, logfc.threshold = 0.1, min.pct = 0.01)
-  write.table(se.markers.presto, paste(outdir, "/se_markers_presto_integrated.txt", sep = ''), 
+  write.table(se.markers.presto, paste("se_markers_presto_integrated.txt", sep = ''), 
               quote = FALSE,row.names = T, sep = "\t", col.names = T)
   
   se.markers.presto.top3 <- as.data.frame(se.markers.presto %>% group_by(cluster) %>% top_n(n = 3, wt = avg_log2FC))
   expr.heatmap <- DoHeatmap(se.integrated, features = se.markers.presto.top3$gene)
-  PrintSave(expr.heatmap, 'top3_markers_expr_heatmap.pdf', plot.path)
+  PrintSave(expr.heatmap, 'top3_markers_expr_heatmap.pdf')
   
   ##### Conserved markers across the conditions #####
   if (length(unique(se.integrated@meta.data[["group"]])) == 2){
@@ -32,11 +33,11 @@ IdentifyCellMarkers <- function(se.integrated, outdir, plot.path){
     # color intensity denotes average expression across all cells in a class
     conserved.markers.dotplot <- DotPlot(se.integrated, features = conserved.markers.top.2$gene, cols = c("blue", "red"), dot.scale = 8, split.by = "group") +
       RotatedAxis()
-    PrintSave(conserved.markers.dotplot, 'conserved_marker_unlabelled.pdf', plot.path, w=20, h = 16)
+    PrintSave(conserved.markers.dotplot, 'conserved_marker_unlabelled.pdf', w=20, h = 16)
   }
 }
 
-ReferenceMarkerMapping <- function(reference, query, dims, plot.path){
+ReferenceMarkerMapping <- function(reference, query, dims){
   reference <- NormalizeData(reference)
   reference <- FindVariableFeatures(object = reference)
   
@@ -56,7 +57,7 @@ ReferenceMarkerMapping <- function(reference, query, dims, plot.path){
   
   prediction.matrix <- tapply(prediction.scores$score, list(prediction.scores$RNA_snn_res.1, prediction.scores$source), median)
   se.hm <- pheatmap(prediction.matrix, cluster_rows = FALSE, cluster_cols = FALSE, color = colorRampPalette(c("white","red"))(200), display_numbers = FALSE, silent = TRUE)
-  PrintSave(se.hm, "reference_marker_mapping_heatmap.pdf", plot.path)
+  PrintSave(se.hm, "reference_marker_mapping_heatmap.pdf")
   
   cluster.names <- colnames(prediction.matrix)[max.col(prediction.matrix,ties.method="first")]
   names(cluster.names) <- levels(query)
@@ -67,7 +68,7 @@ ReferenceMarkerMapping <- function(reference, query, dims, plot.path){
   query$ident <- query$celltype
   
   umap.labelled <- DimPlot(query, reduction = "umap", group.by = "celltype")
-  PrintSave(umap.labelled, "integrated_umap_labelled.pdf", plot.path)
+  PrintSave(umap.labelled, "integrated_umap_labelled.pdf")
   reference$reference.cell.meta <- NULL
   
   query
