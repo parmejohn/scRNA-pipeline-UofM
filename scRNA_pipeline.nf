@@ -262,7 +262,7 @@ process COMPARATIVEANALYSIS {
 
     output:
     path "*.pdf"
-    path "*.txt"
+    //path "*.txt" // should include DEGs txt file?
     
     script:
        """
@@ -374,11 +374,11 @@ workflow {
         identified_ch = dimred_ch
     }
     identified_ch.view() // confirm the output
-    TRAJECTORYINFERENCE(identified_ch, params.beginning_cluster)
+    //TRAJECTORYINFERENCE(identified_ch, params.beginning_cluster)
 
 
     COMPARATIVEANALYSIS(identified_ch, params.species)
-    ESCAPEANALYSIS(identified_ch, params.species)
+    //ESCAPEANALYSIS(identified_ch, params.species)
     DAANALYSIS(identified_ch, new_opt_clust)
 
 }

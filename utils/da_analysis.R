@@ -31,6 +31,14 @@ CellProportionByCluster <- function(se.integrated){
   PrintSave(cond.prop.plot, 'condition_proportion_per_cluster.pdf')
 }
 
+se.integrated <- readRDS("/home/projects/sc_pipelines/test_run_nf_1/analysis/data/se_integrated_auto_label.rds")
+sample <- 'sample'
+condition <- 'group'
+k <- 17
+d <- 17
+reduced.dims <- 'INTEGRATED.CCA'
+prop <- 0.15
+
 DifferentialAbundanceMilo <- function(se.integrated, sample, condition, k, d, reduced.dims, prop = 0.15){
 
   DefaultAssay(se.integrated) <- "RNA"
@@ -42,7 +50,7 @@ DifferentialAbundanceMilo <- function(se.integrated, sample, condition, k, d, re
 
   # Constructing graph -> computes a k-nearest neighbour graph; Graph vertex = single cell, Edges = neighbors
   # built from PCA -> so if using integrated dataset the PCA will be corrected for using MNN
-  sc.integrated.milo.traj <- buildGraph(sc.integrated.milo, k = k, d = d, reduced.dim = reduced.dims) # d = use the corrected reduction; k is increased or decreased according to plotNhoodSizeHist
+  sc.integrated.milo.traj <- buildGraph(sc.integrated.milo, k = k, d = d, reduced.dim = reduced.dims) # d = use the corrected reduction; k is increased or decreased according to plotNhoodSizeHist but usually the same as building knn
 
   # Defining neigborhoods -> group of cells connected by an edge in KNN graph to an index cell
   sc.integrated.milo.traj <- makeNhoods(sc.integrated.milo.traj, prop = prop, k = k, d=d, reduced_dims = reduced.dims, refined = TRUE)
@@ -86,23 +94,30 @@ DifferentialAbundanceMilo <- function(se.integrated, sample, condition, k, d, re
     dge_smp <- findNhoodMarkers(sc.integrated.milo.traj, da.results,
                                 assay = "counts", gene.offset = FALSE, da.fdr = 0.1,
                                 aggregate.samples = TRUE, sample_col = "sample",
-                                subset.nhoods = eval(parse(text=paste0("da.results", "$", "da.clusters"))) %in% c(i) # seeing if this paste method works
+                                subset.nhoods = da.results$da.clusters %in% c(i) # seeing if this paste method works
     )
+    paste("findNhoodMarkers")
     dge.smp.filt <- dge_smp %>%
       filter_at(vars(starts_with("adj.P.Val_")), any_vars(. <= 0.01))
+    paste("filt adjpval")
     
     markers <- dge.smp.filt[, "GeneID"]
     sc.integrated.milo.traj <- calcNhoodExpression(sc.integrated.milo.traj, subset.row=markers)
+    paste("traj")
     
     da.results.filt <- filter(da.results, da.clusters == i & SpatialFDR < 0.1) # Error in hclust(dist(expr_mat)) : must have n >= 2 objects to cluster -> filtered sets mustve had nothing
+    print("dafilt")
     
-    if (dim(da.results.filt)[1] >= 2 & length(markers) >= 2){ # have to check if there are any that meet the spatialFDR or marker cutoff to begin with
-      p5 <- plotNhoodExpressionDA(sc.integrated.milo.traj, da.results.filt, features = markers,
-                            subset.nhoods = eval(parse(text=paste0("da.results.filt", "$", "da.clusters"))) %in% c(i),
-                            assay="logcounts",
-                            scale_to_1 = TRUE, cluster_features = TRUE, show_rownames = FALSE
-      )
-      PrintSave(p5, paste0("milo_DA_DE_heatmap_", i, ".pdf"))
+    if (!is.null(dim(da.results.filt)[1]) & !is.null(markers)){
+      if (dim(da.results.filt)[1] >= 2 & length(markers) >= 2){ # have to check if there are any that meet the spatialFDR or marker cutoff to begin with
+        print("checked")
+        p5 <- plotNhoodExpressionDA(sc.integrated.milo.traj, da.results.filt, features = markers,
+                              subset.nhoods = da.results$da.clusters %in% c(i),
+                              assay="logcounts",
+                              scale_to_1 = TRUE, cluster_features = TRUE, show_rownames = FALSE
+        )
+        PrintSave(p5, paste0("milo_DA_DE_heatmap_", i, ".pdf"))
+      }
     }
   }
   # plots the Differential abundance -> uses UMAP reduction from seurat object

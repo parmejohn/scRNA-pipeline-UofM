@@ -1,7 +1,6 @@
 source(paste0(dirname(dirname(dirname(getwd()))),"/utils/misc.R"))
 set.seed(333)
 
-se.integrated <- readRDS("/home/projects/sc_pipelines/test_run_nf_1/analysis/data/se_integrated_auto_label.rds")
 
 DESeq2ConditionPerCluster <-  function(se.integrated, species){
   se.integrated$de.clusters <- Idents(se.integrated)
@@ -42,7 +41,7 @@ DESeq2ConditionPerCluster <-  function(se.integrated, species){
                                 verbose = T, min.cells.feature = 0, min.cells.group = 0)
       # start GSEA analysis here too since will be doing all the comparisons here
       de_markers$gene <- rownames(de_markers)
-      GseaComparison(de_markers, cluster.name, target[1], target[2])
+      GseaComparison(de_markers, cluster.name, target[1], target[2], fgsea_sets)
       
       #print('plot')
       p <- ggplot(de_markers, aes(avg_log2FC, -log10(p_val))) + geom_point(size = 0.5, alpha = 0.5) + theme_bw() +
@@ -58,14 +57,14 @@ DESeq2ConditionPerCluster <-  function(se.integrated, species){
   
 }
 
-GseaComparison <- function(de.markers, cluster.name, ident.1, ident.2, fgsea.sets = fgsea_sets){
+GseaComparison <- function(de.markers, cluster.name, ident.1, ident.2, fgsea.sets){
   cluster.genes<- de.markers %>%
     arrange(desc(avg_log2FC)) %>% 
     dplyr::select(gene, avg_log2FC) # use avg_log2FC as ranking for now; https://www.biostars.org/p/9526168/
   
   ranks <- deframe(cluster.genes)
   
-  fgseaRes <- fgsea(fgsea_sets, stats = ranks, nperm = 1000)
+  fgseaRes <- fgsea(fgsea.sets, stats = ranks, nperm = 1000)
   fgseaRes <- filter(fgseaRes, pval <= 0.01) %>% arrange(desc(NES))
   fgseaRes$Enrichment = ifelse(fgseaRes$NES > 0, "Up-regulated", "Down-regulated") 
   

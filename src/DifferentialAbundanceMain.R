@@ -27,4 +27,4 @@ print("Differential Abundance")
 
 # make sure idents are set correctly
 # Idents(object = se.integrated) <- "celltype"
-DifferentialAbundanceMilo(se.integrated, 'sample', 'group', 30, args$opt.clusters, 'INTEGRATED.CCA')
+DifferentialAbundanceMilo(se.integrated, 'sample', 'group', k = args$clusters_optimal, d = 50, 'INTEGRATED.CCA')

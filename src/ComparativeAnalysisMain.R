@@ -9,6 +9,7 @@ library(ggplot2)
 library(fgsea)
 library(msigdbr)
 library(ggrepel)
+library(DESeq2)
 
 set.seed(333)
 
