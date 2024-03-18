@@ -7,3 +7,4 @@ work/
 .git/
 .nextflow*
 *.log
+*.swp

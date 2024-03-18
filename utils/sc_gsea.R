@@ -31,7 +31,7 @@ EscapeGSEA <- function(se.integrated, species){
                                         assay = "escape.UCell", 
                                         gene.sets = geneset.c5, 
                                         scale.factor = se.integrated$nFeature_RNA)
-  saveRDS(se.integrated, "/se_integrated_escape_norm.rds")
+  saveRDS(se.integrated, "se_integrated_escape_norm.rds")
   #print(paste0("Saved object under ", out.path, "/se_integrated_escape_norm.rds"))
   
   print("Performing DE analysis for the pathways")

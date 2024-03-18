@@ -39,7 +39,7 @@ nextflow run scRNA_pipeline.nf \
 	-with-apptainer path_to_image/scrnaseq_singularity_tmp.sif
 ```
 
-### Arguements
+### Arguments
 - indir: Input directory with folders of condition names, which have cellranger count results in them for each sample (REQUIRED)
 	- DEFAULT: ''
 - outdir: Where to place analysis/ folder (REQUIRED)
@@ -57,14 +57,80 @@ nextflow run scRNA_pipeline.nf \
 - resolution: Desired resolution, increasing this will increase the number of clusters and vice versa. WILL IMPLEMENT AUTOMATICALLY THROUGH CLUSTTREE LATER
 	- DEFAULT: 1
 - with-apptainer: path to downloaded image (REQUIRED)
+	- When this option is not set, you will use your native environment, which may be missing packages, dependecies, or have version mismatches.
 
 ### Outputs
 Analysis folder:
 
 ```
-
+analysis/
+├── data
+│   ├── optimal_clusters.txt
+│   ├── qc
+│   │   ├── CONDITION1
+│   │   │   ├── [sample_1]_soupx
+│   │   │   │   ├── barcodes.tsv
+│   │   │   │   ├── genes.tsv
+│   │   │   │   └── matrix.mtx
+│   │   │   └── ...
+│   │   └── ...
+│   ├── sce_slingshot.rds
+│   ├── sc_integrated_milo_traj.rds
+│   ├── se_filtered_list.rds
+│   ├── se_filtered_singlets_list.rds
+│   ├── se_integrated_auto_label.rds
+│   ├── se_integrated_dimred.rds
+│   ├── se_integrated_escape_norm.rds
+│   ├── se_integrated_escape.rds
+│   ├── se_integrated.rds
+│   ├── se_list_raw.rds
+│   ├── se_markers_presto_integrated.txt
+│   └── ti
+│       ├── ti_gene_clusters_slingPseudotime_\*.txt
+│       ├── ...
+└── plots
+    ├── conserved_marker_unlabelled.pdf
+    ├── da
+    │   ├── milo_DA_DE_heatmap_\*.pdf
+    │   ├── milo_DA_fc_distribution.pdf
+    │   ├── milo_DA_umap.pdf
+    │   ├── milo_pval_distribution.pdf
+    │   └── milo_volcano_plot.pdf
+    ├── deseq2
+    │   ├── deseq2_cluster_[CLUSTER]_[CONDITION1]_vs_[CONDITION2].pdf
+    │   ├── ...
+    ├── gsea
+    │   ├── comparative
+    │   │   ├── gsea_cluster_[CLUSTER]_[CONDITION1]_vs_[CONDITION2].pdf
+    │   │   ├── ...
+    │	└── escape
+    │       ├── escape_heatmap_top5.pdf
+    │       ├── [CLUSTER]
+    │       │   ├── GEYSER_PLOT_[1_path].pdf
+    │	    │   ├──...
+    │       ├── ...
+    ├── integrated_elbow_plot.pdf
+    ├── integrated_umap_grouped.pdf
+    ├── integrated_umap_labelled.pdf
+    ├── integrated_umap_split.pdf
+    ├── integrated_umap_unlabelled.pdf
+    ├── qc
+    │   ├── [sample1]_soupx_nGenes_nUMI.pdf
+    │   ├── [sample1]_soupx_percent_mt.pdf
+    │   ├── ...
+    ├── reference_marker_mapping_heatmap.pdf
+    ├── ti
+    │   ├── Rplots.pdf
+    │   ├── ti_de_slingPseudotime_1\*.pdf
+    │   └── ti_start_smooth.pdf OR ti_no_start_not_smooth.pdf
+    └── top3_markers_expr_heatmap.pdf
 ```
 
+#### Data
+- optimal_clusters.txt: Contains the number of optimal clusters used for machine learning algorithms throughout the pipline
+- qc/: Ambient corrected Cellranger counts using SoupX
+- sce_slingshot.rds: SingleCellExperiment R object containing pseudotime calculations for trajectory inference
+- 
 
 
 ### Example

@@ -284,7 +284,7 @@ process ESCAPEANALYSIS {
         path: "$params.outdir/analysis/plots/gsea/",
         mode: 'copy',
         overwrite: true,
-        pattern: "*escape/"
+        pattern: "esc*"
     )
 
     containerOptions "--bind $params.bind"
@@ -295,7 +295,7 @@ process ESCAPEANALYSIS {
 
     output:
     path "*.rds"
-    path "*escape/"
+    path "escape/"
     
     script:
        """
@@ -374,11 +374,11 @@ workflow {
         identified_ch = dimred_ch
     }
     identified_ch.view() // confirm the output
-    //TRAJECTORYINFERENCE(identified_ch, params.beginning_cluster)
+    TRAJECTORYINFERENCE(identified_ch, params.beginning_cluster)
 
 
     COMPARATIVEANALYSIS(identified_ch, params.species)
-    //ESCAPEANALYSIS(identified_ch, params.species)
+    ESCAPEANALYSIS(identified_ch, params.species)
     DAANALYSIS(identified_ch, new_opt_clust)
-
+    //TESTDIROUT()
 }
