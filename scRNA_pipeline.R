@@ -182,4 +182,4 @@ library(miloR)
 
 # make sure idents are set correctly
 Idents(object = se.integrated) <- "celltype"
-DifferentialAbundanceMilo(se.integrated, 'sample', 'group', 30, opt.clusters, plotpdf, 'INTEGRATED.CCA')
+DifferentialAbundanceMilo(se.integrated, 'sample', 'group', 30, opt.clusters, plotpdf, 'INTEGRATED.CCA')z

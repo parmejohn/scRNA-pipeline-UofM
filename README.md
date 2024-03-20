@@ -14,7 +14,7 @@ Request has to be asked beforehand, or can be run on the server under FOLDERNAME
 git clone https://github.com/parmejohn/scRNA-pipeline-UofM.git
 ```
 
-#### Apptainer(Singularity)
+#### Apptainer (Singularity)
 Image can be downloaded from [Sylabs](https://cloud.sylabs.io/library/parmejohn/uofm/scrnaseq_singularity) or pulled using 
 
 ```
@@ -126,12 +126,48 @@ analysis/
     └── top3_markers_expr_heatmap.pdf
 ```
 
-#### Data
+#### Data descriptions:
 - optimal_clusters.txt: Contains the number of optimal clusters used for machine learning algorithms throughout the pipline
 - qc/: Ambient corrected Cellranger counts using SoupX
 - sce_slingshot.rds: SingleCellExperiment R object containing pseudotime calculations for trajectory inference
-- 
+- sc_integrated_milo_traj.rds: Integrated Seurat object with miloR calculated neighborhoods
+- se_filtered_list.rds: Basic QC'd list of Seurat objects; removal of low quality cells from MAD cutoffs of nGenes, nUMI, and percentage of mitochondrial reads
+- se_filtered_singlets_list.rds: List of Seurat objects with removed doublets from ScDblFinder
+- se_integrated_auto_label.rds: Integrated Seurat object from automatic labelling from reference Seurat object(s)
+- se_integrated_dimred.rds: Integrated Seurat object with Seurat dimensional reduction techniques saved (FindClusters, RunPCA, RunUMAP)
+- se_integrated_escape_norm.rds: Integrated Seurat object with UCell enrichment scores calculated for each cell, which is normalized in respect to the number of genes
+- se_integrated_escape.rds: Integrated Seurat object with UCell enrichment scores calculated for each cell
+- se_integrated.rds: Seurat object that has all samples over all conditions integrated in order to be comparable downstream
+- se_list_raw.rds: Seurat object list of corrected for ambient RNA
+- se_markers_presto_integrated.txt: Results from FindAllMarkers (presto implementation), where differential expression (1 cluster against the rest) is calculated for each gene.
+- ti/:
+	- ti_gene_clusters_slingPseudotime_\*.txt: Gene names for each cluster in the differential expressed genes according to pseudotime
 
+#### Plot descriptions:
+- conserved_marker_unlabelled.pdf:
+- da/:
+	- milo_DA_DE_heatmap_\*.pdf:
+	- milo_DA_fc_distribution.pdf:
+	- milo_DA_umap.pdf:
+	- milo_pval_distribution.pdf:
+	- milo_volcano_plot.pdf:
+- deseq2/:
+- gsea/:
+	- comparative/:
+	- escape/:
+		- escape_heatmap_top5.pdf:
+		- GEYSER_PLOT_[path].pdf:
+- integrated_elbow_plot.pdf:
+- integrated_umap_grouped.pdf:
+- integrated_umap_labelled.pdf:
+- integrated_umap_split.pdf:
+- integrated_umap_unlabelled.pdf:
+- qc/:
+	- [sample1]_soupx_nGenes_nUMI.pdf:
+	- [sample1]_soupx_percent_mt.pdf:
+- reference_marker_mapping_heatmap.pdf:
+- ti/:
+- top3_markers_expr_heatmap.pdf:
 
 ### Example
 From Cisplatin-treated and non-treated mice data.

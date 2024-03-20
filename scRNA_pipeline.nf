@@ -356,6 +356,8 @@ workflow {
     dimred_ch = DIMENSIONALREDUCTION.out.se_integrated_dimred
     //DIMENSIONALREDUCTION.out.clusters_optimal_n.view()
     dimred_ch.view()
+
+    // have to read the clusters file because couldnt save globally though stdout
     opt_clust_file = file("${params.outdir}/analysis/data/optimal_clusters.txt", checkIfExists: true)
     new_opt_clust = opt_clust_file.text
 
@@ -363,13 +365,9 @@ workflow {
     identified_ch = Channel.of()
     println params.reference_seurat
     if (params.reference_seurat != 'none'){
-        println "true"
-        println params.reference_seurat
         IDENTIFYMARKERS(dimred_ch, new_opt_clust, params.reference_seurat)
         identified_ch = IDENTIFYMARKERS.out.se_integrated_auto_label
     } else {
-        println "false"
-        println params.reference_seurat
         IDENTIFYMARKERS(dimred_ch, new_opt_clust, params.reference_seurat)
         identified_ch = dimred_ch
     }
