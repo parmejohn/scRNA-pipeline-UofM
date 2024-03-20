@@ -144,24 +144,24 @@ analysis/
 	- ti_gene_clusters_slingPseudotime_\*.txt: Gene names for each cluster in the differential expressed genes according to pseudotime
 
 #### Plot descriptions:
-- conserved_marker_unlabelled.pdf:
-- da/:
-	- milo_DA_DE_heatmap_\*.pdf:
-	- milo_DA_fc_distribution.pdf:
-	- milo_DA_umap.pdf:
-	- milo_pval_distribution.pdf:
-	- milo_volcano_plot.pdf:
-- deseq2/:
-- gsea/:
-	- comparative/:
-	- escape/:
-		- escape_heatmap_top5.pdf:
-		- GEYSER_PLOT_[path].pdf:
-- integrated_elbow_plot.pdf:
-- integrated_umap_grouped.pdf:
-- integrated_umap_labelled.pdf:
-- integrated_umap_split.pdf:
-- integrated_umap_unlabelled.pdf:
+- conserved_marker_unlabelled.pdf: Conserved markers between conditions; aids in identifying cluseters manually
+- da/: Differential abundance analysis through the miloR package. This will test which condition is more prevelant in the different clusters
+	- milo_DA_DE_heatmap_\*.pdf: Differentially expressed genes that meet a differential abundance cutoff between conditions
+	- milo_DA_fc_distribution.pdf: Beeswarm plot showing fold-change distribution
+	- milo_DA_umap.pdf: Single-cell clustered UMAP from Seurat, which is now labelled with the differential abundance across conditions. Each vertice is the amount of cells in a given neighborhood, and each edge is the number of cells shared between the neighbourhoods.
+	- milo_pval_distribution.pdf: Uncorrected P-value distribution, should have a right skew (anti-conservative) distribution
+	- milo_volcano_plot.pdf: Visualizes the the SpatialFDR values to see if any neighbourhoods make the cutoff
+- deseq2/: Finds differentially expressed genes between conditions for each cluster; calculated with pseudobulk
+- gsea/: Gene-set enrichment analyses
+	- comparative/: DESeq2 (pseudobulk) GSEA results between conditions for each cluster
+	- escape/: UCell GSEA results calculated on clusters of cells one by one
+		- escape_heatmap_top5.pdf: Aggregated enrichment scores for each cluster, for the top five GO pathways
+		- GEYSER_PLOT_[path].pdf: Shows individual GO paths with individual cells for each cluster. Central dot = median. Thick/thin lines = 66/95% interval summaries
+- integrated_elbow_plot.pdf: Rank PCs based on variance percentage, view the elbow for choosing an optimal clustering number
+- integrated_umap_grouped.pdf: UMAP of integrated samples separated by conditions. Check if integrated properly and for batch effects
+- integrated_umap_labelled.pdf: UMAP of integrated samples with automatic labelling from reference Seurat object(s)
+- integrated_umap_split.pdf: UMAP of integrated samples separated by samples
+- integrated_umap_unlabelled.pdf: UMAP of integrated samples
 - qc/:
 	- [sample1]_soupx_nGenes_nUMI.pdf:
 	- [sample1]_soupx_percent_mt.pdf:

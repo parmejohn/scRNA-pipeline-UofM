@@ -24,8 +24,6 @@ indir <- args$i
 
 se.integrated <- readRDS(indir)
 
-se.integrated <- readRDS("/home/projects/sc_pipelines/test_run_nf_1/analysis/data/se_integrated_auto_label.rds")
-
 print("Trajectory Inference")
 # https://nbisweden.github.io/workshop-archive/workshop-scRNAseq/2020-01-27/labs/compiled/slingshot/slingshot.html#basic_processing_with_seurat_pipeline
 if (args$beginning_cluster == '') {

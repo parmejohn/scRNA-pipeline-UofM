@@ -24,6 +24,8 @@ se.integrated <- readRDS(indir)
 species <- NA
 if (args$s == "musmusculus"){
   species <- "Mus musculus"
+} else if (args$s == "homosapiens") {
+  species <- "Homo sapiens"
 } else {
   print("bad")
 }
