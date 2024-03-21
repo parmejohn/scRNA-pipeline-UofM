@@ -363,13 +363,14 @@ workflow {
         new_opt_clust = opt_clust_file.text
     }
 */
-    opt_clust_ch = DIMENSIONALREDUCTION.out.clusters_optimal_n
-    opt_clust_file = file(opt_clust_ch.view().toString())
-    new_opt_clust = opt_clust_file.text
+    new_opt_clust = DIMENSIONALREDUCTION.out.clusters_optimal_n | view | toString | file | text
+
+    //opt_clust_ch = DIMENSIONALREDUCTION.out.clusters_optimal_n | view | toString | file
+    //opt_clust_file = file(opt_clust_ch.view().toString())
+    //new_opt_clust = opt_clust_file.text
 
     // identify cell markers
     identified_ch = Channel.of()
-    println params.reference_seurat
     if (params.reference_seurat != 'none'){
         IDENTIFYMARKERS(dimred_ch, new_opt_clust, params.reference_seurat)
         identified_ch = IDENTIFYMARKERS.out.se_integrated_auto_label
