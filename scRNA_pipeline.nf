@@ -355,10 +355,15 @@ workflow {
     DIMENSIONALREDUCTION(integrated_ch, params.clusters_optimal, params.resolution)
     dimred_ch = DIMENSIONALREDUCTION.out.se_integrated_dimred
     //DIMENSIONALREDUCTION.out.clusters_optimal_n.view()
-    dimred_ch.view()
 
+/*    new_opt_clust = Channel.value()
     // have to read the clusters file because couldnt save globally though stdout
-    opt_clust_file = file("${params.outdir}/analysis/data/optimal_clusters.txt", checkIfExists: true)
+    if (DIMENSIONALREDUCTION.out.clusters_optimal_n.ifEmpty(false)){
+        opt_clust_file = file("${params.outdir}/analysis/data/optimal_clusters.txt", checkIfExists: true)
+        new_opt_clust = opt_clust_file.text
+    }
+*/
+    opt_clust_file = file(DIMENSIONALREDUCTION.out.clusters_optimal_n)
     new_opt_clust = opt_clust_file.text
 
     // identify cell markers
