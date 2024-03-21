@@ -363,7 +363,8 @@ workflow {
         new_opt_clust = opt_clust_file.text
     }
 */
-    opt_clust_file = file(DIMENSIONALREDUCTION.out.clusters_optimal_n.view().toString())
+    opt_clust_ch = DIMENSIONALREDUCTION.out.clusters_optimal_n
+    opt_clust_file = file(opt_clust_ch.view().toString())
     new_opt_clust = opt_clust_file.text
 
     // identify cell markers
