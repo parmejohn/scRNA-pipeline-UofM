@@ -36,6 +36,7 @@ nextflow run scRNA_pipeline.nf \
 	--beginning_cluster [inferred earliest celltype] \
 	--clusters_optimal [optimal number of clusters] \
 	--resolution [a chosen resolution] \
+	--run_escape [True/False] \
 	-with-apptainer path_to_image/scrnaseq_singularity_tmp.sif
 ```
 
@@ -56,6 +57,8 @@ nextflow run scRNA_pipeline.nf \
 	- DEFAULT: 0
 - resolution: Desired resolution, increasing this will increase the number of clusters and vice versa. WILL IMPLEMENT AUTOMATICALLY THROUGH CLUSTTREE LATER
 	- DEFAULT: 1
+- run_escape: Performs escape analysis to provide single-cell GSEA results. IMPORTANT: This analysis takes a substantial amount of time and memory, so ensure that you provide enough of both before setting to 'True'. With Nextflow capabilities as well, it is fine to run the pipeline once without escape and then with, since the pipeline will cache the rest of the data.
+	- Default: False
 - with-apptainer: path to downloaded image (REQUIRED)
 	- When this option is not set, you will use your native environment, which may be missing packages, dependecies, or have version mismatches.
 
@@ -120,8 +123,7 @@ analysis/
     │   ├── ...
     ├── reference_marker_mapping_heatmap.pdf
     ├── ti
-    │   ├── Rplots.pdf
-    │   ├── ti_de_slingPseudotime_1\*.pdf
+    │   ├── ti_de_slingPseudotime_*.pdf
     │   └── ti_start_smooth.pdf OR ti_no_start_not_smooth.pdf
     └── top3_markers_expr_heatmap.pdf
 ```
@@ -141,7 +143,7 @@ analysis/
 - se_list_raw.rds: Seurat object list of corrected for ambient RNA
 - se_markers_presto_integrated.txt: Results from FindAllMarkers (presto implementation), where differential expression (1 cluster against the rest) is calculated for each gene.
 - ti/:
-	- ti_gene_clusters_slingPseudotime_\*.txt: Gene names for each cluster in the differential expressed genes according to pseudotime
+	- ti_gene_clusters_slingPseudotime_*.txt: Gene names for each cluster in the differential expressed genes according to pseudotime
 
 #### Plot descriptions:
 - conserved_marker_unlabelled.pdf: Conserved markers between conditions; aids in identifying cluseters manually
@@ -162,12 +164,15 @@ analysis/
 - integrated_umap_labelled.pdf: UMAP of integrated samples with automatic labelling from reference Seurat object(s)
 - integrated_umap_split.pdf: UMAP of integrated samples separated by samples
 - integrated_umap_unlabelled.pdf: UMAP of integrated samples
-- qc/:
-	- [sample1]_soupx_nGenes_nUMI.pdf:
-	- [sample1]_soupx_percent_mt.pdf:
-- reference_marker_mapping_heatmap.pdf:
+- qc/: Preliminary QC graphs to remove low quality cells through MAD values
+	- [sample1]_soupx_nGenes_nUMI.pdf: Filtered by number of genes and number of UMIs. High amount = potential multiplets; Low amount = Lysed or ambient RNA cells
+	- [sample1]_soupx_percent_mt.pdf: Filtered by the percentage of mitochodrial reads in the cell. High amount = Lysed cell
+- reference_marker_mapping_heatmap.pdf: If provided reference Seurat object(s), a prediction score heatmap will be made to visualize the cell labelling to the unnamed clusters
 - ti/:
-- top3_markers_expr_heatmap.pdf:
+	- ti_de_slingPseudotime_*.pdf = Differentially expressed genes for across pseudotime values calculated by slingshot
+	- ti_start_smooth.pdf: Trajectory inference with smooth principal curves; produced when a starting cluster/celltype is explicitly mentioned
+	- ti_no_start_not_smooth.pdf: Trajectory inference, useful for trying to figure out if cells are differentiating from one cluster to another; direction is not known though
+- top3_markers_expr_heatmap.pdf: Top 3 genes for each cluster from FindAllMarkers call
 
 ### Example
 From Cisplatin-treated and non-treated mice data.
@@ -182,7 +187,7 @@ counts
     ├── pilot_study_T1 -> /home/projects/CIO/yard/run_cellranger_count/pilot_study_T1
     └── pilot_study_T2 -> /home/projects/CIO/yard/run_cellranger_count/pilot_study_T2
 ```
-Above I am using symlinks to save space (the symlink path also needs to be included in the binded paths)
+Above I am using symlinks to save space (the symlink path also needs to be included in the binded paths).Ensure that REAL paths are used, an error will occur if attempting to use a symlink path name since apptainer/singularity does not run with root access and needs to be explicitly told where the files can be found.
 
 ```
 nextflow run scRNA_pipeline.nf \

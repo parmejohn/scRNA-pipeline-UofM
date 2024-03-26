@@ -19,14 +19,18 @@ DESeq2ConditionPerCluster <-  function(se.integrated, species){
       cluster.name <- paste0("g", i-1)
       print(cluster.name)
       cluster.bulk <- subset(bulk, de.clusters == cluster.name) # seurat subset doesnt seem to like string args
-      # expr <- FetchData(bulk, vars = "de.clusters")
-      # cluster.bulk <- bulk[, which(expr == cluster.name)]
+      #expr <- FetchData(bulk, vars = "de.clusters")
+      #cluster.bulk <- bulk[, which(expr == cluster.name)]
     } else {
       cluster.name <- levels(droplevels(se.integrated@meta.data[["de.clusters"]]))[i] ### NEED TO SEE IF THIS WORKS
       print(cluster.name)
+	if(grepl("_", cluster.name, fixed=TRUE)){
+		cluster.name <- sub("_", "-", cluster.name)
+		print(cluster.name)
+	}
       cluster.bulk <- subset(bulk, de.clusters == cluster.name)
-      # expr <- FetchData(bulk, vars = "de.clusters")
-      # cluster.bulk <- bulk[, which(expr == cluster.name)]
+      #expr <- FetchData(bulk, vars = "de.clusters")
+      #cluster.bulk <- bulk[, which(expr == cluster.name)]
     }
     
     Idents(cluster.bulk) <- "group"

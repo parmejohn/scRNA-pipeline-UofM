@@ -26,7 +26,7 @@ se.integrated <- readRDS(indir)
 
 print("Trajectory Inference")
 # https://nbisweden.github.io/workshop-archive/workshop-scRNAseq/2020-01-27/labs/compiled/slingshot/slingshot.html#basic_processing_with_seurat_pipeline
-if (args$beginning_cluster == '') {
+if (args$beginning_cluster == 'none') {
   TrajectoryInferenceSlingshot(se.integrated)
 } else {
   TrajectoryInferenceSlingshot(se.integrated, start.clus=args$beginning_cluster)

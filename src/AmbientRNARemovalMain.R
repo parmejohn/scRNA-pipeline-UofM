@@ -18,6 +18,7 @@ args <- parser$parse_args()
 indir <- args$i
 
 print("SoupX filtering")
+print(indir)
 # loading in the files initially; need to test runtime
 filenames <- list.files(path = indir, pattern = "matrix.h5", full.names = TRUE, recursive = T, include.dirs = T)
 print(filenames)

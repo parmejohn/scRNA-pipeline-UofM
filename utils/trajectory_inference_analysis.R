@@ -5,19 +5,19 @@ TrajectoryInferenceSlingshot <- function(se.integrated, start.clus=NULL){
   se.integrated$ti.clusters <- Idents(se.integrated)
   pal <- c(RColorBrewer::brewer.pal(9, "Set1"), RColorBrewer::brewer.pal(8, "Set2"))
   
-  dim.red<- se.integrated@reductions[["umap"]]@cell.embeddings
+  dim.red <- se.integrated@reductions[["umap"]]@cell.embeddings
   clustering <- se.integrated$ti.clusters
   counts <- as.matrix(se.integrated@assays[["RNA"]]@layers[["counts"]])
   
   if(is.null(start.clus)){
     
-    lineages <- getLineages(data = dim.red, clusterLabels = ti.clusters)
+    lineages <- getLineages(data = dim.red, clusterLabels = clustering)
     par(mfrow = c(1, 2))
-    plot(dim.red[, 1:2], col = pal[ti.clusters], cex = 0.5, pch = 16)
-    for (i in levels(ti.clusters)) {
-      text(mean(dim.red[ti.clusters == i, 1]), mean(dim.red[ti.clusters == i, 2]), labels = i, font = 2)
+    plot(dim.red[, 1:2], col = pal[clustering], cex = 0.5, pch = 16)
+    for (i in levels(clustering)) {
+      text(mean(dim.red[clustering == i, 1]), mean(dim.red[clustering == i, 2]), labels = i, font = 2)
     }
-    p1 <- plot(dim.red[, 1:2], col = pal[ti.clusters], cex = 0.5, pch = 16)
+    p1 <- plot(dim.red[, 1:2], col = pal[clustering], cex = 0.5, pch = 16)
     lines(as.SlingshotDataSet(lineages), lwd = 3, col = "black")
     #p1 <- recordPlot()
     PrintSave(p1, 'ti_no_start_not_smooth.pdf')

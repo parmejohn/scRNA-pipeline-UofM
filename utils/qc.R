@@ -44,7 +44,7 @@ AmbientRNARemoval <- function(pair_list){
 BasicQC <- function(seurat_obj){
   
   print("Removing low quality cells based on MAD thresholds")
-  seurat_obj[["percent.mt"]] <- PercentageFeatureSet(seurat_obj, pattern = "^mt-")
+  seurat_obj[["percent.mt"]] <- PercentageFeatureSet(seurat_obj, pattern = paste(c("^mt-","^MT-"), collapse="|"))
   
   VlnPlot(seurat_obj, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3)   # view distribution and to spot any obvious outliers; not saved so can remove
   

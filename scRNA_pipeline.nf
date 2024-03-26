@@ -9,7 +9,8 @@ params.bind = ''
 params.reference_seurat = 'none'
 params.clusters_optimal = 0
 params.resolution = 1
-params.beginning_cluster = ''
+params.beginning_cluster = 'none'
+params.run_escape = "False"
 
 //Global Variables
 //outdata_ch = Channel.value()
@@ -228,8 +229,8 @@ process TRAJECTORYINFERENCE {
 
     output:
     path "*.pdf"
-    path "*.txt"
-    path "*.rds"
+    path "*.txt", optional: true
+    path "*.rds", optional: true
     
     script:
        """
@@ -363,11 +364,14 @@ workflow {
         new_opt_clust = opt_clust_file.text
     }
 */
-    new_opt_clust = DIMENSIONALREDUCTION.out.clusters_optimal_n | view | toString | file | text
+    //new_opt_clust = DIMENSIONALREDUCTION.out.clusters_optimal_n | view | toString() | file() | text
 
     //opt_clust_ch = DIMENSIONALREDUCTION.out.clusters_optimal_n | view | toString | file
     //opt_clust_file = file(opt_clust_ch.view().toString())
     //new_opt_clust = opt_clust_file.text
+
+	new_opt_clust = DIMENSIONALREDUCTION.out.clusters_optimal_n.splitText().map{it -> it.trim()}
+	println new_opt_clust
 
     // identify cell markers
     identified_ch = Channel.of()
@@ -383,7 +387,11 @@ workflow {
 
 
     COMPARATIVEANALYSIS(identified_ch, params.species)
-    ESCAPEANALYSIS(identified_ch, params.species)
+	if (params.run_escape == "True"){
+		println "WARNING: This may take a while"
+		ESCAPEANALYSIS(identified_ch, params.species)
+	} else if (params.run_escape == "False"){
+		println "SKIPPING ESCAPE ANALYSIS, RERUN WITH '--run_escape True' if you desired those results"
+	}
     DAANALYSIS(identified_ch, new_opt_clust)
-    //TESTDIROUT()
 }

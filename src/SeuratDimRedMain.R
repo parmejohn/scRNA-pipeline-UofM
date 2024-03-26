@@ -37,7 +37,7 @@ if (args$resolution == 1) {
 # this can always be increased if want to seperate clusters more ie. finding rare cell populations
 ElbowPlot(se.integrated) %>% PrintSave("integrated_elbow_plot.pdf")
 
-read.table("/home/projects/sc_pipelines/test_run_nf_1/analysis/data/optimal_clusters.txt")
+#read.table("/home/projects/sc_pipelines/test_run_nf_1/analysis/data/optimal_clusters.txt")
 write.table(opt.clusters, "optimal_clusters.txt", quote=FALSE, sep = '', 
             row.names = F, col.names = F, eol='')
 saveRDS(se.integrated, "se_integrated_dimred.rds")
