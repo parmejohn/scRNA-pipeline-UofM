@@ -1,5 +1,5 @@
 #!/usr/local/bin/Rscript
-source(paste0(dirname(dirname(dirname(getwd()))),"/utils/seurat_analysis.R"))
+#source(paste0(dirname(dirname(dirname(getwd()))),"/utils/seurat_analysis.R"))
 
 library(argparse)
 library(Seurat)
@@ -18,6 +18,21 @@ args <- parser$parse_args()
 input <- args$i
 se.integrated <- readRDS(input)
 opt.clusters <- 0
+
+thisFile <- function() {
+        cmdArgs <- commandArgs(trailingOnly = FALSE)
+        needle <- "--file="
+                match <- grep(needle, cmdArgs)
+                if (length(match) > 0) {
+                                        # Rscript
+                                        return(normalizePath(sub(needle, "", cmdArgs[match])))
+                        } else {
+                                                # 'source'd via R console
+                                                return(normalizePath(sys.frames()[[1]]$ofile))
+                                }
+}
+source(paste0(file.path(dirname(dirname(thisFile()))), "/utils/seurat_analysis.R"))
+source(paste0(file.path(dirname(dirname(thisFile()))), "/utils/misc.R"))
 
 print("Dimensional reduction")
 if (args$clusters_optimal == 0) {

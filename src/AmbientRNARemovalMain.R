@@ -1,7 +1,6 @@
 #!/usr/local/bin/Rscript
 #print(dirname(dirname(dirname(getwd()))))
 
-source(paste0(dirname(dirname(dirname(getwd()))),"/utils/qc.R"))
 
 library(argparse)
 library(Seurat)
@@ -16,6 +15,22 @@ parser$add_argument('-indir', '--i',  type="character", required=TRUE, nargs=1, 
 args <- parser$parse_args()
 
 indir <- args$i
+
+##### load in helper functions #####
+thisFile <- function() {
+        cmdArgs <- commandArgs(trailingOnly = FALSE)
+        needle <- "--file="
+                match <- grep(needle, cmdArgs)
+                if (length(match) > 0) {
+                                        # Rscript
+                                        return(normalizePath(sub(needle, "", cmdArgs[match])))
+                        } else {
+                                                # 'source'd via R console
+                                                return(normalizePath(sys.frames()[[1]]$ofile))
+                                }
+}
+source(paste0(file.path(dirname(dirname(thisFile()))), "/utils/qc.R"))
+source(paste0(file.path(dirname(dirname(thisFile()))), "/utils/misc.R"))
 
 print("SoupX filtering")
 print(indir)

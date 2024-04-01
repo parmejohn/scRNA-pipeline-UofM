@@ -1,5 +1,5 @@
 #!/usr/local/bin/Rscript
-source(paste0(dirname(dirname(dirname(getwd()))),"/utils/cellmarker_analysis.R"))
+#source(paste0(dirname(dirname(dirname(getwd()))),"/utils/cellmarker_analysis.R"))
 
 library(argparse)
 library(Seurat)
@@ -19,6 +19,21 @@ args <- parser$parse_args()
 
 input <- args$i
 se.integrated <- readRDS(input)
+
+thisFile <- function() {
+        cmdArgs <- commandArgs(trailingOnly = FALSE)
+        needle <- "--file="
+                match <- grep(needle, cmdArgs)
+                if (length(match) > 0) {
+                                        # Rscript
+                                        return(normalizePath(sub(needle, "", cmdArgs[match])))
+                        } else {
+                                                # 'source'd via R console
+                                                return(normalizePath(sys.frames()[[1]]$ofile))
+                                }
+}
+source(paste0(file.path(dirname(dirname(thisFile()))), "/utils/cellmarker_analysis.R"))
+source(paste0(file.path(dirname(dirname(thisFile()))), "/utils/misc.R"))
 
 #### Identifying Cell Markers ####
 print("IdentifyCellMarkers")

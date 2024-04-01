@@ -1,5 +1,5 @@
 #!/usr/local/bin/Rscript
-source(paste0(dirname(dirname(dirname(getwd()))),"/utils/deseq2_gsea_analysis.R"))
+#source("../utils/deseq2_gsea_analysis.R", chdir=TRUE)
 
 library(argparse)
 library(Seurat)
@@ -20,6 +20,22 @@ args <- parser$parse_args()
 
 indir <- args$i
 se.integrated <- readRDS(indir)
+
+thisFile <- function() {
+        cmdArgs <- commandArgs(trailingOnly = FALSE)
+        needle <- "--file="
+                match <- grep(needle, cmdArgs)
+                if (length(match) > 0) {
+                                        # Rscript
+                                        return(normalizePath(sub(needle, "", cmdArgs[match])))
+                        } else {
+                                                # 'source'd via R console
+                                                return(normalizePath(sys.frames()[[1]]$ofile))
+                                }
+}
+source(paste0(file.path(dirname(dirname(thisFile()))), "/utils/deseq2_gsea_analysis.R"))
+source(paste0(file.path(dirname(dirname(thisFile()))), "/utils/misc.R"))
+
 
 species <- NA
 if (args$s == "musmusculus"){

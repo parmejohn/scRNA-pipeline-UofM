@@ -10,7 +10,7 @@ params.reference_seurat = 'none'
 params.clusters_optimal = 0
 params.resolution = 1
 params.beginning_cluster = 'none'
-params.run_escape = "False"
+params.run_escape = false
 
 //Global Variables
 //outdata_ch = Channel.value()
@@ -295,7 +295,7 @@ process ESCAPEANALYSIS {
     val species
 
     output:
-    path "*.rds"
+    path "*.rds", emit: se_integrated_escape
     path "escape/"
     
     script:
@@ -387,11 +387,14 @@ workflow {
 
 
     COMPARATIVEANALYSIS(identified_ch, params.species)
-	if (params.run_escape == "True"){
+	//escape_ch = Channel.of()
+	if (params.run_escape){
 		println "WARNING: This may take a while"
 		ESCAPEANALYSIS(identified_ch, params.species)
-	} else if (params.run_escape == "False"){
-		println "SKIPPING ESCAPE ANALYSIS, RERUN WITH '--run_escape True' if you desired those results"
+		escape_ch = ESCAPEANALYSIS.out.se_integrated_escape
+	} else {
+		escape_ch = "SKIPPING ESCAPE ANALYSIS, RERUN WITH '--run_escape true' if you desired those results"
 	}
+	println escape_ch
     DAANALYSIS(identified_ch, new_opt_clust)
 }
