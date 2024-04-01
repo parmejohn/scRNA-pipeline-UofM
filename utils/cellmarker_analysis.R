@@ -1,4 +1,4 @@
-source(paste0(dirname(dirname(dirname(getwd()))),"/utils/seurat_analysis.R"))
+#source(paste0(dirname(dirname(dirname(getwd()))),"/utils/seurat_analysis.R"))
 set.seed(333)
 
 # code source: https://hbctraining.github.io/scRNA-seq_online/lessons/09_merged_SC_marker_identification.html

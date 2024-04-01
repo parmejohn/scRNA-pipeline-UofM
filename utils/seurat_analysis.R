@@ -1,4 +1,4 @@
-source(paste0(dirname(dirname(dirname(getwd()))),"/utils/misc.R"))
+#source(paste0(dirname(dirname(dirname(getwd()))),"/utils/misc.R"))
 set.seed(333)
 
 PreprocessingSeurat <- function(seurat_object){

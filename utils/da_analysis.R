@@ -1,4 +1,4 @@
-source(paste0(dirname(dirname(dirname(getwd()))),"/utils/misc.R"))
+#source(paste0(dirname(dirname(dirname(getwd()))),"/utils/misc.R"))
 set.seed(333)
 
 CellProportionByCluster <- function(se.integrated){
@@ -91,6 +91,8 @@ DifferentialAbundanceMilo <- function(se.integrated, sample, condition, k, d, re
   print("Finding DEGs for DA neighborhoods, this may take a while")
   for (i in levels(droplevels(se.integrated@meta.data[["da.clusters"]]))){
     print(paste0("Working on DA DE heatmap for cluster ", i))
+	logcounts(sc.integrated.milo.traj) <- log1p(counts(sc.integrated.milo.traj))
+	print("get logcounts")
     dge_smp <- findNhoodMarkers(sc.integrated.milo.traj, da.results,
                                 assay = "counts", gene.offset = FALSE, da.fdr = 0.1,
                                 aggregate.samples = TRUE, sample_col = "sample",
@@ -102,8 +104,13 @@ DifferentialAbundanceMilo <- function(se.integrated, sample, condition, k, d, re
       dge.smp.filt <- dge_smp %>%
         filter_at(vars(starts_with("adj.P.Val_")), any_vars(. <= 0.01))
       #paste("filt adjpval")
-      
+	print("renaming genes")
       markers <- dge.smp.filt[, "GeneID"]
+	#markers <- sub("HLA.", "HLA-", markers) #temporary solution
+	print("renamed")
+
+	logcounts(sc.integrated.milo.traj) <- log1p(counts(sc.integrated.milo.traj))
+	print("get log counts again")
       sc.integrated.milo.traj <- calcNhoodExpression(sc.integrated.milo.traj, subset.row=markers)
       #paste("traj")
       
@@ -112,8 +119,8 @@ DifferentialAbundanceMilo <- function(se.integrated, sample, condition, k, d, re
       
       if (!is.null(dim(da.results.filt)[1]) & !is.null(markers)){
         if (dim(da.results.filt)[1] >= 2 & length(markers) >= 2){ # have to check if there are any that meet the spatialFDR or marker cutoff to begin with
-          #print("checked")
-          p5 <- plotNhoodExpressionDA(sc.integrated.milo.traj, da.results.filt, features = markers,
+          print("plotting deg")
+          p5 <- plotNhoodExpressionDA_fixed(sc.integrated.milo.traj, da.results.filt, features = markers,
                                 subset.nhoods = da.results$da.clusters %in% c(i),
                                 assay="logcounts",
                                 scale_to_1 = TRUE, cluster_features = TRUE, show_rownames = FALSE
@@ -143,4 +150,137 @@ DifferentialAbundanceMilo <- function(se.integrated, sample, condition, k, d, re
   #sc.integrated.milo.traj
   se.integrated$da.clusters <- NULL
   saveRDS(sc.integrated.milo.traj, "sc_integrated_milo_traj.rds")
+}
+
+plotNhoodExpressionDA_fixed <- function(x, da.res, features, alpha=0.1,
+                                        subset.nhoods=NULL, cluster_features=FALSE, assay="logcounts",
+                                        scale_to_1 = FALSE,
+                                        show_rownames=TRUE,
+                                        highlight_features = NULL){
+  if (length(features) <= 0 | is.null(features)) {
+    stop("features is empty")
+  }
+  ## Check if features are in rownames(x)
+  if (!all(features %in% rownames(x))) {
+    stop("Some features are not in rownames(x)")
+  }
+  ## Check if nhood expression exists
+  if (dim(nhoodExpression(x))[2] == 1){
+    warning("Nothing in nhoodExpression(x): computing for requested features...")
+    x <- calcNhoodExpression(x, assay = assay, subset.row = features)
+  }
+  ## Check if all features are in nhoodExpression
+  if (!all(features %in% rownames(nhoodExpression(x)))) {
+    warning("Not all features in nhoodExpression(x): recomputing for requested features...")
+    x <- calcNhoodExpression(x, assay = assay, subset.row = features)
+  }
+  
+  expr_mat <- nhoodExpression(x)[features, ]
+  colnames(expr_mat) <- seq_len(ncol(nhoods(x)))
+  
+  ## Get nhood expression matrix
+  if (!is.null(subset.nhoods)) {
+    expr_mat <- expr_mat[,subset.nhoods, drop=FALSE]
+  }
+  
+  if (!isFALSE(scale_to_1)) {
+    expr_mat <- t(apply(expr_mat, 1, function(X) (X - min(X))/(max(X)- min(X))))
+    # force NAs to 0?
+    if(sum(is.na(expr_mat)) > 0){
+      warning("NA values found - resetting to 0")
+      expr_mat[is.na(expr_mat)] <- 0
+    }
+  }
+  
+  print("replacing all '-' with '.' because of dataframe conversion issues")
+  rownames(expr_mat) <- gsub(pattern = "-", replacement = ".", rownames(expr_mat)) ## To avoid problems when converting to data.frame
+  
+  pl_df <- data.frame(t(expr_mat)) %>%
+    rownames_to_column("Nhood") %>%
+    mutate(Nhood=as.double(Nhood)) %>%
+    left_join(da.res, by="Nhood") %>%
+    mutate(logFC_rank=percent_rank(logFC))
+  
+  ## Top plot: nhoods ranked by DA log FC
+  pl_top <- pl_df %>%
+    mutate(is_signif = ifelse(SpatialFDR < alpha, paste0("SpatialFDR < ", alpha), NA)) %>%
+    ggplot(aes(logFC_rank, logFC)) +
+    geom_hline(yintercept = 0, linetype=2) +
+    geom_point(size=0.2, color="grey") +
+    geom_point(data=.%>% filter(!is.na(is_signif)), aes(color=is_signif), size=1) +
+    theme_bw(base_size=16) +
+    ylab("DA logFC") +
+    scale_color_manual(values="red", name="") +
+    scale_x_continuous(expand = c(0.01, 0)) +
+    theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(), axis.title.x = element_blank())
+  
+  ## Bottom plot: gene expression heatmap
+  if (isTRUE(cluster_features)) {
+    row.order <- hclust(dist(expr_mat))$order # clustering
+    ordered_features <- rownames(expr_mat)[row.order]
+  } else {
+    ordered_features <- rownames(expr_mat)
+  }
+  
+  # this code assumes that colnames do not begin with numeric values
+  # add 'X' to feature names with numeric first characters
+  rownames(expr_mat) <- str_replace(rownames(expr_mat), pattern="(^[0-9]+)", replacement="X\\1")
+  
+  print("start of error")
+  pl_df <- pl_df %>%
+    pivot_longer(cols=rownames(expr_mat), names_to='feature', values_to="avg_expr") %>%
+    mutate(feature=factor(feature, levels=ordered_features))
+  print("past error!")
+  
+  if (!is.null(highlight_features)) {
+    if (!all(highlight_features %in% pl_df$feature)){
+      missing <- highlight_features[which(!highlight_features %in% pl_df$feature)]
+      warning('Some elements of highlight_features are not in features and will not be highlighted. \nMissing features: ',
+              paste(missing, collapse = ', ') )
+    }
+    pl_df <- pl_df %>%
+      mutate(label=ifelse(feature %in% highlight_features, as.character(feature), NA))
+  }
+  
+  pl_bottom <- pl_df %>%
+    ggplot(aes(logFC_rank, feature, fill=avg_expr)) +
+    geom_tile() +
+    scale_fill_viridis_c(option="magma", name="Avg.Expr.") +
+    xlab("Neighbourhoods") + ylab("Features") +
+    scale_x_continuous(expand = c(0.01, 0)) +
+    theme_classic(base_size = 16) +
+    coord_cartesian(clip="off") +
+    theme(axis.text.x = element_blank(), axis.line.x = element_blank(), axis.ticks.x = element_blank(),
+          axis.line.y = element_blank(), axis.ticks.y = element_blank(),
+          panel.spacing = margin(2, 2, 2, 2, "cm"),
+          legend.margin=margin(0,0,0,0),
+          legend.box.margin=margin(10,10,10,10)
+    )
+  
+  if (!is.null(highlight_features)) {
+    pl_bottom <- pl_bottom +
+      geom_text_repel(data=. %>%
+                        filter(!is.na(label)) %>%
+                        group_by(label) %>%
+                        summarise(logFC_rank=max(logFC_rank), avg_expr=mean(avg_expr), feature=first(feature)),
+                      aes(label=label, x=logFC_rank),
+                      size=4,
+                      xlim = c(max(pl_df$logFC_rank) + 0.01, max(pl_df$logFC_rank) + 0.02),
+                      min.segment.length = 0,
+                      max.overlaps=Inf,
+                      seed=42
+      )
+    
+  }
+  
+  if(isFALSE(show_rownames)){
+    pl_bottom <- pl_bottom +
+      theme(axis.text.y=element_blank())
+  }
+  
+  ## Assemble plot
+  (pl_top / pl_bottom) +
+    plot_layout(heights = c(1,4), guides = "collect") &
+    theme(legend.justification=c(0, 1),
+          legend.margin = margin(0,0,0,50))
 }

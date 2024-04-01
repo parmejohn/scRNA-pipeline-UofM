@@ -1,4 +1,4 @@
-source(paste0(dirname(dirname(dirname(getwd()))),"/utils/misc.R"))
+#source(paste0(dirname(dirname(dirname(getwd()))),"/utils/misc.R"))
 set.seed(333)
 
 TrajectoryInferenceSlingshot <- function(se.integrated, start.clus=NULL){
@@ -19,7 +19,7 @@ TrajectoryInferenceSlingshot <- function(se.integrated, start.clus=NULL){
     }
     p1 <- plot(dim.red[, 1:2], col = pal[clustering], cex = 0.5, pch = 16)
     lines(as.SlingshotDataSet(lineages), lwd = 3, col = "black")
-    #p1 <- recordPlot()
+    p1 <- recordPlot()
     PrintSave(p1, 'ti_no_start_not_smooth.pdf')
     
   } else {
@@ -48,7 +48,7 @@ TrajectoryInferenceSlingshotCurved <- function(se.integrated, start.clus, km=10)
   # slo <- SlingshotDataSet(sce) look at the different lineages
   p1 <- plot(reducedDims(sce)$UMAP, col = brewer.pal(9,'Set1')[sce$ti.clusters], pch=16)
   lines(SlingshotDataSet(sce), lwd=2, col='black')
-  #p1 <- recordPlot()
+  p1 <- recordPlot()
   PrintSave(p1,'ti_start_smooth.pdf')
   saveRDS(sce, "sce_slingshot.rds")
   

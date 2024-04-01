@@ -1,9 +1,9 @@
-source(paste0(dirname(dirname(dirname(getwd()))),"/utils/misc.R"))
+#source(paste0(dirname(dirname(dirname(getwd()))),"/utils/misc.R"))
 set.seed(333)
 
 EscapeGSEA <- function(se.integrated, species){
   dir.create('escape')
-  geneset.c5 <- getGeneSets(species = species, library = 'C5')
+  geneset.c5 <- getGeneSets(species = species, library = 'C5', subcategory = 'BP')
   #geneset.c5.bp <- getGeneSets(species = 'Mus musculus', library = 'C5', subcategory = "BP")
   
   # as a heuristic and for speed, removing genesets >1500 
