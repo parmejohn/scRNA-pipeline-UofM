@@ -12,7 +12,7 @@ GetConserved <- function(cluster){ # replace or edit function?,
 }
 
 IdentifyCellMarkers <- function(se.integrated){
-  se.markers.presto <- RunPrestoAll(se.integrated, only.pos = T, logfc.threshold = 0.1, min.pct = 0.01)
+  se.markers.presto <- RunPrestoAll(se.integrated, only.pos = T, logfc.threshold = 0.1, min.pct = 0.01, min.cells.group = 1)
   write.table(se.markers.presto, paste("se_markers_presto_integrated.txt", sep = ''), 
               quote = FALSE,row.names = T, sep = "\t", col.names = T)
   
@@ -21,20 +21,24 @@ IdentifyCellMarkers <- function(se.integrated){
   PrintSave(expr.heatmap, 'top3_markers_expr_heatmap.pdf')
   
   ##### Conserved markers across the conditions #####
-  if (length(unique(se.integrated@meta.data[["group"]])) == 2){
-    cluster.num <- nlevels(se.integrated@meta.data[["seurat_clusters"]])-1
-    conserved.markers <- map_dfr(0:cluster.num, GetConserved) # cluster 27 doesnt show any conserved because its purely made of 1 condtion (CTRL)
-    conserved.markers.top.2 <- conserved.markers %>% 
-      mutate(avg_fc = (eval(as.symbol(paste(unique(se.integrated@meta.data[["group"]])[1], '_avg_log2FC', sep=''))) + 
-                         eval(as.symbol(paste(unique(se.integrated@meta.data[["group"]])[2], '_avg_log2FC', sep='')))) /2) %>% # extract from group name
-      group_by(cluster_id) %>% 
-      top_n(n = 2, wt = avg_fc)
-    
-    # color intensity denotes average expression across all cells in a class
-    conserved.markers.dotplot <- DotPlot(se.integrated, features = conserved.markers.top.2$gene, cols = c("blue", "red"), dot.scale = 8, split.by = "group") +
-      RotatedAxis()
-    PrintSave(conserved.markers.dotplot, 'conserved_marker_unlabelled.pdf', w=20, h = 16)
-  }
+  #   Error in `levels<-`(`*tmp*`, value = as.character(levels)) : -> fix later
+  # factor level [32] is duplicated
+  # Calls: IdentifyCellMarkers -> DotPlot -> factor
+  
+  # if (length(unique(se.integrated@meta.data[["group"]])) == 2){
+  #   cluster.num <- nlevels(se.integrated@meta.data[["seurat_clusters"]])-1
+  #   conserved.markers <- map_dfr(0:cluster.num, GetConserved) # cluster 27 doesnt show any conserved because its purely made of 1 condtion (CTRL)
+  #   conserved.markers.top.2 <- conserved.markers %>% 
+  #     mutate(avg_fc = (eval(as.symbol(paste0(unique(se.integrated@meta.data[["group"]])[1], '_avg_log2FC'))) + 
+  #                        eval(as.symbol(paste0(unique(se.integrated@meta.data[["group"]])[2], '_avg_log2FC')))) /2) %>% # extract from group name
+  #     group_by(cluster_id) %>% 
+  #     top_n(n = 2, wt = avg_fc)
+  #   
+  #   # color intensity denotes average expression across all cells in a class
+  #   conserved.markers.dotplot <- DotPlot(se.integrated, features = conserved.markers.top.2$gene, cols = c("blue", "red"), dot.scale = 8, split.by = "group") +
+  #     RotatedAxis()
+  #   PrintSave(conserved.markers.dotplot, 'conserved_marker_unlabelled.pdf', w=20, h = 16)
+  #}
 }
 
 ReferenceMarkerMapping <- function(reference, query, dims){

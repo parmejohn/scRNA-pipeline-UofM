@@ -54,6 +54,7 @@ DESeq2ConditionPerCluster <-  function(se.integrated, species){
       #dir.create(paste('deseq2', sep=''))
       #deseq2.folder <- paste(plot.path, 'deseq2/')
       #print('save')
+      write.table(de_markers, paste0("deseq2_cluster_", cluster.name, "_", target[1], "_vs_", target[2], '.txt'), row.names = F, quote = F)
       PrintSave(p, paste0("deseq2_cluster_", cluster.name, "_", target[1], "_vs_", target[2], '.pdf'))
     }
   }

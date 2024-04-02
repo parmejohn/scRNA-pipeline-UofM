@@ -23,8 +23,8 @@ IntegrateSamples <- function(seurat_obj_list, group){
     # CCA integration background; https://hbctraining.github.io/scRNA-seq_online/lessons/06_integration.html
     # - It is a form of PCA, in that it identifies the greatest sources of variation in the data, but only if it is shared or conserved across the conditions/groups
     DefaultAssay(se.merged) <- "RNA"
-    se.integrated <- IntegrateLayers(object = se.merged.preprocessed, method = CCAIntegration,
-                                     orig.reduction = "pca", new.reduction = "integrated.cca",
+    se.integrated <- IntegrateLayers(object = se.merged.preprocessed, method = HarmonyIntegration,
+                                     orig.reduction = "pca", new.reduction = "harmony",
                                      verbose = T)
   } else {
     print('Only 1 sample, no need to integrate')
@@ -33,7 +33,7 @@ IntegrateSamples <- function(seurat_obj_list, group){
 
 # perform dimenstional reduction and clustering
 # results are saved 
-SeuratDimReduction <- function(se.integrated, dims, group, res = 1, reduction = "integrated.cca"){
+SeuratDimReduction <- function(se.integrated, dims, group, res = 1, reduction = "harmony"){
   se.integrated[["RNA"]] <- JoinLayers(se.integrated[["RNA"]])
   se.integrated <- FindNeighbors(se.integrated, reduction = reduction, dims = dims) # returns KNN graph using the PC or CCA
   se.integrated <- FindClusters(se.integrated, resolution = res) # find clusters of cells by shared SNN

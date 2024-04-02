@@ -12,9 +12,6 @@ params.resolution = 1
 params.beginning_cluster = 'none'
 params.run_escape = false
 
-//Global Variables
-//outdata_ch = Channel.value()
-//plotdata_ch = Channel.value()
 
 process INITIALIZEFOLDERS {
     input:
@@ -185,7 +182,7 @@ process IDENTIFYMARKERS {
     input:
     path integrated
     val clusters_optimal
-    path reference_seurat
+    val reference_seurat
 
     output:
     path "*.pdf"
@@ -254,6 +251,13 @@ process COMPARATIVEANALYSIS {
         overwrite: true,
         pattern: "deseq2*.pdf"
     )
+	publishDir (
+        path: "$params.outdir/analysis/data/deseq2",
+        mode: 'copy',
+        overwrite: true,
+        pattern: "*.txt"
+    )
+
 
     containerOptions "--bind $params.bind"
 
@@ -263,7 +267,7 @@ process COMPARATIVEANALYSIS {
 
     output:
     path "*.pdf"
-    //path "*.txt" // should include DEGs txt file?
+    path "*.txt" // should include DEGs txt file?
     
     script:
        """
@@ -307,6 +311,7 @@ process ESCAPEANALYSIS {
 process DAANALYSIS {
     debug true
     cache 'deep'
+//	cache false
 
     publishDir (
         path: "$params.outdir/analysis/data/",
@@ -338,7 +343,6 @@ process DAANALYSIS {
 }
 
 workflow {
-    // TODO: change all val to path after -> dont know why some of these are working
     INITIALIZEFOLDERS(params.outdir)
     ambient_ch = AMBIENTRNAREMOVAL(params.indir) // array of conditions
     // ambient_ch.view() // outputs just the qc folder, for downstream qc, all samples need to be loaded as a list
@@ -346,35 +350,19 @@ workflow {
 
     FILTERLOWQUALDOUBLETS(ambient_ch)
     filtered_ch = FILTERLOWQUALDOUBLETS.out.se_filtered_singlets_list
-    //filtered_ch = Channel.fromPath( "${params.outdir}/analysis/data/se_filtered_singlets_list.rds", checkIfExists: true)
     
     // integrated seurat object
     integrated_ch = INTEGRATEDATA(filtered_ch)
-    //integrated_ch.view()
 
     // seurat dim red
     DIMENSIONALREDUCTION(integrated_ch, params.clusters_optimal, params.resolution)
     dimred_ch = DIMENSIONALREDUCTION.out.se_integrated_dimred
-    //DIMENSIONALREDUCTION.out.clusters_optimal_n.view()
-
-/*    new_opt_clust = Channel.value()
-    // have to read the clusters file because couldnt save globally though stdout
-    if (DIMENSIONALREDUCTION.out.clusters_optimal_n.ifEmpty(false)){
-        opt_clust_file = file("${params.outdir}/analysis/data/optimal_clusters.txt", checkIfExists: true)
-        new_opt_clust = opt_clust_file.text
-    }
-*/
-    //new_opt_clust = DIMENSIONALREDUCTION.out.clusters_optimal_n | view | toString() | file() | text
-
-    //opt_clust_ch = DIMENSIONALREDUCTION.out.clusters_optimal_n | view | toString | file
-    //opt_clust_file = file(opt_clust_ch.view().toString())
-    //new_opt_clust = opt_clust_file.text
 
 	new_opt_clust = DIMENSIONALREDUCTION.out.clusters_optimal_n.splitText().map{it -> it.trim()}
 	println new_opt_clust
 
     // identify cell markers
-    identified_ch = Channel.of()
+    //identified_ch = Channel.of()
     if (params.reference_seurat != 'none'){
         IDENTIFYMARKERS(dimred_ch, new_opt_clust, params.reference_seurat)
         identified_ch = IDENTIFYMARKERS.out.se_integrated_auto_label
@@ -387,7 +375,6 @@ workflow {
 
 
     COMPARATIVEANALYSIS(identified_ch, params.species)
-	//escape_ch = Channel.of()
 	if (params.run_escape){
 		println "WARNING: This may take a while"
 		ESCAPEANALYSIS(identified_ch, params.species)
