@@ -20,6 +20,10 @@ parser$add_argument(
   nargs = 1,
   help = 'Contains CellRanger count outputs folder seperated by condition'
 )
+parser$add_argument('-test_data',
+                    type = "integer",
+                    nargs = 1,
+                    help = 'specify whether this is just a test run, if so your data will be downsampled 3000 cells per sample') # need to change to many options later
 args <- parser$parse_args()
 
 indir <- args$i
@@ -55,7 +59,7 @@ filenames <-
     recursive = T,
     include.dirs = T
   )
-print(filenames)
+#print(filenames)
 filenames <- filenames[grepl("outs", filenames)]
 
 list_of_pairs <- list()
@@ -66,4 +70,4 @@ for (i in 1:length(filenames)) {
   }
 }
 
-lapply(list_of_pairs, AmbientRNARemoval)
+lapply(list_of_pairs, AmbientRNARemoval, test=args$test_data)

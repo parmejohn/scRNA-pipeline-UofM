@@ -11,6 +11,8 @@ params.clusters_optimal = 0
 params.resolution = 1
 params.beginning_cluster = 'none'
 params.run_escape = false
+params.run_sling = false
+params.test_data = 0
 
 
 process INITIALIZEFOLDERS {
@@ -45,14 +47,15 @@ process AMBIENTRNAREMOVAL {
     containerOptions "--bind $params.bind"
 
     input:
-    val params.indir
+    val indir
+    val test_data
 
     output:
     path '*'
     
     script:
        """
-        ${projectDir}/src/AmbientRNARemovalMain.R --i ${params.indir}
+        ${projectDir}/src/AmbientRNARemovalMain.R --i $indir -test_data $test_data
        """
 }
 
@@ -225,7 +228,7 @@ process TRAJECTORYINFERENCE {
     val beginning_cluster
 
     output:
-    path "*.pdf"
+    path "*.pdf", emit: slingshot_out_pdf
     path "*.txt", optional: true
     path "*.rds", optional: true
     
@@ -267,7 +270,7 @@ process COMPARATIVEANALYSIS {
 
     output:
     path "*.pdf"
-    path "*.txt" // should include DEGs txt file?
+    path "*.txt" // DEGs txt files
     
     script:
        """
@@ -344,7 +347,7 @@ process DAANALYSIS {
 
 workflow {
     INITIALIZEFOLDERS(params.outdir)
-    ambient_ch = AMBIENTRNAREMOVAL(params.indir) // array of conditions
+    ambient_ch = AMBIENTRNAREMOVAL(params.indir, params.test_data) // array of conditions
     // ambient_ch.view() // outputs just the qc folder, for downstream qc, all samples need to be loaded as a list
     
 
@@ -371,10 +374,19 @@ workflow {
         identified_ch = dimred_ch
     }
     identified_ch.view() // confirm the output
-    TRAJECTORYINFERENCE(identified_ch, params.beginning_cluster)
+
+	if (params.run_sling){
+		TRAJECTORYINFERENCE(identified_ch, params.beginning_cluster)
+		sling_ch = TRAJECTORYINFERENCE.out.slingshot_out_pdf
+	} else {
+		sling_ch = "SKIPPING SLINGSHOT ANALYSIS, RERUN WITH '--run_sling true' if you desired those results"
+	}
+	println sling_ch
+    //TRAJECTORYINFERENCE(identified_ch, params.beginning_cluster)
 
 
     COMPARATIVEANALYSIS(identified_ch, params.species)
+
 	if (params.run_escape){
 		println "WARNING: This may take a while"
 		ESCAPEANALYSIS(identified_ch, params.species)
@@ -383,5 +395,6 @@ workflow {
 		escape_ch = "SKIPPING ESCAPE ANALYSIS, RERUN WITH '--run_escape true' if you desired those results"
 	}
 	println escape_ch
+
     DAANALYSIS(identified_ch, new_opt_clust)
 }

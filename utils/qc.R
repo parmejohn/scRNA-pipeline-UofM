@@ -1,5 +1,5 @@
 ##### fxns for QC #####
-AmbientRNARemoval <- function(pair_list){
+AmbientRNARemoval <- function(pair_list, test){
   #save.loc <- paste(outdir, '/analysis/data/qc/', sep='')
   
   print(paste("Loading ", pair_list[1], "and ", pair_list[2], sep=''))
@@ -29,6 +29,11 @@ AmbientRNARemoval <- function(pair_list){
   soup.channel  <- autoEstCont(soup.channel, doPlot=FALSE)   # automatically estimates the contamination fraction
   adj.matrix  <- adjustCounts(soup.channel, roundToInt = T)   # calculate the resulting corrected count matrix with background contamination removed
   
+  if(test != 0){
+    rand =  sample(1:ncol(adj.matrix), test)
+    adj.matrix = adj.matrix[, rand]
+  }
+  
   # should work with cellranger outputs -> just back tracks a set amount of times, so as long as folder struc is correct
   sample.name <- sub(".*\\/(.*)\\/.*\\/.*", "\\1", pair_list[1])
   group.name <- sub(".*\\/(.*)\\/.*\\/.*\\/.*", "\\1", pair_list[1])
@@ -44,6 +49,8 @@ AmbientRNARemoval <- function(pair_list){
 BasicQC <- function(seurat_obj){
   
   print("Removing low quality cells based on MAD thresholds")
+  
+  
   seurat_obj[["percent.mt"]] <- PercentageFeatureSet(seurat_obj, pattern = paste(c("^mt-","^MT-"), collapse="|"))
   
   VlnPlot(seurat_obj, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3)   # view distribution and to spot any obvious outliers; not saved so can remove

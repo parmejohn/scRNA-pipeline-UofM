@@ -56,7 +56,7 @@ print("Dimensional reduction")
 if (args$clusters_optimal == 0) {
   opt.clusters <-
     NbClust(
-      se.integrated@reductions[["harmony"]]@feature.loadings,
+      se.integrated@reductions[["pca"]]@feature.loadings,
       distance = "euclidean",
       min.nc = 10,
       max.nc = 20,
