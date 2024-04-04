@@ -79,6 +79,7 @@ process FILTERLOWQUALDOUBLETS {
 
     input:
     path ambient_rmv
+    val species
 
     output:
     path "*.pdf"
@@ -88,7 +89,7 @@ process FILTERLOWQUALDOUBLETS {
     
     script:
        """
-        ${projectDir}/src/FilterLowQualityAndDoublets.R --i $ambient_rmv
+        ${projectDir}/src/FilterLowQualityAndDoublets.R --i $ambient_rmv -species $species
        """
 }
 
@@ -351,7 +352,7 @@ workflow {
     // ambient_ch.view() // outputs just the qc folder, for downstream qc, all samples need to be loaded as a list
     
 
-    FILTERLOWQUALDOUBLETS(ambient_ch)
+    FILTERLOWQUALDOUBLETS(ambient_ch, params.species)
     filtered_ch = FILTERLOWQUALDOUBLETS.out.se_filtered_singlets_list
     
     // integrated seurat object

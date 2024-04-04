@@ -42,16 +42,32 @@ AmbientRNARemoval <- function(pair_list, test){
   
   print(paste("Saving under ./qc/", group.name, '/', sample.name, "_soupx",sep=''))
   DropletUtils:::write10xCounts(paste('./qc/', group.name, '/', sample.name, "_soupx",sep=''), adj.matrix, overwrite = TRUE) # name will be the fo;der before the /outs/ folder
-  #DropletUtils:::write10xCounts(paste(save.loc, group.name, '/', sample.name, "_soupx",sep=''), adj.matrix, overwrite = TRUE) # name will be the fo;der before the /outs/ folder
-  #print(paste("Saved under ", save.loc, group.name, '/', sample.name, "_soupx",sep=''))
 }
 
-BasicQC <- function(seurat_obj){
+BasicQC <- function(seurat_obj, species){
   
   print("Removing low quality cells based on MAD thresholds")
   
   
-  seurat_obj[["percent.mt"]] <- PercentageFeatureSet(seurat_obj, pattern = paste(c("^mt-","^MT-"), collapse="|"))
+  if(all(grepl("^ENS", rownames(seurat_obj)))){ #checks if geneIDs are ensembl IDs; need to convert it into gene symbols to filter for mitochondrial genes
+    ens.to.symbols <- NULL
+    if (species == "musmusculus"){
+      library(EnsDb.Mmusculus.v79)
+      ens.to.symbols <- as.data.frame(mapIds(EnsDb.Mmusculus.v79, keys = rownames(seurat_obj@assays[["RNA"]]@counts),
+                                             column = c('SYMBOL'), keytype = 'GENEID'))
+    } else if (species == "homosapiens"){
+      library(EnsDb.Hsapiens.v86)
+      ens.to.symbols <- as.data.frame(mapIds(EnsDb.Hsapiens.v86, keys = rownames(seurat_obj@assays[["RNA"]]@counts),
+                                             column = c('SYMBOL'), keytype = 'GENEID'))
+    }
+    names(ens.to.symbols)[1] <- "SYMBOL"
+    seurat_obj@assays$RNA@meta.features <- merge(seurat_obj@assays$RNA@meta.features, ens.to.symbols, by=0, all.x=TRUE) %>% select(1,3) #save under meta.features, allows mapping for later on if needed
+    mt.to.calc <- subset(seurat_obj@assays$RNA@meta.features, SYMBOL %in% grep("^mt-", seurat_obj@assays$RNA@meta.features$SYMBOL, value = T))[,1]
+    
+    seurat_obj[["percent.mt"]] <- PercentageFeatureSet(seurat_obj, features = mt.to.calc)
+  } else {
+    seurat_obj[["percent.mt"]] <- PercentageFeatureSet(seurat_obj, pattern = paste(c("^mt-","^MT-"), collapse="|"))
+  }
   
   VlnPlot(seurat_obj, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3)   # view distribution and to spot any obvious outliers; not saved so can remove
   
@@ -66,9 +82,6 @@ BasicQC <- function(seurat_obj){
     geom_hline(aes(yintercept = max.mito.thr), colour = "red", linetype = 2) +
     annotate(geom = "text", label = paste0(as.numeric(table(Cell.QC.Stat$percent.mt > max.mito.thr)[2])," cells removed\n",
                                            as.numeric(table(Cell.QC.Stat$percent.mt > max.mito.thr)[1])," cells remain"), x = 6000, y = 0.1)
-  
-  # dir.create(paste0(plot.path, "/qc/"), showWarnings = FALSE)
-  # dir.create(paste0(plot.path, "/qc/", seurat_obj@misc[[1]]), showWarnings = FALSE)
   ggsave(paste0(seurat_obj@misc[[1]], "_percent_mt.pdf"), plot=p1)
   
   Cell.QC.Stat <- Cell.QC.Stat %>% filter(percent.mt < max.mito.thr)
@@ -100,8 +113,7 @@ BasicQC <- function(seurat_obj){
     filter(log10(nCount_RNA) < max.nUMI.thr)
   
   print("Filtered low-quality cells based of MAD")
-  #print(paste("QC plots saved under ", seurat_obj@misc[[1]],sep=''))
-  
+
   Cell.QC.Stat.bc <- rownames_to_column(Cell.QC.Stat, "barcode")
   filtered.seurat <- subset(seurat_obj, cells = Cell.QC.Stat.bc$barcode)   # filtering in Seurat object
 }
