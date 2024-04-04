@@ -78,13 +78,18 @@ BasicQC <- function(seurat_obj, species){
   max.mito.thr <- median(Cell.QC.Stat$percent.mt) + 3*mad(Cell.QC.Stat$percent.mt) #looking where to make the cutoff for the max
   
   p1 <- ggplot(Cell.QC.Stat, aes(x=nFeature_RNA, y=percent.mt)) +
-    geom_point() +
+    geom_point(alpha=0.3) +
     geom_hline(aes(yintercept = max.mito.thr), colour = "red", linetype = 2) +
     annotate(geom = "text", label = paste0(as.numeric(table(Cell.QC.Stat$percent.mt > max.mito.thr)[2])," cells removed\n",
                                            as.numeric(table(Cell.QC.Stat$percent.mt > max.mito.thr)[1])," cells remain"), x = 6000, y = 0.1)
   ggsave(paste0(seurat_obj@misc[[1]], "_percent_mt.pdf"), plot=p1)
   
-  Cell.QC.Stat <- Cell.QC.Stat %>% filter(percent.mt < max.mito.thr)
+  Cell.QC.Stat.mt <- filter(Cell.QC.Stat, percent.mt < max.mito.thr)
+  if(nrow(Cell.QC.Stat.mt)/nrow(Cell.QC.Stat) > .5){
+    Cell.QC.Stat <- Cell.QC.Stat.mt
+  } else {
+    stop("Over 50% of your cells were removed because of a mitochondrial cutoff, please check your data")
+  }
   
   #ggMarginal(p1, type = "histogram", fill="lightgrey", bins=100) # I think extranaeous but can add later if want
   #min.mito.thr <- median(ifnb$percent.mt) - 3*mad(ifnb$percent.mt) # Many scRNA-seq data doesnt bother with finding a min percent.mt
@@ -97,20 +102,35 @@ BasicQC <- function(seurat_obj, species){
   max.nUMI.thr <- median(log10(Cell.QC.Stat$nCount_RNA)) + 3*mad(log10(Cell.QC.Stat$nCount_RNA))
   
   p2 <- ggplot(Cell.QC.Stat, aes(x=log10(nCount_RNA), y=log10(nFeature_RNA))) +
-    geom_point() +
+    geom_point(alpha=0.3) +
     geom_smooth(method="lm") +
     geom_hline(aes(yintercept = min.Genes.thr), colour = "green", linetype = 2) +
     geom_hline(aes(yintercept = max.Genes.thr), colour = "green", linetype = 2) +
     geom_vline(aes(xintercept = min.nUMI.thr), colour = "red", linetype = 2) +
-    geom_vline(aes(xintercept = max.nUMI.thr), colour = "red", linetype = 2)
+    geom_vline(aes(xintercept = max.nUMI.thr), colour = "red", linetype = 2) +
+    annotate(geom = "text", label = paste0(as.numeric(table(log10(Cell.QC.Stat$nFeature_RNA) > max.Genes.thr | 
+                                                              log10(Cell.QC.Stat$nFeature_RNA) < min.Genes.thr | 
+                                                              log10(Cell.QC.Stat$nCount_RNA) > max.nUMI.thr | 
+                                                              log10(Cell.QC.Stat$nCount_RNA) < min.nUMI.thr)[2])," cells removed\n",
+                                           as.numeric(table(log10(Cell.QC.Stat$nFeature_RNA) > max.Genes.thr | 
+                                                              log10(Cell.QC.Stat$nFeature_RNA) < min.Genes.thr | 
+                                                              log10(Cell.QC.Stat$nCount_RNA) > max.nUMI.thr | 
+                                                              log10(Cell.QC.Stat$nCount_RNA) < min.nUMI.thr)[1])," cells remain"), x = 3, y = 3)
   ggsave(paste0(seurat_obj@misc[[1]], "_nGenes_nUMI.pdf"), plot=p2)
   
   
-  Cell.QC.Stat <- Cell.QC.Stat %>% # removing the low quality cells
+  Cell.QC.Stat.nfeature.numi <- Cell.QC.Stat %>% # removing the low quality cells
     filter(log10(nFeature_RNA) > min.Genes.thr) %>%
     filter(log10(nFeature_RNA) < max.Genes.thr) %>%
     filter(log10(nCount_RNA) > min.nUMI.thr) %>%
     filter(log10(nCount_RNA) < max.nUMI.thr)
+  
+  if(nrow(Cell.QC.Stat.nfeature.numi)/nrow(Cell.QC.Stat) > .5){
+    Cell.QC.Stat <- Cell.QC.Stat.nfeature.numi
+  } else {
+    stop("Over 50% of your cells were removed because of the number of UMIs and 
+         genes cutoff, please check your double check your data")
+  }
   
   print("Filtered low-quality cells based of MAD")
 
