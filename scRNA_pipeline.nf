@@ -14,6 +14,15 @@ params.run_escape = false
 params.run_sling = false
 params.test_data = 0
 
+include {AMBIENTRNAREMOVAL} from './modules/ambientremoval.nf'
+include {FILTERLOWQUALDOUBLETS} from './modules/filterlowqualdoublets.nf'
+include {INTEGRATEDATA} from './modules/integratedata.nf'
+include {DIMENSIONALREDUCTION} from './modules/dimensionalreduction.nf'
+include {IDENTIFYMARKERS} from './modules/identifymarkers.nf'
+include {COMPARATIVEANALYSIS} from './modules/comparativeanalysis.nf'
+include {TRAJECTORYINFERENCE} from './modules/trajectoryinference.nf'
+include {ESCAPEANALYSIS} from './modules/escapeanalysis.nf'
+include {DAANALYSIS} from './modules/daanalysis.nf'
 
 process INITIALIZEFOLDERS {
     input:
@@ -36,316 +45,6 @@ process INITIALIZEFOLDERS {
     """ 
 }
 
-process AMBIENTRNAREMOVAL {
-    //debug true
-    publishDir (
-        path: "$params.outdir/analysis/data/",
-        mode: 'copy',
-        overwrite: true
-    )
-
-    containerOptions "--bind $params.bind"
-
-    input:
-    val indir
-    val test_data
-
-    output:
-    path '*'
-    
-    script:
-       """
-        ${projectDir}/src/AmbientRNARemovalMain.R --i $indir -test_data $test_data
-       """
-}
-
-process FILTERLOWQUALDOUBLETS {
-    debug true
-
-    publishDir (
-        path: "$params.outdir/analysis/data/",
-        mode: 'copy',
-        overwrite: true,
-        pattern: "*.rds"
-    )
-    publishDir (
-        path: "$params.outdir/analysis/plots/qc",
-        mode: 'copy',
-        overwrite: true,
-        pattern: "*.pdf"
-    )
-
-    containerOptions "--bind $params.bind"
-
-    input:
-    path ambient_rmv
-    val species
-
-    output:
-    path "*.pdf"
-    path "se_filtered_singlets_list.rds", emit: se_filtered_singlets_list
-    path "se_filtered_list.rds"
-    path "se_list_raw.rds"
-    
-    script:
-       """
-        ${projectDir}/src/FilterLowQualityAndDoublets.R --i $ambient_rmv -species $species
-       """
-}
-
-process INTEGRATEDATA {
-    debug true
-    cache 'deep'
-
-    publishDir (
-        path: "$params.outdir/analysis/data/",
-        mode: 'copy',
-        overwrite: true
-    )
-
-    containerOptions "--bind $params.bind"
-
-    input:
-    val rds
-
-    output:
-    path 'se_integrated.rds'
-    
-    script:
-       """
-        ${projectDir}/src/IntegrateSamplesMain.R --i $rds
-       """
-}
-
-process DIMENSIONALREDUCTION {
-    debug true
-    cache 'deep'
-
-    publishDir (
-        path: "$params.outdir/analysis/data/",
-        mode: 'copy',
-        overwrite: true,
-        pattern: "*.rds"
-    )
-    publishDir (
-        path: "$params.outdir/analysis/data/",
-        mode: 'copy',
-        overwrite: true,
-        pattern: "*.txt"
-    )
-    publishDir (
-        path: "$params.outdir/analysis/plots/",
-        mode: 'copy',
-        overwrite: true,
-        pattern: "*.pdf"
-    )
-
-    containerOptions "--bind $params.bind"
-
-    input:
-    path integrated
-    val clusters_optimal
-    val resolution
-
-    output:
-    path "*.pdf"
-    path "se_integrated_dimred.rds", emit: se_integrated_dimred
-    path "optimal_clusters.txt", emit: clusters_optimal_n
-    
-    script:
-       """
-        ${projectDir}/src/SeuratDimRedMain.R --i $integrated -clusters_optimal $clusters_optimal -resolution $resolution
-       """
-}
-
-process IDENTIFYMARKERS {
-    debug true
-    cache 'deep'
-
-    publishDir (
-        path: "$params.outdir/analysis/data/",
-        mode: 'copy',
-        overwrite: true,
-        pattern: "*.rds"
-    )
-    publishDir (
-        path: "$params.outdir/analysis/data/",
-        mode: 'copy',
-        overwrite: true,
-        pattern: "*.txt"
-    )
-    publishDir (
-        path: "$params.outdir/analysis/plots/",
-        mode: 'copy',
-        overwrite: true,
-        pattern: "*.pdf"
-    )
-
-    containerOptions "--bind $params.bind"
-
-    input:
-    path integrated
-    val clusters_optimal
-    val reference_seurat
-
-    output:
-    path "*.pdf"
-    path "se_markers_presto_integrated.txt"
-    path "se_integrated_auto_label.rds", emit: se_integrated_auto_label, optional: true
-    
-    script:
-       """
-        ${projectDir}/src/IdentifyCellMarkersMain.R --i $integrated -clusters_optimal $clusters_optimal -reference_seurat $reference_seurat
-       """
-}
-
-process TRAJECTORYINFERENCE {
-    debug true
-    cache 'deep'
-
-    publishDir (
-        path: "$params.outdir/analysis/data/",
-        mode: 'copy',
-        overwrite: true,
-        pattern: "*.rds"
-    )
-    publishDir (
-        path: "$params.outdir/analysis/data/ti",
-        mode: 'copy',
-        overwrite: true,
-        pattern: "*.txt"
-    )
-    publishDir (
-        path: "$params.outdir/analysis/plots/ti",
-        mode: 'copy',
-        overwrite: true,
-        pattern: "*.pdf"
-    )
-
-    containerOptions "--bind $params.bind"
-
-    input:
-    path integrated
-    val beginning_cluster
-
-    output:
-    path "*.pdf", emit: slingshot_out_pdf
-    path "*.txt", optional: true
-    path "*.rds", optional: true
-    
-    script:
-       """
-        ${projectDir}/src/TrajectoryInferenceMain.R --i $integrated -beginning_cluster $beginning_cluster
-       """
-}
-
-process COMPARATIVEANALYSIS {
-    debug true
-    cache 'deep'
-
-    publishDir (
-        path: "$params.outdir/analysis/plots/gsea/comparative",
-        mode: 'copy',
-        overwrite: true,
-        pattern: "gsea_cluster*.pdf"
-    )
-    publishDir (
-        path: "$params.outdir/analysis/plots/deseq2",
-        mode: 'copy',
-        overwrite: true,
-        pattern: "deseq2*.pdf"
-    )
-	publishDir (
-        path: "$params.outdir/analysis/data/deseq2",
-        mode: 'copy',
-        overwrite: true,
-        pattern: "*.txt"
-    )
-
-
-    containerOptions "--bind $params.bind"
-
-    input:
-    path integrated
-    val species
-
-    output:
-    path "*.pdf"
-    path "*.txt" // DEGs txt files
-    
-    script:
-       """
-        ${projectDir}/src/ComparativeAnalysisMain.R --i $integrated --s $species
-       """
-}
-
-process ESCAPEANALYSIS {
-    debug true
-    cache 'deep'
-
-    publishDir (
-        path: "$params.outdir/analysis/data/",
-        mode: 'copy',
-        overwrite: true,
-        pattern: "*.rds"
-    )
-    publishDir (
-        path: "$params.outdir/analysis/plots/gsea/",
-        mode: 'copy',
-        overwrite: true,
-        pattern: "esc*"
-    )
-
-    containerOptions "--bind $params.bind"
-
-    input:
-    path integrated
-    val species
-
-    output:
-    path "*.rds", emit: se_integrated_escape
-    path "escape/"
-    
-    script:
-       """
-        ${projectDir}/src/EscapeMain.R --i $integrated --s $species
-       """
-}
-
-process DAANALYSIS {
-    debug true
-    cache 'deep'
-//	cache false
-
-    publishDir (
-        path: "$params.outdir/analysis/data/",
-        mode: 'copy',
-        overwrite: true,
-        pattern: "*.rds"
-    )
-    publishDir (
-        path: "$params.outdir/analysis/plots/da",
-        mode: 'copy',
-        overwrite: true,
-        pattern: "*.pdf"
-    )
-
-    containerOptions "--bind $params.bind"
-
-    input:
-    path integrated
-    val clusters_optimal
-
-    output:
-    path "*.rds"
-    path "*.pdf"
-    
-    script:
-       """
-        ${projectDir}/src/DifferentialAbundanceMain.R --i $integrated -clusters_optimal $clusters_optimal
-       """
-}
-
 workflow {
     INITIALIZEFOLDERS(params.outdir)
     ambient_ch = AMBIENTRNAREMOVAL(params.indir, params.test_data) // array of conditions
@@ -366,7 +65,6 @@ workflow {
 	println new_opt_clust
 
     // identify cell markers
-    //identified_ch = Channel.of()
     if (params.reference_seurat != 'none'){
         IDENTIFYMARKERS(dimred_ch, new_opt_clust, params.reference_seurat)
         identified_ch = IDENTIFYMARKERS.out.se_integrated_auto_label
@@ -374,7 +72,6 @@ workflow {
         IDENTIFYMARKERS(dimred_ch, new_opt_clust, params.reference_seurat)
         identified_ch = dimred_ch
     }
-    identified_ch.view() // confirm the output
 
 	if (params.run_sling){
 		TRAJECTORYINFERENCE(identified_ch, params.beginning_cluster)
