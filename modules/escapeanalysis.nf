@@ -24,6 +24,7 @@ process ESCAPEANALYSIS {
     output:
     path "*.rds", emit: se_integrated_escape
     path "escape/"
+    val true, emit: report
     
     script:
        """

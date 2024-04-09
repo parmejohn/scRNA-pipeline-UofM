@@ -23,6 +23,7 @@ include {COMPARATIVEANALYSIS} from './modules/comparativeanalysis.nf'
 include {TRAJECTORYINFERENCE} from './modules/trajectoryinference.nf'
 include {ESCAPEANALYSIS} from './modules/escapeanalysis.nf'
 include {DAANALYSIS} from './modules/daanalysis.nf'
+include {SUMMARYREPORT} from './modules/summaryreport.nf'
 
 process INITIALIZEFOLDERS {
     input:
@@ -95,4 +96,6 @@ workflow {
 	println escape_ch
 
     DAANALYSIS(identified_ch, new_opt_clust)
+
+    
 }

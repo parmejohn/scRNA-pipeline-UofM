@@ -41,6 +41,7 @@ thisFile <- function() {
     return(normalizePath(sys.frames()[[1]]$ofile))
   }
 }
+
 source(paste0(file.path(dirname(dirname(
   thisFile()
 ))), "/utils/qc.R"))

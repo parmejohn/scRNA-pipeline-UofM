@@ -25,6 +25,7 @@ process DAANALYSIS {
     output:
     path "*.rds"
     path "*.pdf"
+    val true, emit: report
     
     script:
        """

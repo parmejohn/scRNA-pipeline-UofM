@@ -31,6 +31,7 @@ process TRAJECTORYINFERENCE {
     path "*.pdf", emit: slingshot_out_pdf
     path "*.txt", optional: true
     path "*.rds", optional: true
+    val true, emit: report
     
     script:
        """

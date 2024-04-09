@@ -31,7 +31,8 @@ process COMPARATIVEANALYSIS {
     output:
     path "*.pdf"
     path "*.txt" // DEGs txt files
-    
+    val true, emit: report
+
     script:
        """
         ${projectDir}/src/ComparativeAnalysisMain.R --i $integrated --s $species
