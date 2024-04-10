@@ -81,7 +81,7 @@ workflow {
 		sling_ch = "SKIPPING SLINGSHOT ANALYSIS, RERUN WITH '--run_sling true' if you desired those results"
 	}
 	println sling_ch
-    //TRAJECTORYINFERENCE(identified_ch, params.beginning_cluster)
+    // TRAJECTORYINFERENCE(identified_ch, params.beginning_cluster)
 
 
     COMPARATIVEANALYSIS(identified_ch, params.species)
@@ -97,5 +97,12 @@ workflow {
 
     DAANALYSIS(identified_ch, new_opt_clust)
 
-    
+    SUMMARYREPORT(
+        COMPARATIVEANALYSIS.out.report,
+        sling_ch,
+        DAANALYSIS.out.report,
+        escape_ch,
+        "${params.outdir}/analysis/",
+        new_opt_clust
+        )
 }

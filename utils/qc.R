@@ -81,7 +81,10 @@ BasicQC <- function(seurat_obj, species){
     geom_point(alpha=0.3) +
     geom_hline(aes(yintercept = max.mito.thr), colour = "red", linetype = 2) +
     annotate(geom = "text", label = paste0(as.numeric(table(Cell.QC.Stat$percent.mt > max.mito.thr)[2])," cells removed\n",
-                                           as.numeric(table(Cell.QC.Stat$percent.mt > max.mito.thr)[1])," cells remain"), x = 6000, y = 0.1)
+                                           as.numeric(table(Cell.QC.Stat$percent.mt > max.mito.thr)[1])," cells remain"), x = 6000, y = 0.1) + 
+    ggtitle(paste0(seurat_obj@misc[[1]], " QC: Percentage of Mitochondrial reads per Cell")) +
+    xlab("Number of Genes") +
+    ylab("Percent of Mitochondrial reads")
   ggsave(paste0(seurat_obj@misc[[1]], "_percent_mt.pdf"), plot=p1)
   
   Cell.QC.Stat.mt <- filter(Cell.QC.Stat, percent.mt < max.mito.thr)
@@ -115,7 +118,10 @@ BasicQC <- function(seurat_obj, species){
                                            as.numeric(table(log10(Cell.QC.Stat$nFeature_RNA) > max.Genes.thr | 
                                                               log10(Cell.QC.Stat$nFeature_RNA) < min.Genes.thr | 
                                                               log10(Cell.QC.Stat$nCount_RNA) > max.nUMI.thr | 
-                                                              log10(Cell.QC.Stat$nCount_RNA) < min.nUMI.thr)[1])," cells remain"), x = 3, y = 3)
+                                                              log10(Cell.QC.Stat$nCount_RNA) < min.nUMI.thr)[1])," cells remain"), x = 3, y = 3) +
+    ggtitle(paste0(seurat_obj@misc[[1]], " QC: Number of Genes vs Number of UMIs")) +
+    xlab("Number of UMIs") +
+    ylab("Number of Genes")
   ggsave(paste0(seurat_obj@misc[[1]], "_nGenes_nUMI.pdf"), plot=p2)
   
   

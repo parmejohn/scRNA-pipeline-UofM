@@ -115,11 +115,14 @@ DifferentialAbundanceMilo <-
       )
     
     p1 <-
-      ggplot(da.results, aes(PValue)) + geom_histogram(bins = 50) # should be anti-conservative distribution
+      ggplot(da.results, aes(PValue)) + 
+      geom_histogram(bins = 50) + # should be anti-conservative distribution
+      ggtitle("DA Test: Distribution of p-values")
     p2 <-
       ggplot(da.results, aes(logFC,-log10(SpatialFDR))) + #volcano plot to see how many neighborhoods are above a fdr threshold
       geom_point() +
-      geom_hline(yintercept = 1) ## Mark significance threshold (10% FDR)
+      geom_hline(yintercept = 1) +## Mark significance threshold (10% FDR)
+      ggtitle("Significant Neighborhoods over Conditions")
     PrintSave(p1, "milo_pval_distribution.pdf")
     PrintSave(p2, "milo_volcano_plot.pdf")
     
@@ -134,7 +137,8 @@ DifferentialAbundanceMilo <-
     print("buzzbuzz")
     da.results$da.clusters.num <- as.numeric(da.results$da.clusters)
     p4 <-
-      plotDAbeeswarm_fixed(da.results, group.by = "da.clusters.num") # gives a distribution view instead of UMAP
+      plotDAbeeswarm_fixed(da.results, group.by = "da.clusters.num") + # gives a distribution view instead of UMAP
+      ggtitle("DA FC Distribution per Cluster")
     if (is.ggplot(p4)) {
       PrintSave(p4, "milo_DA_fc_distribution.pdf")
     }
@@ -199,7 +203,8 @@ DifferentialAbundanceMilo <-
                 scale_to_1 = TRUE,
                 cluster_features = TRUE,
                 show_rownames = FALSE
-              )
+              ) + 
+              ggtitle(paste0(i, "DA DEGs"))
             PrintSave(p5, paste0("milo_DA_DE_heatmap_", i, ".pdf"))
           }
         }
@@ -214,8 +219,9 @@ DifferentialAbundanceMilo <-
       plotNhoodGraphDA(sc.integrated.milo.traj,
                        da.results,
                        layout = "UMAP",
-                       alpha = 0.1) # for my UMAP negative FC denoted CTRL and positive values denoted TREAT -> will have to look at your original UMAP for density of cells
+                       alpha = 0.1) +  # for my UMAP negative FC denoted CTRL and positive values denoted TREAT -> will have to look at your original UMAP for density of cells
     # also can look at the your design -> should be ordered correspondingly; https://github.com/MarioniLab/miloR/issues/81
+      ggtitle("DA Analysis UMAP")
     
     
     da.results <-

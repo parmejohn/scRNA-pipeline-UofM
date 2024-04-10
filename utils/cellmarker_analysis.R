@@ -17,7 +17,8 @@ IdentifyCellMarkers <- function(se.integrated){
               quote = FALSE,row.names = T, sep = "\t", col.names = T)
   
   se.markers.presto.top3 <- as.data.frame(se.markers.presto %>% group_by(cluster) %>% top_n(n = 3, wt = avg_log2FC))
-  expr.heatmap <- DoHeatmap(subset(se.integrated, downsample = 300), features = se.markers.presto.top3$gene, assay = "RNA", slot = "data") # will only plot a max of 300 cells per identity; ggplot has a limit of 30,000 cells total
+  expr.heatmap <- DoHeatmap(subset(se.integrated, downsample = 300), features = se.markers.presto.top3$gene, assay = "RNA", slot = "data") + # will only plot a max of 300 cells per identity; ggplot has a limit of 30,000 cells total
+    ggtitle("Top 3 Cell Markers per Cluster")
   PrintSave(expr.heatmap, 'top3_markers_5k_expr_heatmap.pdf')
   
   ##### Conserved markers across the conditions #####
@@ -36,7 +37,10 @@ IdentifyCellMarkers <- function(se.integrated){
 
     # color intensity denotes average expression across all cells in a class
     conserved.markers.dotplot <- DotPlot(se.integrated, features = unique(conserved.markers.top.2$gene), cols = c("blue", "red"), dot.scale = 8, split.by = "group") +
-      RotatedAxis()
+      RotatedAxis() + 
+      ggtitle("Conserved Markers across conditions per Cluster") + 
+      xlab("Genes") +
+      ylab("Cluster and Condition Name")
     PrintSave(conserved.markers.dotplot, 'conserved_marker_unlabelled.pdf', w=20, h = 16)
   }
 }
@@ -60,7 +64,9 @@ ReferenceMarkerMapping <- function(reference, query, dims){
   prediction.scores <- melt(prediction.scores, id.vars = "RNA_snn_res.1", variable.name = "source", value.name = "score")
   
   prediction.matrix <- tapply(prediction.scores$score, list(prediction.scores$RNA_snn_res.1, prediction.scores$source), median)
-  se.hm <- pheatmap(prediction.matrix, cluster_rows = FALSE, cluster_cols = FALSE, color = colorRampPalette(c("white","red"))(200), display_numbers = FALSE, silent = TRUE)
+  se.hm <- pheatmap(prediction.matrix, cluster_rows = FALSE, cluster_cols = FALSE, 
+                    color = colorRampPalette(c("white","red"))(200), display_numbers = FALSE, 
+                    main = "Reference Marker Prediction Scores", silent = TRUE)
   PrintSave(se.hm, "reference_marker_mapping_heatmap.pdf")
   
   cluster.names <- colnames(prediction.matrix)[max.col(prediction.matrix,ties.method="first")]
@@ -71,7 +77,8 @@ ReferenceMarkerMapping <- function(reference, query, dims){
   Idents(query) <- 'celltype'
   query$ident <- query$celltype
   
-  umap.labelled <- DimPlot(query, reduction = "umap", group.by = "celltype")
+  umap.labelled <- DimPlot(query, reduction = "umap", group.by = "celltype", label = TRUE, alpha = 0.5) +
+    ggtitle("UMAP Reference Labelled Clusters")
   PrintSave(umap.labelled, "integrated_umap_labelled.pdf")
   reference$reference.cell.meta <- NULL
   

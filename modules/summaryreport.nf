@@ -12,6 +12,8 @@ process SUMMARYREPORT{
     val trajectory_signal
     val da_signal
     val escape_signal
+    val analysis_dir
+    val opt_clusters
 
     output:
     path '*.html'
@@ -20,7 +22,7 @@ process SUMMARYREPORT{
         """
         #!/usr/local/bin/Rscript
 
-        rmarkdown::render("${projectDIr}/src/SummaryReport.R")
+        rmarkdown::render("${projectDIr}/src/SummaryReport.R", params = list(data = $analysis_dir, opt_c = , $opt_clusters))
         """
 
 }

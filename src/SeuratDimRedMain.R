@@ -77,7 +77,9 @@ if (args$resolution == 1) {
 
 # have to use visual check to find optimal # of clusters for now
 # this can always be increased if want to seperate clusters more ie. finding rare cell populations
-ElbowPlot(se.integrated) %>% PrintSave("integrated_elbow_plot.pdf")
+elbow <- ElbowPlot(se.integrated) +
+  ggtitle("Elbow plot for Determining Optimal Clusters")
+PrintSave(elbow, "integrated_elbow_plot.pdf")
 
 #read.table("/home/projects/sc_pipelines/test_run_nf_1/analysis/data/optimal_clusters.txt")
 write.table(

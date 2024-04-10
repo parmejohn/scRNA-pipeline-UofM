@@ -17,9 +17,11 @@ TrajectoryInferenceSlingshot <- function(se.integrated, start.clus=NULL){
     for (i in levels(clustering)) {
       text(mean(dim.red[clustering == i, 1]), mean(dim.red[clustering == i, 2]), labels = i, font = 2)
     }
-    p1 <- plot(dim.red[, 1:2], col = pal[clustering], cex = 0.5, pch = 16)
+    plot(dim.red[, 1:2], col = pal[clustering], cex = 0.5, pch = 16)
     lines(as.SlingshotDataSet(lineages), lwd = 3, col = "black")
+    title("Lineage Structure")
     p1 <- recordPlot()
+    plot.new()
     PrintSave(p1, 'ti_no_start_not_smooth.pdf')
     
   } else {
@@ -46,9 +48,11 @@ TrajectoryInferenceSlingshotCurved <- function(se.integrated, start.clus, km=10)
   ))
   
   # slo <- SlingshotDataSet(sce) look at the different lineages
-  p1 <- plot(reducedDims(sce)$UMAP, col = brewer.pal(9,'Set1')[sce$ti.clusters], pch=16)
+  plot(reducedDims(sce)$UMAP, col = brewer.pal(9,'Set1')[sce$ti.clusters], pch=16)
   lines(SlingshotDataSet(sce), lwd=2, col='black')
+  title("Lineage Path Predictions")
   p1 <- recordPlot()
+  plot.new()
   PrintSave(p1,'ti_start_smooth.pdf')
   saveRDS(sce, "sce_slingshot.rds")
   
@@ -82,7 +86,8 @@ TrajectoryInferenceSlingshotCurved <- function(se.integrated, start.clus, km=10)
       arrange(qval)
     
     # get log normalized counts 
-    to_plot <- as.matrix(logcounts(sce)[res$id[1:100], lineage_cells])
+    #to_plot <- as.matrix(logcounts(sce)[res$id[1:100], lineage_cells]) #limited to the first 100 genes which will miss biological importance
+    to_plot <- as.matrix(logcounts(sce)[res, lineage_cells]) #limited to the first 100 genes which will miss biological importance
     
     # arrange cells by pseudotime
     ptime_order <- colnames(to_plot)[order(ptime)]
@@ -94,6 +99,8 @@ TrajectoryInferenceSlingshotCurved <- function(se.integrated, start.clus, km=10)
     
     ha <- HeatmapAnnotation(df = annotations)
     p2 <- Heatmap(to_plot,
+                  name = "Log-normalized Counts", 
+                  column_title = paste0("DEGs over ", ptime.str),
                   km = km,
                   column_order = ptime_order,
                   show_column_names = FALSE,

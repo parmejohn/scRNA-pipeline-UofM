@@ -39,9 +39,17 @@ SeuratDimReduction <- function(se.integrated, dims, group, res = 1, reduction = 
   se.integrated <- FindClusters(se.integrated, resolution = res) # find clusters of cells by shared SNN
   se.integrated <- RunUMAP(se.integrated, dims = dims, reduction = reduction) # optimizes the low-dimensional graph representaiton to be as similar to og graph
   
-  DimPlot(se.integrated, reduction = "umap", group.by = group) %>% PrintSave("integrated_umap_grouped.pdf")
-  DimPlot(se.integrated, reduction = "umap", split.by = group) %>% PrintSave("integrated_umap_split.pdf")
-  DimPlot(se.integrated, reduction = "umap", group.by = "seurat_clusters") %>% PrintSave("integrated_umap_unlabelled.pdf")
+  p1 <- DimPlot(se.integrated, reduction = "umap", group.by = group, alpha = 0.5) + 
+    ggtitle("UMAP with Highlighted Conditions")
+  PrintSave(p1, "integrated_umap_grouped.pdf")
+  
+  p2 <- DimPlot(se.integrated, reduction = "umap", split.by = group, alpha = 0.5) %>% PrintSave("integrated_umap_split.pdf") +
+    ggtitle("UMAP Split by Condition and Highlighted by Sample")
+  PrintSave(p2, "integrated_umap_split.pdf")
+  
+  p3 <- DimPlot(se.integrated, reduction = "umap", group.by = "seurat_clusters", label = TRUE, alpha = 0.5) %>% PrintSave("integrated_umap_unlabelled.pdf") +
+    ggtitle("UMAP Unlabelled Seurat Clusters")
+  PrintSave(p3, "integrated_umap_unlabelled.pdf")
   
   se.integrated <- se.integrated
 }

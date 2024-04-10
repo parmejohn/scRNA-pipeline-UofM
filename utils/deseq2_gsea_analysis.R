@@ -48,9 +48,13 @@ DESeq2ConditionPerCluster <-  function(se.integrated, species){
       GseaComparison(de_markers, cluster.name, target[1], target[2], fgsea_sets)
       
       #print('plot')
-      p <- ggplot(de_markers, aes(avg_log2FC, -log10(p_val))) + geom_point(size = 0.5, alpha = 0.5) + theme_bw() +
-        ylab("-log10(unadjusted p-value)") + geom_text_repel(aes(label = ifelse(((p_val_adj < 0.05 & avg_log2FC >= 2)|(p_val_adj < 0.05 & avg_log2FC <= -2)), gene,
-                                                                                "")), colour = "red", size = 3)
+      p <- ggplot(de_markers, aes(avg_log2FC, -log10(p_val))) + 
+        geom_point(size = 0.5, alpha = 0.5) + 
+        theme_bw() +
+        ylab("-log10(unadjusted p-value)") + 
+        geom_text_repel(aes(label = ifelse(((p_val_adj < 0.05 & avg_log2FC >= 2)|(p_val_adj < 0.05 & avg_log2FC <= -2)), gene,
+                                                                                "")), colour = "red", size = 3) + 
+        ggtitle(paste0("DESeq2: ", cluster.name, " ", target[1], " vs ", target[2]))
       #dir.create(paste('deseq2', sep=''))
       #deseq2.folder <- paste(plot.path, 'deseq2/')
       #print('save')
@@ -81,7 +85,8 @@ GseaComparison <- function(de.markers, cluster.name, ident.1, ident.2, fgsea.set
     scale_size_continuous(range = c(2,10)) +
     geom_hline(yintercept = 0) +
     coord_flip() +
-    labs(x="Pathway", y="Normalized Enrichment Score")
+    labs(x="Pathway", y="Normalized Enrichment Score") + 
+    ggtitle(paste0("GSEA: ", cluster.name, " ", ident.1, " vs ", ident.2))
   
   #dir.create(paste(plot.path, 'gsea', sep=''))
   PrintSave(p1, paste0("gsea_cluster_", cluster.name, "_", ident.1, "_vs_", ident.2, '.pdf'), w=12)

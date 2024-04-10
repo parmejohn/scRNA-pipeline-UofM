@@ -43,7 +43,8 @@ EscapeGSEA <- function(se.integrated, species){
                           gene.set.use = unique(ucell.markers.top5$gene),
                           assay = "escape.UCell_normalized",
                           scale = TRUE) +
-    theme(legend.position = "right", axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+    theme(legend.position = "right", axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
+    ggtitle("Top 5 GO Pathways per Cluster")
   ggsave(paste0("escape/", "escape_heatmap_top5.pdf"), p1, width = 20, height = 10)
   
   for (i in 1:nrow(ucell.markers.top5)){
@@ -53,7 +54,8 @@ EscapeGSEA <- function(se.integrated, species){
                            gene.set = ucell.markers.top5[i,7], 
                            facet.by = "group",
                            scale = TRUE) +
-      theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+      theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
+      ggtitle()
     tar.dir <- paste0("escape/", levels(droplevels(ucell.markers.top5[i,6])), "/")
     dir.create(tar.dir)
     ggsave(paste0(tar.dir, ucell.markers.top5[i,7], "_geyser.pdf"), p2, width = 12, height = 12)
