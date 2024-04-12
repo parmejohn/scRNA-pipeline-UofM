@@ -1,5 +1,8 @@
 #' ---
 #' title: "scRNA-seq analysis pipeline report"
+#' params:
+#'   data:
+#'   opt_c:
 #' output:
 #'   html_document:
 #'    toc: true
@@ -18,7 +21,7 @@
   
 
 #+ echo=FALSE, include=FALSE
-library(argparse)
+#library(argparse)
 library(dplyr)
 library(tidyverse)
 library(Seurat)
@@ -29,17 +32,6 @@ library(cowplot)
 library(magick)
 
 set.seed(333)
-
-parser <-
-  ArgumentParser(description = 'Process scRNA-seq data, while performing comparitive analyses')
-parser$add_argument(
-  '-analysis_folder',
-  '--a',
-  type = "character",
-  required = TRUE,
-  nargs = 1,
-  help = 'Contains pipeline analysis folder path'
-)
 
 thisFile <- function() {
   cmdArgs <- commandArgs(trailingOnly = FALSE)
@@ -55,8 +47,8 @@ thisFile <- function() {
 }
 
 # use Rmd params option for rendering https://rmarkdown.rstudio.com/lesson-6.html
-res.loc <- "/home/projects/sc_pipelines/scrna_deanne_harmony/downsample_test/analysis/"
-#res.loc <- params$data
+#res.loc <- "/home/projects/sc_pipelines/scrna_deanne_harmony/downsample_test/analysis/"
+res.loc <- params$data
 
 #' # QC
 #' ## Ambient RNA Removal
@@ -84,7 +76,7 @@ for(i in plots){
 {{list.dirs(paste0(res.loc, "/data/qc"), recursive = FALSE, full.names = FALSE)}}
 #' , which will be named 'group' in the seurat metadata
 #' Optimal clustering was inputed as 
-#{{params$opt_c}}
+{{params$optc}}
 
 #' Please view the grouped plot below to ensure that integration was sufficient for your given dataset
 #+ warning=FALSE, echo=FALSE, fig.height = 10, fig.width = 10
@@ -103,7 +95,7 @@ kable(md[, .N, by = c("group", "seurat_clusters")] %>% dcast(., group ~ seurat_c
 #' The heatmap below is also limited to 300 cells per cluster because of ggplot limitations.
 #' Note: Cell marker in this context means genes that are differentially expressed in the given cluster compared to all others.
 #+ warning=FALSE, echo=FALSE, fig.height = 10, fig.width = 10, results='asis'
-plot(image_read_pdf(paste0(res.loc,"plots/top3_markers_expr_heatmap.pdf")))
+plot(image_read_pdf(paste0(res.loc,"plots/top3_markers_5k_expr_heatmap.pdf")))
 
 if (file.exists(paste0(res.loc,"plots/conserved_marker_unlabelled.pdf"))){
   plot(image_read_pdf(paste0(res.loc,"plots/conserved_marker_unlabelled.pdf")))
@@ -175,7 +167,7 @@ for(i in 1:length(plots)){
 
 #+ warning=FALSE, echo=FALSE, fig.height = 10, fig.width = 10, results='asis'
 if (file.exists(paste0(res.loc,"data/se_integrated_escape_norm.rds"))){
-  plot(image_read_pdf(paste0(res.loc,"plots/escape_heatmap_top5.pdf")))
+  plot(image_read_pdf(paste0(res.loc,"plots/gsea/escape/escape_heatmap_top5.pdf")))
 } else {
   print("escape analysis was set to false, if you wanted this analysis please set '-run_escape true'")
 }
@@ -188,10 +180,10 @@ if (file.exists(paste0(res.loc,"plots/ti"))){
     for(i in plots){
       #cat("![example](",i,"){width=100%, height=500}")
       #cat("\includepdf[pages={1}](",i,"){width=100%}")
-      plot(image_read_pdf(i))
+#      plot(image_read_pdf(i))
     }
   } else {
-    plot(image_read_pdf(paste0(res.loc,"plots/ti/ti_no_start_not_smooth.pdf")))
+#    plot(image_read_pdf(paste0(res.loc,"plots/ti/ti_no_start_not_smooth.pdf")))
   }
 } else {
   print("slingshot analysis was set to false, if you wanted this analysis please set '-run_sling true'")

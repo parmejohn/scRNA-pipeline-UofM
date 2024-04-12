@@ -16,13 +16,13 @@ process SUMMARYREPORT{
     val opt_clusters
 
     output:
-    path '*.html'
+    path "*.html"
 
     script:
         """
         #!/usr/local/bin/Rscript
 
-        rmarkdown::render("${projectDIr}/src/SummaryReport.R", params = list(data = $analysis_dir, opt_c = , $opt_clusters))
+        rmarkdown::render("${projectDir}/src/SummaryReport.R", params = list(data = "$analysis_dir", opt_c = "$opt_clusters"), output_dir = ".")
         """
 
 }

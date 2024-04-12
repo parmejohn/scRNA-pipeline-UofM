@@ -87,7 +87,7 @@ TrajectoryInferenceSlingshotCurved <- function(se.integrated, start.clus, km=10)
     
     # get log normalized counts 
     #to_plot <- as.matrix(logcounts(sce)[res$id[1:100], lineage_cells]) #limited to the first 100 genes which will miss biological importance
-    to_plot <- as.matrix(logcounts(sce)[res, lineage_cells]) #limited to the first 100 genes which will miss biological importance
+    to_plot <- as.matrix(logcounts(sce)[res$id, lineage_cells]) #limited to the first 100 genes which will miss biological importance
     
     # arrange cells by pseudotime
     ptime_order <- colnames(to_plot)[order(ptime)]

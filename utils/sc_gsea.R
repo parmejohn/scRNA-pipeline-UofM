@@ -55,7 +55,7 @@ EscapeGSEA <- function(se.integrated, species){
                            facet.by = "group",
                            scale = TRUE) +
       theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
-      ggtitle()
+      ggtitle(paste0("Geyser Enrichment: ", levels(droplevels(ucell.markers.top5[i,6]))))
     tar.dir <- paste0("escape/", levels(droplevels(ucell.markers.top5[i,6])), "/")
     dir.create(tar.dir)
     ggsave(paste0(tar.dir, ucell.markers.top5[i,7], "_geyser.pdf"), p2, width = 12, height = 12)

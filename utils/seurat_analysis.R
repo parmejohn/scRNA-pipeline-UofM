@@ -43,11 +43,11 @@ SeuratDimReduction <- function(se.integrated, dims, group, res = 1, reduction = 
     ggtitle("UMAP with Highlighted Conditions")
   PrintSave(p1, "integrated_umap_grouped.pdf")
   
-  p2 <- DimPlot(se.integrated, reduction = "umap", split.by = group, alpha = 0.5) %>% PrintSave("integrated_umap_split.pdf") +
+  p2 <- DimPlot(se.integrated, reduction = "umap", split.by = group, alpha = 0.5) +
     ggtitle("UMAP Split by Condition and Highlighted by Sample")
   PrintSave(p2, "integrated_umap_split.pdf")
   
-  p3 <- DimPlot(se.integrated, reduction = "umap", group.by = "seurat_clusters", label = TRUE, alpha = 0.5) %>% PrintSave("integrated_umap_unlabelled.pdf") +
+  p3 <- DimPlot(se.integrated, reduction = "umap", group.by = "seurat_clusters", label = TRUE, alpha = 0.5) +
     ggtitle("UMAP Unlabelled Seurat Clusters")
   PrintSave(p3, "integrated_umap_unlabelled.pdf")
   

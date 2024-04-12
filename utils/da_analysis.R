@@ -136,10 +136,9 @@ DifferentialAbundanceMilo <-
       log1p(counts(sc.integrated.milo.traj))
     print("buzzbuzz")
     da.results$da.clusters.num <- as.numeric(da.results$da.clusters)
-    p4 <-
-      plotDAbeeswarm_fixed(da.results, group.by = "da.clusters.num") + # gives a distribution view instead of UMAP
-      ggtitle("DA FC Distribution per Cluster")
+    p4 <- plotDAbeeswarm_fixed(da.results, group.by = "da.clusters.num") # gives a distribution view instead of UMAP
     if (is.ggplot(p4)) {
+	p4 <- p4 + ggtitle("DA FC Distribution per Cluster")
       PrintSave(p4, "milo_DA_fc_distribution.pdf")
     }
     
