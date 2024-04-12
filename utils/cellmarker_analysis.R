@@ -1,4 +1,3 @@
-#source(paste0(dirname(dirname(dirname(getwd()))),"/utils/seurat_analysis.R"))
 set.seed(333)
 
 # code source: https://hbctraining.github.io/scRNA-seq_online/lessons/09_merged_SC_marker_identification.html
@@ -17,9 +16,11 @@ IdentifyCellMarkers <- function(se.integrated){
               quote = FALSE,row.names = T, sep = "\t", col.names = T)
   
   se.markers.presto.top3 <- as.data.frame(se.markers.presto %>% group_by(cluster) %>% top_n(n = 3, wt = avg_log2FC))
-  expr.heatmap <- DoHeatmap(subset(se.integrated, downsample = 300), features = se.markers.presto.top3$gene, assay = "RNA", slot = "data") + # will only plot a max of 300 cells per identity; ggplot has a limit of 30,000 cells total
+  expr.heatmap <- DoHeatmap(subset(se.integrated, downsample = 300), 
+                            features = se.markers.presto.top3$gene, 
+                            assay = "RNA", slot = "data", label = FALSE) + # will only plot a max of 300 cells per identity; ggplot has a limit of 30,000 cells total
     ggtitle("Top 3 Cell Markers per Cluster")
-  PrintSave(expr.heatmap, 'top3_markers_5k_expr_heatmap.pdf')
+  PrintSave(expr.heatmap, 'top3_markers_expr_heatmap.pdf')
   
   ##### Conserved markers across the conditions #####
   #   Error in `levels<-`(`*tmp*`, value = as.character(levels)) : -> fix later

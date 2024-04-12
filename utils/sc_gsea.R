@@ -23,7 +23,7 @@ EscapeGSEA <- function(se.integrated, species){
                              normalize = FALSE,
                              groups = 5000,
                              new.assay.name = "escape.UCell")
-  saveRDS(se.integrated, "se_integrated_escape.rds")
+  #saveRDS(se.integrated, "se_integrated_escape.rds")
   
   # takes over 8+ hours
   print("Normalizing UCell values")

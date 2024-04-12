@@ -1,4 +1,3 @@
-#source(paste0(dirname(dirname(dirname(getwd()))),"/utils/misc.R"))
 set.seed(333)
 
 TrajectoryInferenceSlingshot <- function(se.integrated, start.clus=NULL){
@@ -9,24 +8,31 @@ TrajectoryInferenceSlingshot <- function(se.integrated, start.clus=NULL){
   clustering <- se.integrated$ti.clusters
   counts <- as.matrix(se.integrated@assays[["RNA"]]@layers[["counts"]])
   
+  par(mfrow = c(1, 2))
+  plot(dim.red[, 1:2], col = pal[clustering], cex = 0.5, pch = 16)
+  for (i in levels(clustering)) {
+    text(mean(dim.red[clustering == i, 1]), mean(dim.red[clustering == i, 2]), labels = i, font = 1)
+  }
+  title("scRNA-seq UMAP")
+  
   if(is.null(start.clus)){
     
     lineages <- getLineages(data = dim.red, clusterLabels = clustering)
-    par(mfrow = c(1, 2))
-    plot(dim.red[, 1:2], col = pal[clustering], cex = 0.5, pch = 16)
-    for (i in levels(clustering)) {
-      text(mean(dim.red[clustering == i, 1]), mean(dim.red[clustering == i, 2]), labels = i, font = 2)
-    }
     plot(dim.red[, 1:2], col = pal[clustering], cex = 0.5, pch = 16)
     lines(as.SlingshotDataSet(lineages), lwd = 3, col = "black")
     title("Lineage Structure")
     p1 <- recordPlot()
     plot.new()
     PrintSave(p1, 'ti_no_start_not_smooth.pdf')
-    
+    if(dev.cur() > 1){
+      par(mfrow=c(1,1))
+      dev.off()
+    }
+
   } else {
     TrajectoryInferenceSlingshotCurved(se.integrated, start.clus)
   }
+  
   se.integrated$ti.clusters <- NULL
 }
 
@@ -48,12 +54,18 @@ TrajectoryInferenceSlingshotCurved <- function(se.integrated, start.clus, km=10)
   ))
   
   # slo <- SlingshotDataSet(sce) look at the different lineages
-  plot(reducedDims(sce)$UMAP, col = brewer.pal(9,'Set1')[sce$ti.clusters], pch=16)
+  #plot(reducedDims(sce)$UMAP, col = brewer.pal(9,'Set1')[sce$ti.clusters], pch=16)
+  plot(dim.red[, 1:2], col = pal[clustering], cex = 0.5, pch = 16)
   lines(SlingshotDataSet(sce), lwd=2, col='black')
   title("Lineage Path Predictions")
   p1 <- recordPlot()
   plot.new()
   PrintSave(p1,'ti_start_smooth.pdf')
+  if(dev.cur() > 1){
+    par(mfrow=c(1,1))
+    dev.off()
+  }
+  
   saveRDS(sce, "sce_slingshot.rds")
   
   

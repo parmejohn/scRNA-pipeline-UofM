@@ -23,6 +23,7 @@ process FILTERLOWQUALDOUBLETS {
     output:
     path "*.pdf"
     path "se_filtered_singlets_list.rds", emit: se_filtered_singlets_list
+    path "se_filtered_doublets_list.rds"
     path "se_filtered_list.rds"
     path "se_list_raw.rds"
     

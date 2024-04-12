@@ -82,7 +82,7 @@ BasicQC <- function(seurat_obj, species){
     geom_hline(aes(yintercept = max.mito.thr), colour = "red", linetype = 2) +
     annotate(geom = "text", label = paste0(as.numeric(table(Cell.QC.Stat$percent.mt > max.mito.thr)[2])," cells removed\n",
                                            as.numeric(table(Cell.QC.Stat$percent.mt > max.mito.thr)[1])," cells remain"), x = 6000, y = 0.1) + 
-    ggtitle(paste0(seurat_obj@misc[[1]], " QC: Percentage of Mitochondrial reads per Cell")) +
+    ggtitle(paste0(seurat_obj@misc[[1]], " QC: \nPercentage of Mitochondrial reads per Cell")) +
     xlab("Number of Genes") +
     ylab("Percent of Mitochondrial reads")
   ggsave(paste0(seurat_obj@misc[[1]], "_percent_mt.pdf"), plot=p1)
@@ -119,7 +119,7 @@ BasicQC <- function(seurat_obj, species){
                                                               log10(Cell.QC.Stat$nFeature_RNA) < min.Genes.thr | 
                                                               log10(Cell.QC.Stat$nCount_RNA) > max.nUMI.thr | 
                                                               log10(Cell.QC.Stat$nCount_RNA) < min.nUMI.thr)[1])," cells remain"), x = 3, y = 3) +
-    ggtitle(paste0(seurat_obj@misc[[1]], " QC: Number of Genes vs Number of UMIs")) +
+    ggtitle(paste0(seurat_obj@misc[[1]], " QC: \nNumber of Genes vs Number of UMIs")) +
     xlab("Number of UMIs") +
     ylab("Number of Genes")
   ggsave(paste0(seurat_obj@misc[[1]], "_nGenes_nUMI.pdf"), plot=p2)
@@ -145,11 +145,9 @@ BasicQC <- function(seurat_obj, species){
 }
 
 DoubletQC <- function(seurat_obj){
-  
   sce <- as.SingleCellExperiment(seurat_obj)
   sce <- scDblFinder(sce, clusters=FALSE) # generates random doublets -> generates a new PCA -> creates a kNN network
   # training an iterative classifier on the neighborhood of real cells and artificial doublets
   se <- as.Seurat(sce, counts = "counts", data = NULL)
-  se.singlet <- subset(se, subset = scDblFinder.class  == "singlet") # remove doublets from seurat object
-  
+  #se.singlet <- subset(se, subset = scDblFinder.class  == "singlet") # remove doublets from seurat object
 }

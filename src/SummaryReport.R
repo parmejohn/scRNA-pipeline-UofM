@@ -52,7 +52,7 @@ res.loc <- params$data
 
 #' # QC
 #' ## Ambient RNA Removal
-#' List and location of ambient RNA QC'd files
+#' Reminder that this step adjusts the counts accordingly due to removing ambient RNA, it does not remove cells themselves. List and location of ambient RNA QC'd files
 #+ warning=FALSE, echo=FALSE
 dir1 <- list.dirs(paste0(res.loc, "/data/qc"), recursive = FALSE)
 dir2 <- list.dirs(dir1, recursive = FALSE)
@@ -82,20 +82,21 @@ for(i in plots){
 #+ warning=FALSE, echo=FALSE, fig.height = 10, fig.width = 10
 
 plot(image_read_pdf(paste0(res.loc,"plots/integrated_umap_unlabelled.pdf")))
-plot(image_read_pdf(paste0(res.loc,"plots/integrated_umap_grouped.pdf")))
-plot(image_read_pdf(paste0(res.loc,"plots/integrated_umap_split.pdf")))
 
 se.integrated <- readRDS(paste0(res.loc, "data/se_integrated_dimred.rds"))
 md <- se.integrated@meta.data %>% as.data.table()
 
 kable(md[, .N, by = c("group", "seurat_clusters")] %>% dcast(., group ~ seurat_clusters, value.var = "N"), caption = "Number of cells per seurat_cluster")
 
+plot(image_read_pdf(paste0(res.loc,"plots/integrated_umap_grouped.pdf")))
+plot(image_read_pdf(paste0(res.loc,"plots/integrated_umap_split.pdf")))
+
 #' ## Identifying Cell Markers
 #' Please use the information below to identify/confirm your clustering labels.
 #' The heatmap below is also limited to 300 cells per cluster because of ggplot limitations.
 #' Note: Cell marker in this context means genes that are differentially expressed in the given cluster compared to all others.
 #+ warning=FALSE, echo=FALSE, fig.height = 10, fig.width = 10, results='asis'
-plot(image_read_pdf(paste0(res.loc,"plots/top3_markers_5k_expr_heatmap.pdf")))
+plot(image_read_pdf(paste0(res.loc,"plots/top3_markers_expr_heatmap.pdf")))
 
 if (file.exists(paste0(res.loc,"plots/conserved_marker_unlabelled.pdf"))){
   plot(image_read_pdf(paste0(res.loc,"plots/conserved_marker_unlabelled.pdf")))
@@ -165,9 +166,12 @@ for(i in 1:length(plots)){
 #' Individual GO pathways in a geyser plot can be found at 
 {{paste0(res.loc, "plots/gsea/escape")}}
 
-#+ warning=FALSE, echo=FALSE, fig.height = 10, fig.width = 10, results='asis'
+#+ warning=FALSE, echo=FALSE, fig.height = 8, fig.width = 9, out.width = "100%" results='asis'
 if (file.exists(paste0(res.loc,"data/se_integrated_escape_norm.rds"))){
-  plot(image_read_pdf(paste0(res.loc,"plots/gsea/escape/escape_heatmap_top5.pdf")))
+  #plot(image_read_pdf(paste0(res.loc,"plots/gsea/escape/escape_heatmap_top5.pdf")))
+  image_read_pdf(paste0(res.loc,"plots/gsea/escape/escape_heatmap_top5.pdf")) %>% 
+    image_trim() %>%
+    plot()
 } else {
   print("escape analysis was set to false, if you wanted this analysis please set '-run_escape true'")
 }
