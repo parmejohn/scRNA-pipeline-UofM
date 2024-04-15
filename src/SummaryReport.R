@@ -166,7 +166,7 @@ for(i in 1:length(plots)){
 #' Individual GO pathways in a geyser plot can be found at 
 {{paste0(res.loc, "plots/gsea/escape")}}
 
-#+ warning=FALSE, echo=FALSE, fig.height = 8, fig.width = 9, out.width = "100%" results='asis'
+#+ warning=FALSE, echo=FALSE, fig.height = 8, fig.width = 9, out.width = "100%", results='asis'
 if (file.exists(paste0(res.loc,"data/se_integrated_escape_norm.rds"))){
   #plot(image_read_pdf(paste0(res.loc,"plots/gsea/escape/escape_heatmap_top5.pdf")))
   image_read_pdf(paste0(res.loc,"plots/gsea/escape/escape_heatmap_top5.pdf")) %>% 

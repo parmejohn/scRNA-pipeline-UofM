@@ -92,5 +92,7 @@ print("Doublet removal")
 se.filtered.doublets.list <- lapply(se.filtered.list, DoubletQC)
 saveRDS(se.filtered.doublets.list, "se_filtered_doublets_list.rds")
 
-se.singlet <- subset(se.filtered.doublets.list, subset = scDblFinder.class  == "singlet")
+#se.filtered.singlets.list <- lapply(subset(se.filtered.doublets.list, subset = scDblFinder.class  == "singlet"))
+se.filtered.singlets.list <- lapply(se.filtered.doublets.list, subset, subset = scDblFinder.class  == "singlet")
+
 saveRDS(se.filtered.singlets.list, "se_filtered_singlets_list.rds")
