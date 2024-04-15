@@ -21,7 +21,6 @@
   
 
 #+ echo=FALSE, include=FALSE
-#library(argparse)
 library(dplyr)
 library(tidyverse)
 library(Seurat)
@@ -40,7 +39,7 @@ ReadImageAndTrim <- function(path) {
 }
 
 # use Rmd params option for rendering https://rmarkdown.rstudio.com/lesson-6.html
-#res.loc <- "/home/projects/sc_pipelines/scrna_deanne_harmony/downsample_test/analysis/"
+#res.loc <- "/home/projects/sc_pipelines/organoid_work/organoid_dn_sampled_v3/pipeline/analysis/"
 res.loc <- params$data
 
 #' # QC
@@ -62,6 +61,18 @@ for(i in plots){
   #cat("<iframe src=",i,"width='100%' height='500' frameborder='0' />")
   ReadImageAndTrim(i)
 }
+
+doub.table <-  data.frame(row.names = c("singlet", "doublet"))
+
+se.filtered.doublets.list <- readRDS(paste0(res.loc, "/data/se_filtered_doublets_list.rds"))
+for (i in 1:length(se.filtered.doublets.list)){
+  singlets <- subset(se.filtered.doublets.list[[i]], subset = scDblFinder.class  == "singlet") %>% colnames() %>% length()
+  doublets <- subset(se.filtered.doublets.list[[i]], subset = scDblFinder.class  == "doublet") %>% colnames() %>% length()
+  
+  doub.table[, levels(se.filtered.doublets.list[[i]]@meta.data[["ident"]])] <- c(singlets, doublets)
+}
+
+kable(doub.table, caption = "Number of Doublets Detected with scDblFinder")
 
 #' # Seurat processing
 #' ## Integrating and Performing dimensional reductions
@@ -169,13 +180,19 @@ if (file.exists(paste0(res.loc,"data/se_integrated_escape_norm.rds"))){
 #+ warning=FALSE, echo=FALSE, fig.height = 10, fig.width = 10, results='asis'
 if (file.exists(paste0(res.loc,"plots/ti"))){
   if(file.exists(paste0(res.loc, "plots/ti/ti_start_smooth.pdf"))){
+    
+    ReadImageAndTrim(paste0(res.loc, "plots/ti/ti_start_smooth.pdf"))
     plots <- list.files(paste0(res.loc, "plots/ti/"), full.names=TRUE)
+    plots <- plots[grep("de_sling", plots)]
+    
     for(i in plots){
       #cat("![example](",i,"){width=100%, height=500}")
       #cat("\includepdf[pages={1}](",i,"){width=100%}")
 #      plot(image_read_pdf(i))
+      ReadImageAndTrim(i)
     }
   } else {
+    ReadImageAndTrim(paste0(res.loc,"plots/ti/ti_no_start_not_smooth.pdf"))
 #    plot(image_read_pdf(paste0(res.loc,"plots/ti/ti_no_start_not_smooth.pdf")))
   }
 } else {

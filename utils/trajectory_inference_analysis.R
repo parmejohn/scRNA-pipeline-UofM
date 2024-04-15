@@ -8,31 +8,37 @@ TrajectoryInferenceSlingshot <- function(se.integrated, start.clus=NULL){
   clustering <- se.integrated$ti.clusters
   counts <- as.matrix(se.integrated@assays[["RNA"]]@layers[["counts"]])
   
-  par(mfrow = c(1, 2))
-  plot(dim.red[, 1:2], col = pal[clustering], cex = 0.5, pch = 16)
-  for (i in levels(clustering)) {
-    text(mean(dim.red[clustering == i, 1]), mean(dim.red[clustering == i, 2]), labels = i, font = 1)
-  }
-  title("scRNA-seq UMAP")
-  
   if(is.null(start.clus)){
+    
+    pdf('ti_no_start_not_smooth.pdf', width = 8, height = 6)
+    par(mfrow = c(1, 2))
+    plot(dim.red[, 1:2], col = pal[clustering], cex = 0.5, pch = 16)
+    for (i in levels(clustering)) {
+      text(mean(dim.red[clustering == i, 1]), mean(dim.red[clustering == i, 2]), labels = i, font = 1)
+    }
+    title("scRNA-seq UMAP")
     
     lineages <- getLineages(data = dim.red, clusterLabels = clustering)
     plot(dim.red[, 1:2], col = pal[clustering], cex = 0.5, pch = 16)
     lines(as.SlingshotDataSet(lineages), lwd = 3, col = "black")
     title("Lineage Structure")
-    p1 <- recordPlot()
-    plot.new()
-    PrintSave(p1, 'ti_no_start_not_smooth.pdf')
-    if(dev.cur() > 1){
-      par(mfrow=c(1,1))
-      dev.off()
-    }
+    graphics.off()
+    # p1 <- recordPlot()
+    # plot.new()
+    # PrintSave(p1, 'ti_no_start_not_smooth.pdf')
+    # if(dev.cur() > 1){
+    #   par(mfrow=c(1,1))
+    #   dev.off()
+    # }
 
   } else {
     TrajectoryInferenceSlingshotCurved(se.integrated, start.clus)
   }
-  
+  fn <- "Rplots.pdf"
+  if (file.exists(fn)) {
+    #Delete file if it exists
+    file.remove(fn)
+  }
   se.integrated$ti.clusters <- NULL
 }
 
@@ -53,18 +59,30 @@ TrajectoryInferenceSlingshotCurved <- function(se.integrated, start.clus, km=10)
     start.clus = start.clus
   ))
   
+  pal <- c(RColorBrewer::brewer.pal(9, "Set1"), RColorBrewer::brewer.pal(8, "Set2"))
+  dim.red <- se.integrated@reductions[["umap"]]@cell.embeddings
+  clustering <- se.integrated$ti.clusters
+
+  pdf('ti_start_smooth.pdf', width = 8, height = 6)
+  par(mfrow = c(1, 2))
+  plot(dim.red[, 1:2], col = pal[clustering], cex = 0.5, pch = 16)
+  for (i in levels(clustering)) {
+    text(mean(dim.red[clustering == i, 1]), mean(dim.red[clustering == i, 2]), labels = i, font = 1)
+  }
+  title("scRNA-seq UMAP")
+  
   # slo <- SlingshotDataSet(sce) look at the different lineages
   plot(reducedDims(sce)$UMAP, col = brewer.pal(9,'Set1')[sce$ti.clusters], pch=16)
-  #plot(dim.red[, 1:2], col = pal[clustering], cex = 0.5, pch = 16)
   lines(SlingshotDataSet(sce), lwd=2, col='black')
   title("Lineage Path Predictions")
-  p1 <- recordPlot()
-  plot.new()
-  PrintSave(p1,'ti_start_smooth.pdf')
-  if(dev.cur() > 1){
-    par(mfrow=c(1,1))
-    dev.off()
-  }
+  graphics.off()
+  # p1 <- recordPlot()
+  # plot.new()
+  # PrintSave(p1,'ti_start_smooth.pdf')
+  # if(dev.cur() > 1){
+  #   par(mfrow=c(1,1))
+  #   dev.off()
+  # }
   
   saveRDS(sce, "sce_slingshot.rds")
   
