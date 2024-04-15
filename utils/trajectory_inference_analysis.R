@@ -54,8 +54,8 @@ TrajectoryInferenceSlingshotCurved <- function(se.integrated, start.clus, km=10)
   ))
   
   # slo <- SlingshotDataSet(sce) look at the different lineages
-  #plot(reducedDims(sce)$UMAP, col = brewer.pal(9,'Set1')[sce$ti.clusters], pch=16)
-  plot(dim.red[, 1:2], col = pal[clustering], cex = 0.5, pch = 16)
+  plot(reducedDims(sce)$UMAP, col = brewer.pal(9,'Set1')[sce$ti.clusters], pch=16)
+  #plot(dim.red[, 1:2], col = pal[clustering], cex = 0.5, pch = 16)
   lines(SlingshotDataSet(sce), lwd=2, col='black')
   title("Lineage Path Predictions")
   p1 <- recordPlot()
