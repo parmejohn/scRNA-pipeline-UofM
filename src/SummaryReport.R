@@ -33,17 +33,10 @@ library(magick)
 
 set.seed(333)
 
-thisFile <- function() {
-  cmdArgs <- commandArgs(trailingOnly = FALSE)
-  needle <- "--file="
-  match <- grep(needle, cmdArgs)
-  if (length(match) > 0) {
-    # Rscript
-    return(normalizePath(sub(needle, "", cmdArgs[match])))
-  } else {
-    # 'source'd via R console
-    return(normalizePath(sys.frames()[[1]]$ofile))
-  }
+ReadImageAndTrim <- function(path) {
+  image_read_pdf(path) %>% 
+    image_trim() %>%
+    plot()
 }
 
 # use Rmd params option for rendering https://rmarkdown.rstudio.com/lesson-6.html
@@ -67,7 +60,7 @@ for(i in plots){
   #cat("![example](",i,"){width=100%, height=500}")
   #cat("\includepdf[pages={1}](",i,"){width=100%}")
   #cat("<iframe src=",i,"width='100%' height='500' frameborder='0' />")
-  plot(image_read_pdf(i))
+  ReadImageAndTrim(i)
 }
 
 #' # Seurat processing
@@ -80,26 +73,25 @@ for(i in plots){
 
 #' Please view the grouped plot below to ensure that integration was sufficient for your given dataset
 #+ warning=FALSE, echo=FALSE, fig.height = 10, fig.width = 10
-
-plot(image_read_pdf(paste0(res.loc,"plots/integrated_umap_unlabelled.pdf")))
+ReadImageAndTrim(paste0(res.loc,"plots/integrated_umap_unlabelled.pdf"))
 
 se.integrated <- readRDS(paste0(res.loc, "data/se_integrated_dimred.rds"))
 md <- se.integrated@meta.data %>% as.data.table()
 
 kable(md[, .N, by = c("group", "seurat_clusters")] %>% dcast(., group ~ seurat_clusters, value.var = "N"), caption = "Number of cells per seurat_cluster")
 
-plot(image_read_pdf(paste0(res.loc,"plots/integrated_umap_grouped.pdf")))
-plot(image_read_pdf(paste0(res.loc,"plots/integrated_umap_split.pdf")))
+ReadImageAndTrim(paste0(res.loc,"plots/integrated_umap_grouped.pdf"))
+ReadImageAndTrim(paste0(res.loc,"plots/integrated_umap_split.pdf"))
 
 #' ## Identifying Cell Markers
 #' Please use the information below to identify/confirm your clustering labels.
 #' The heatmap below is also limited to 300 cells per cluster because of ggplot limitations.
 #' Note: Cell marker in this context means genes that are differentially expressed in the given cluster compared to all others.
 #+ warning=FALSE, echo=FALSE, fig.height = 10, fig.width = 10, results='asis'
-plot(image_read_pdf(paste0(res.loc,"plots/top3_markers_expr_heatmap.pdf")))
+ReadImageAndTrim(paste0(res.loc,"plots/top3_markers_expr_heatmap.pdf"))
 
 if (file.exists(paste0(res.loc,"plots/conserved_marker_unlabelled.pdf"))){
-  plot(image_read_pdf(paste0(res.loc,"plots/conserved_marker_unlabelled.pdf")))
+  ReadImageAndTrim(paste0(res.loc,"plots/conserved_marker_unlabelled.pdf"))
 }
 
 kable(head(read.table(paste0(res.loc,"data/se_markers_presto_integrated.txt"))), caption="Top cell markers for each cluster (showing just 10)")
@@ -109,9 +101,9 @@ kable(head(read.table(paste0(res.loc,"data/se_markers_presto_integrated.txt"))),
 #+ warning=FALSE, echo=FALSE, fig.height = 10, fig.width = 10,results='asis'
 if (file.exists(paste0(res.loc,"data/se_integrated_auto_label.rds"))){
 
-  plot(image_read_pdf(paste0(res.loc,"plots/reference_marker_mapping_heatmap.pdf")))
-  plot(image_read_pdf(paste0(res.loc,"plots/integrated_umap_labelled.pdf")))
-  
+  ReadImageAndTrim(paste0(res.loc,"plots/reference_marker_mapping_heatmap.pdf"))
+  ReadImageAndTrim(paste0(res.loc,"plots/integrated_umap_labelled.pdf"))
+
   se.integrated <- readRDS(paste0(res.loc, "data/se_integrated_auto_label.rds"))
   
   se.integrated$labelled <- Idents(se.integrated)
@@ -137,7 +129,7 @@ for(i in 1:length(plots)){
   #cat("![example](",i,"){width=100%, height=500}")
   #cat("\includepdf[pages={1}](",i,"){width=100%}")
   if (i != 10){
-    plot(image_read_pdf(plots[i]))
+    ReadImageAndTrim(plots[i])
   } else {
     break
   }
@@ -155,7 +147,7 @@ for(i in 1:length(plots)){
   #cat("![example](",i,"){width=100%, height=500}")
   #cat("\includepdf[pages={1}](",i,"){width=100%}")
   if (i != 10){
-    plot(image_read_pdf(plots[i]))
+    ReadImageAndTrim(plots[i])
   } else {
     break
   }
@@ -166,12 +158,9 @@ for(i in 1:length(plots)){
 #' Individual GO pathways in a geyser plot can be found at 
 {{paste0(res.loc, "plots/gsea/escape")}}
 
-#+ warning=FALSE, echo=FALSE, fig.height = 8, fig.width = 9, out.width = "100%" results='asis'
+#+ warning=FALSE, echo=FALSE, fig.height = 8, fig.width = 9, out.width = "100%", results='asis'
 if (file.exists(paste0(res.loc,"data/se_integrated_escape_norm.rds"))){
-  #plot(image_read_pdf(paste0(res.loc,"plots/gsea/escape/escape_heatmap_top5.pdf")))
-  image_read_pdf(paste0(res.loc,"plots/gsea/escape/escape_heatmap_top5.pdf")) %>% 
-    image_trim() %>%
-    plot()
+  ReadImageAndTrim(paste0(res.loc,"plots/gsea/escape/escape_heatmap_top5.pdf"))
 } else {
   print("escape analysis was set to false, if you wanted this analysis please set '-run_escape true'")
 }
@@ -201,7 +190,7 @@ plots <- list.files(paste0(res.loc, "plots/da/"), full.names=TRUE)
 for(i in plots){
   #cat("![example](",i,"){width=100%, height=500}")
   #cat("\includepdf[pages={1}](",i,"){width=100%}")
-  plot(image_read_pdf(i))
+  ReadImageAndTrim(i)
 }
 
 #knitr::spin(thisFile())
