@@ -13,6 +13,7 @@ params.beginning_cluster = 'none'
 params.run_escape = false
 params.run_sling = false
 params.test_data = 0
+params.co_conditions = 'none'
 
 include {AMBIENTRNAREMOVAL} from './modules/ambientremoval.nf'
 include {FILTERLOWQUALDOUBLETS} from './modules/filterlowqualdoublets.nf'
@@ -51,8 +52,8 @@ workflow {
     ambient_ch = AMBIENTRNAREMOVAL(params.indir, params.test_data) // array of conditions
     // ambient_ch.view() // outputs just the qc folder, for downstream qc, all samples need to be loaded as a list
     
-
-    FILTERLOWQUALDOUBLETS(ambient_ch, params.species)
+    processed_co_condition = params.co_conditions.replaceAll(',', ' ')
+    FILTERLOWQUALDOUBLETS(ambient_ch, params.species, processed_co_condition)
     filtered_ch = FILTERLOWQUALDOUBLETS.out.se_filtered_singlets_list
     
     // integrated seurat object

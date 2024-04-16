@@ -25,10 +25,16 @@ parser$add_argument(
   '-species',
   '--s',
   type = "character",
-  
   required = TRUE,
   nargs = 1,
   help = 'Species name (Mus musculus, Homo sapiens); CASE-SENSITIVE'
+)
+parser$add_argument(
+  '-coconditions',
+  type = "character",
+  required = TRUE,
+  nargs = '*',
+  help = 'Co-conditions listed'
 )
 args <- parser$parse_args()
 
@@ -57,7 +63,7 @@ source(paste0(file.path(dirname(dirname(
 ##### Loading data as Seurat Objects #####
 print("Loading data as Seurat Objects")
 foldernames <-
-  list.dirs(path = paste0(indir),
+  list.dirs(path = indir,
             full.names = TRUE,
             recursive = T)
 foldernames <- foldernames[grepl("soupx", foldernames)]
@@ -75,9 +81,22 @@ for (i in 1:length(se.list)) {
     list(sub(".*\\/(.*)", "\\1", foldernames[i])) # save sample folder name in SeuratObject metadata
   se.list[[i]] <-
     SetIdent(se.list[[i]], value = sub(".*\\/(.*)", "\\1", foldernames[i]))
-  se.list[[i]]$sample <- sub(".*\\/(.*)", "\\1", foldernames[i])
+  sample.name <- sub(".*\\/(.*)", "\\1", foldernames[i])
+  if (!grepl("_", sample.name)){
+    stop("there should be at least 1 underscore in your sample names, please relabel them")
+  }
+  se.list[[i]]$sample <- sample.name
   se.list[[i]]$group <-
     sub(".*\\/(.*)\\/.*", "\\1", foldernames[i]) # save condition folder name under group
+  if (args$coconditions[1] != 'none'){
+    if (str_count(sample.name, "_") < length(args$coconditions) + 2){
+      stop("you might have forgetten an underscore somewhere when trying to seperate your conditions, please check again")
+    }
+    for (j in 1:length(args$coconditions)){
+      se.list[[i]] <- AddMetaData(se.list[[i]], sapply(strsplit(sample.name, "_"), function(x) x[j+2]), args$coconditions[j])
+    }
+  }
+  Misc(se.list[[i]], slot = "co.conditions") <- args$coconditions
 }
 saveRDS(se.list, "se_list_raw.rds")
 
