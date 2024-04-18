@@ -35,6 +35,8 @@ IdentifyCellMarkers <- function(se.integrated){
                          eval(as.symbol(paste0(unique(se.integrated@meta.data[["group"]])[2], '_avg_log2FC')))) /2) %>%
       group_by(cluster_id) %>%
       top_n(n = 2, wt = avg_fc)
+    write.table(conserved.markers.top.2, paste("se_markers_conserved_integrated.txt", sep = ''), 
+                quote = FALSE,row.names = T, sep = "\t", col.names = T)
 
     # color intensity denotes average expression across all cells in a class
     conserved.markers.dotplot <- DotPlot(se.integrated, features = unique(conserved.markers.top.2$gene), cols = c("blue", "red"), dot.scale = 8, split.by = "group") +
@@ -47,8 +49,11 @@ IdentifyCellMarkers <- function(se.integrated){
 }
 
 ReferenceMarkerMapping <- function(reference, query, dims){
+  DefaultAssay(reference) <- "RNA"
+  DefaultAssay(query) <- "RNA"
   reference <- NormalizeData(reference)
-  # reference <- FindVariableFeatures(object = reference)
+  reference <- FindVariableFeatures(object = reference)
+  reference <- ScaleData(object = reference)
   
   query <- NormalizeData(query)
   query <- FindVariableFeatures(query)

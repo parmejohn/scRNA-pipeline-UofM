@@ -175,8 +175,8 @@ if (file.exists(paste0(res.loc,"data/se_integrated_escape_norm.rds"))){
 } else {
   print("escape analysis was set to false, if you wanted this analysis please set '-run_escape true'")
 }
-
-#' ## Trajectory Inference with slingshot
+#' ## Trajectory Inference
+#' ### slingshot
 #+ warning=FALSE, echo=FALSE, fig.height = 10, fig.width = 10, results='asis'
 if (file.exists(paste0(res.loc,"plots/ti"))){
   if(file.exists(paste0(res.loc, "plots/ti/ti_start_smooth.pdf"))){
@@ -198,6 +198,25 @@ if (file.exists(paste0(res.loc,"plots/ti"))){
 } else {
   print("slingshot analysis was set to false, if you wanted this analysis please set '-run_sling true'")
 }
+
+#' ### tempora
+#' #+ warning=FALSE, echo=FALSE, fig.height = 10, fig.width = 10, results='asis'
+if(file.exists(paste0(res.loc, "data/se_integrated_tempora_seurat_v3.rds"))){
+  # plots <- list.files(paste0(res.loc, "plots/ti/"), full.names=TRUE)
+  # plots <- plots[grep("tempora", plots)]
+  # 
+  # for(i in plots){
+  #   #cat("![example](",i,"){width=100%, height=500}")
+  #   #cat("\includepdf[pages={1}](",i,"){width=100%}")
+  #   #      plot(image_read_pdf(i))
+  #   ReadImageAndTrim(i)
+  # }
+  ReadImageAndTrim(paste0(res.loc, "plots/ti/tempora_screeplot.pdf"))
+  ReadImageAndTrim(paste0(res.loc, "plots/ti/tempora_inferred_lineages.pdf"))
+} else {
+  print("no time was specified under co-conditions, please rerun with '--co_conditions ...,time,...' and ensure your sample names contain it")
+}
+
 
 #' ## Differential Abundance analysis with miloR
 {{if(length(list.files(paste0(res.loc, "plots/da/"), full.names=TRUE)) == 3){"No Differential Abundant neighborhoods were found, so no DEG heatmaps will be made."}}}

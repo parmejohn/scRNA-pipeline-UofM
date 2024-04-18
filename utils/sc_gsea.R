@@ -1,4 +1,3 @@
-#source(paste0(dirname(dirname(dirname(getwd()))),"/utils/misc.R"))
 set.seed(333)
 
 EscapeGSEA <- function(se.integrated, species){

@@ -24,6 +24,7 @@ include {COMPARATIVEANALYSIS} from './modules/comparativeanalysis.nf'
 include {TRAJECTORYINFERENCE} from './modules/trajectoryinference.nf'
 include {ESCAPEANALYSIS} from './modules/escapeanalysis.nf'
 include {DAANALYSIS} from './modules/daanalysis.nf'
+include {TEMPORAANALYSIS} from './modules/temporaanalysis.nf'
 include {SUMMARYREPORT} from './modules/summaryreport.nf'
 
 process INITIALIZEFOLDERS {
@@ -82,8 +83,16 @@ workflow {
 		sling_ch = "SKIPPING SLINGSHOT ANALYSIS, RERUN WITH '--run_sling true' if you desired those results"
 	}
 	println sling_ch
-    // TRAJECTORYINFERENCE(identified_ch, params.beginning_cluster)
-
+	// TRAJECTORYINFERENCE(identified_ch, params.beginning_cluster)
+	
+  m = params.co_conditions ==~ '.*time.*'
+  assert m instanceof Boolean
+  if (m){
+    TEMPORAANALYSIS(identified_ch)
+    tempora_ch = TEMPORAANALYSIS.out.report
+  } else {
+    tempora_ch = "SKIPPING TEMPORA, no time co-condition set"
+  }
 
     COMPARATIVEANALYSIS(identified_ch, params.species)
 
@@ -103,6 +112,7 @@ workflow {
         sling_ch,
         DAANALYSIS.out.report,
         escape_ch,
+        tempora_ch,
         "${params.outdir}/analysis/",
         new_opt_clust
         )

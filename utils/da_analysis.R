@@ -36,7 +36,15 @@ CellProportionByCluster <- function(se.integrated) {
   PrintSave(cond.prop.plot, 'condition_proportion_per_cluster.pdf')
 }
 
-# se.integrated <- readRDS("/home/projects/sc_pipelines/test_run_nf_1/analysis/data/se_integrated_auto_label.rds")
+# se.integrated <- readRDS("/home/projects/sc_pipelines/scrna_deanne_harmony_low_res/pipeline/analysis/data/se_integrated_auto_label.rds")
+# k = 16
+# d = 16
+# sample = "sample"
+# condition = "group"
+# reduced.dims = "HARMONY"
+# prop = 0.05
+# 
+# sc.integrated.milo.traj <- readRDS("/home/projects/sc_pipelines/scrna_deanne_harmony_low_res/pipeline/analysis/data/sc_integrated_milo_traj.rds")
 
 DifferentialAbundanceMilo <-
   function(se.integrated,
@@ -111,7 +119,7 @@ DifferentialAbundanceMilo <-
         sc.integrated.milo.traj,
         design = ~ group,
         design.df = sc.integrated.milo.traj.design,
-        reduced.dim = reduced.dims
+        reduced.dim = reduced.dims,
       )
     
     p1 <-

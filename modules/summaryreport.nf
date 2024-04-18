@@ -12,6 +12,7 @@ process SUMMARYREPORT{
     val trajectory_signal
     val da_signal
     val escape_signal
+    val tempora_signal
     val analysis_dir
     val opt_clusters
 
