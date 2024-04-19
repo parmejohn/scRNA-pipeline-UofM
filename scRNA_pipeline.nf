@@ -14,6 +14,7 @@ params.run_escape = false
 params.run_sling = false
 params.test_data = 0
 params.co_conditions = 'none'
+params.reduced_dim = 'integrated.cca'
 
 include {AMBIENTRNAREMOVAL} from './modules/ambientremoval.nf'
 include {FILTERLOWQUALDOUBLETS} from './modules/filterlowqualdoublets.nf'
@@ -58,10 +59,10 @@ workflow {
     filtered_ch = FILTERLOWQUALDOUBLETS.out.se_filtered_singlets_list
     
     // integrated seurat object
-    integrated_ch = INTEGRATEDATA(filtered_ch)
+    integrated_ch = INTEGRATEDATA(filtered_ch, params.reduced_dim)
 
     // seurat dim red
-    DIMENSIONALREDUCTION(integrated_ch, params.clusters_optimal, params.resolution)
+    DIMENSIONALREDUCTION(integrated_ch, params.clusters_optimal, params.resolution, params.reduced_dim)
     dimred_ch = DIMENSIONALREDUCTION.out.se_integrated_dimred
 
 	new_opt_clust = DIMENSIONALREDUCTION.out.clusters_optimal_n.splitText().map{it -> it.trim()}
@@ -105,7 +106,7 @@ workflow {
 	}
 	println escape_ch
 
-    DAANALYSIS(identified_ch, new_opt_clust)
+    DAANALYSIS(identified_ch, new_opt_clust, params.reduced_dim)
 
     SUMMARYREPORT(
         COMPARATIVEANALYSIS.out.report,

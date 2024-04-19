@@ -27,6 +27,7 @@ process DIMENSIONALREDUCTION {
     path integrated
     val clusters_optimal
     val resolution
+    val reduced_dim
 
     output:
     path "*.pdf"
@@ -35,6 +36,6 @@ process DIMENSIONALREDUCTION {
     
     script:
        """
-        ${projectDir}/src/SeuratDimRedMain.R --i $integrated -clusters_optimal $clusters_optimal -resolution $resolution
+        ${projectDir}/src/SeuratDimRedMain.R --i $integrated -clusters_optimal $clusters_optimal -resolution $resolution -reduced_dim $reduced_dim
        """
 }

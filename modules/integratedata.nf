@@ -12,12 +12,13 @@ process INTEGRATEDATA {
 
     input:
     val rds
+    val reduced_dim
 
     output:
     path 'se_integrated.rds'
     
     script:
        """
-        ${projectDir}/src/IntegrateSamplesMain.R --i $rds
+        ${projectDir}/src/IntegrateSamplesMain.R --i $rds -reduced_dim $reduced_dim
        """
 }

@@ -6,6 +6,8 @@ library(Seurat)
 library(dplyr)
 library(tidyverse)
 library(harmony)
+library(batchelor)
+library(SeuratWrappers)
 
 set.seed(333)
 
@@ -19,6 +21,10 @@ parser$add_argument(
   nargs = 1,
   help = 'Contains CellRanger count outputs folder seperated by condition'
 )
+parser$add_argument('-reduced_dim',
+                    type = "character",
+                    nargs = 1,
+                    help = 'Reduced dimensions used')
 args <- parser$parse_args()
 
 input <- args$i
@@ -43,5 +49,5 @@ source(paste0(file.path(dirname(dirname(
   thisFile()
 ))), "/utils/misc.R"))
 
-se.integrated <- IntegrateSamples(se.filtered.singlets.list, group)
+se.integrated <- IntegrateSamples(se.filtered.singlets.list, group, args$reduced_dim)
 saveRDS(se.integrated, "se_integrated.rds")

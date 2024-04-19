@@ -30,6 +30,10 @@ parser$add_argument('-clusters_optimal',
                     type = "integer",
                     nargs = 1,
                     help = 'Optimal clusters for dimensional reductions and clustering algorithms')
+parser$add_argument('-reduced_dim',
+                    type = "character",
+                    nargs = 1,
+                    help = 'Reduced dimensions used')
 args <- parser$parse_args()
 
 indir <- args$i
@@ -65,6 +69,6 @@ DifferentialAbundanceMilo(
   'sample',
   'group',
   k = args$clusters_optimal,
-  d = args$clusters_optimal,
-  'HARMONY'
+  d = 50,
+  toupper(args$reduced_dim)
 )

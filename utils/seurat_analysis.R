@@ -12,7 +12,7 @@ PreprocessingSeurat <- function(seurat_object){
 }
 
 # integratation
-IntegrateSamples <- function(seurat_obj_list, group){
+IntegrateSamples <- function(seurat_obj_list, group, reduction){
   if (length(seurat_obj_list) >= 2){
     se.merged <- merge(seurat_obj_list[[1]], seurat_obj_list[c(2:length(seurat_obj_list))])
     se.merged[["RNA"]] <- split(se.merged[["RNA"]], f = se.merged$group) # whether the data is split by sample or by treatment does not matter for downstream analysis
@@ -23,9 +23,21 @@ IntegrateSamples <- function(seurat_obj_list, group){
     # CCA integration background; https://hbctraining.github.io/scRNA-seq_online/lessons/06_integration.html
     # - It is a form of PCA, in that it identifies the greatest sources of variation in the data, but only if it is shared or conserved across the conditions/groups
     DefaultAssay(se.merged) <- "RNA"
-    se.integrated <- IntegrateLayers(object = se.merged.preprocessed, method = HarmonyIntegration,
-                                     orig.reduction = "pca", new.reduction = "harmony",
-                                     verbose = T)
+    if (reduction == "harmony"){
+      se.integrated <- IntegrateLayers(object = se.merged.preprocessed, method = HarmonyIntegration,
+                                       orig.reduction = "pca", new.reduction = "harmony",
+                                       verbose = T)
+    } else if (reduction == "integrated.cca"){
+      se.integrated <- IntegrateLayers(object = se.merged.preprocessed, method = CCAIntegration,
+                                       orig.reduction = "pca", new.reduction = "integrated.cca",
+                                       verbose = T)
+    } else if (reduction == "integrated.mnn"){
+      se.integrated <- IntegrateLayers(object = se.merged.preprocessed, method = FastMNNIntegration,
+                                       orig.reduction = "pca", new.reduction = "integrated.mnn",
+                                       verbose = T)
+    } else {
+      stop(print0(reduction, " is not implemented. Please use harmony, integrated.cca, or integracted.mnn"))
+    }
   } else {
     print('Only 1 sample, no need to integrate')
   }
@@ -33,7 +45,7 @@ IntegrateSamples <- function(seurat_obj_list, group){
 
 # perform dimenstional reduction and clustering
 # results are saved 
-SeuratDimReduction <- function(se.integrated, dims, group, res = 1, reduction = "harmony"){
+SeuratDimReduction <- function(se.integrated, dims, group, res = 1, reduction){
   se.integrated[["RNA"]] <- JoinLayers(se.integrated[["RNA"]])
   se.integrated <- FindNeighbors(se.integrated, reduction = reduction, dims = dims) # returns KNN graph using the PC or CCA
   se.integrated <- FindClusters(se.integrated, resolution = res) # find clusters of cells by shared SNN

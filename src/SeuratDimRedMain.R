@@ -27,6 +27,10 @@ parser$add_argument('-resolution',
                     type = "integer",
                     nargs = 1,
                     help = 'Change resolution for Seurat UMAP, higher values will lead to more clustering')
+parser$add_argument('-reduced_dim',
+                    type = "character",
+                    nargs = 1,
+                    help = 'Reduced dimensions used')
 args <- parser$parse_args()
 
 input <- args$i
@@ -69,10 +73,10 @@ if (args$clusters_optimal == 0) {
 
 if (args$resolution == 1) {
   se.integrated <-
-    SeuratDimReduction(se.integrated, 1:opt.clusters, 'group')
+    SeuratDimReduction(se.integrated, 1:opt.clusters, 'group', reduction = args$reduced_dim)
 } else {
   se.integrated <-
-    SeuratDimReduction(se.integrated, 1:opt.clusters, 'group', args$resolution)
+    SeuratDimReduction(se.integrated, 1:opt.clusters, 'group', args$resolution, reduction = args$reduced_dim)
 }
 
 # have to use visual check to find optimal # of clusters for now
