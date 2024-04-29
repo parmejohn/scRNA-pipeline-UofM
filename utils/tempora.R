@@ -6,7 +6,8 @@ CalculatePWProfiles_updated <- function (object, gmt_path, method = "gsva", min.
     stop("Not a valid Tempora object")
   }
   cat("Calculating cluster average gene expression profile...")
-  exprMatrix <- object@data
+  #exprMatrix <- object@data
+  exprMatrix <- Matrix(object@data, sparse = TRUE)
   exprMatrix_bycluster <- list()
   pathwaygmt <- GSEABase::getGmt(gmt_path)
   for (i in sort(unique(object@meta.data$Clusters))) {
@@ -15,13 +16,14 @@ CalculatePWProfiles_updated <- function (object, gmt_path, method = "gsva", min.
                                                                                                   i)])])
   }
   names(exprMatrix_bycluster) <- sort(unique(object@meta.data$Clusters))
-  exprMatrix_bycluster <- do.call(cbind, exprMatrix_bycluster)
+  exprMatrix_bycluster <- Matrix(do.call(cbind, exprMatrix_bycluster), sparse = TRUE)
   colnames(exprMatrix_bycluster) <- sort(unique(object@meta.data$Clusters))
   rownames(exprMatrix_bycluster) <- rownames(exprMatrix)
   # GSVA was updated to require this gsvaParam arguement instead of the default method that Tempora was using
+  print("Calculating GSVA Param")
   gsvapar <- GSVA::gsvaParam(exprMatrix_bycluster, pathwaygmt, minSize = min.sz, maxSize = max.sz)
   cat("\nCalculating cluster pathway enrichment profiles...\n")
-  gsva_bycluster <- GSVA::gsva(gsvapar)
+  gsva_bycluster <- GSVA::gsva(gsvapar, BPPARAM = SerialParam(progressbar = TRUE))
   colnames(gsva_bycluster) <- colnames(exprMatrix_bycluster)
   object@cluster.pathways <- gsva_bycluster
   gsva_bycluster_pca <- prcomp(t(gsva_bycluster), scale = T, 

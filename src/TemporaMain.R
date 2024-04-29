@@ -12,7 +12,8 @@ library(RCurl)
 library(extrafont)
 library(igraph)
 library(RColorBrewer)
-
+library(Matrix)
+library(BiocParallel)
 
 set.seed(333)
  

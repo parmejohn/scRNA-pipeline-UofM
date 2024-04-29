@@ -180,7 +180,7 @@ DifferentialAbundanceMilo <-
           PrintSave(p4, "milo_DA_fc_distribution.pdf")
     }
     
-    # print("Finding DEGs for DA neighborhoods, this may take a while")
+    # print("Finding DEGs for DA neighborhoods, this may take a while") https://marionilab.github.io/miloR/articles/milo_gastrulation.html
     for (i in levels(droplevels(se.integrated@meta.data[["da.clusters"]]))) {
       print(paste0("Working on DA DE heatmap for cluster ", i))
       logcounts(sc.integrated.milo.traj) <-
