@@ -13,12 +13,13 @@ process INTEGRATEDATA {
     input:
     val rds
     val reduced_dim
+    val conditions
 
     output:
     path 'se_integrated.rds'
     
     script:
        """
-        ${projectDir}/src/IntegrateSamplesMain.R --i $rds -reduced_dim $reduced_dim
+        ${projectDir}/src/IntegrateSamplesMain.R --i $rds -reduced_dim $reduced_dim -coconditions $conditions
        """
 }

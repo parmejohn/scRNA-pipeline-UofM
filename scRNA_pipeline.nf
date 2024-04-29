@@ -59,7 +59,7 @@ workflow {
     filtered_ch = FILTERLOWQUALDOUBLETS.out.se_filtered_singlets_list
     
     // integrated seurat object
-    integrated_ch = INTEGRATEDATA(filtered_ch, params.reduced_dim)
+    integrated_ch = INTEGRATEDATA(filtered_ch, params.reduced_dim, processed_co_condition)
 
     // seurat dim red
     DIMENSIONALREDUCTION(integrated_ch, params.clusters_optimal, params.resolution, params.reduced_dim)

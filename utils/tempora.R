@@ -156,7 +156,6 @@ DownloadGMT <- function(){
 
 RunTempora <- function(se.integrated){
 
-  se.integrated <- readRDS(input)
   se.integrated[["RNA3"]] <- as(object = se.integrated[["RNA"]], Class = "Assay") #Tempora only works with older seurat objects
   
   cluster.names <- NA
@@ -173,14 +172,16 @@ RunTempora <- function(se.integrated){
     cluster.names <- colnames(prediction.matrix)[max.col(prediction.matrix,ties.method="first")]
     
     se.integrated <- SetIdent(se.integrated, value = se.integrated@meta.data$seurat_clusters)
+    se.integrated@assays[["RNA3_var"]] <- CreateAssayObject(GetAssayData(se.integrated, assay = "RNA3")[se.integrated@assays[["RNA3"]]@var.features,])
+    
     se.integrated.tempora <-  ImportSeuratObject(se.integrated,  clusters = "seurat_clusters", 
-                                                 timepoints = "time", assayType = "RNA3", 
+                                                 timepoints = "time", assayType = "RNA3_var", 
                                                  assaySlot = "data", 
                                                  cluster_labels = cluster.names,
                                                  timepoint_order = mixedsort(unique(se.integrated@meta.data[["time"]])))
   } else {
     se.integrated.tempora <-  ImportSeuratObject(se.integrated,  clusters = "seurat_clusters", 
-                                                 timepoints = "time", assayType = "RNA3", 
+                                                 timepoints = "time", assayType = "RNA3_var", 
                                                  assaySlot = "data", 
                                                  timepoint_order = mixedsort(unique(se.integrated@meta.data[["time"]])))
   }

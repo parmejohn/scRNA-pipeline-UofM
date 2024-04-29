@@ -26,7 +26,6 @@ DESeq2ConditionPerCluster <-  function(se.integrated, species){
       print(cluster.name)
 	if(grepl("_", cluster.name, fixed=TRUE)){
 		cluster.name <- sub("_", "-", cluster.name)
-		print(cluster.name)
 	}
       cluster.bulk <- subset(bulk, de.clusters == cluster.name)
       #expr <- FetchData(bulk, vars = "de.clusters")

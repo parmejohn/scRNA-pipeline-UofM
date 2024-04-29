@@ -49,6 +49,7 @@ source(paste0(file.path(dirname(dirname(
 ))), "/utils/misc.R"))
 
 input <- args$i
+se.integrated <- readRDS(input)
 
-se.integrated.tempora.seurat.v3 <- RunTempora(input)
+se.integrated.tempora.seurat.v3 <- RunTempora(se.integrated)
 saveRDS(se.integrated.tempora.seurat.v3, "se_integrated_tempora_seurat_v3.rds")

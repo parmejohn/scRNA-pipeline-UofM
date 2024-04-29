@@ -25,6 +25,13 @@ parser$add_argument('-reduced_dim',
                     type = "character",
                     nargs = 1,
                     help = 'Reduced dimensions used')
+parser$add_argument(
+  '-coconditions',
+  type = "character",
+  required = TRUE,
+  nargs = '*',
+  help = 'Co-conditions listed'
+)
 args <- parser$parse_args()
 
 input <- args$i
@@ -50,4 +57,5 @@ source(paste0(file.path(dirname(dirname(
 ))), "/utils/misc.R"))
 
 se.integrated <- IntegrateSamples(se.filtered.singlets.list, group, args$reduced_dim)
+Misc(se.integrated, slot = "co.conditions") <- args$coconditions
 saveRDS(se.integrated, "se_integrated.rds")
