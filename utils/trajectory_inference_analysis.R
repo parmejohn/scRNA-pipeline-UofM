@@ -99,10 +99,75 @@ TrajectoryInferenceSlingshotCurved <- function(se.integrated, start.clus){
   #   p <- summary(tmp)[4][[1]][1, 5]
   #   p
   # })
-  sce <- fitGAM(sce.filtered) # model the (potentially nonlinear) relationshipships between gene expression and pseudotime
+  
+  ## If the main condition has more than 2 variables -> perform the conditionTest on it
+  ## This will allow one to find temporally DEGs between 2 conditions; have not tested if this method works with 3 variables
+  if (length(unique(sce@colData@listData[["group"]])) >=2){
+    sce <- fitGAM(sce.filtered, conditions = factor(sce@colData@listData[["group"]])) # model the (potentially nonlinear) relationshipships between gene expression and pseudotime
+    
+    ## Find temporally different genes between conditions
+    ## Unsure if the condition or association test will work if the main condition has > 2 variables to work with -> will have to test
+    condRes <- conditionTest(sce, l2fc = log2(2))
+    condRes$padj <- p.adjust(condRes$pvalue, "fdr")
+    conditionGenes <- rownames(condRes)[condRes$padj <= 0.05]
+    conditionGenes <- conditionGenes[!is.na(conditionGenes)]
+    
+    # provide smoothing to time series -> rmv variation btw time steps -> rmv noise and get the signal of underlying causes
+    # did so for the conditionTest to condense the cell and pseudotime information -> would end up with too many columns to visualize
+    # scale smoothed time series data https://hectorrdb.github.io/condimentsPaper/articles/TGFB.html
+    conditionGenes.smooth <- predictSmooth(sce, gene = conditionGenes, nPoints = 100, tidy = FALSE) %>%
+      log1p()
+    conditionGenes.smooth.scaled <- t(apply(conditionGenes.smooth,1, scales::rescale))
+    
+    mainconditions.list <- list()
+    c = 1
+    for (i in unique(sce@colData@listData[["group"]])){
+      
+      ## dynamically create pheatmaps and stitch together
+      firstcol = grep(paste0("condition", i, "_point1$"), colnames(conditionGenes.smooth))[1]
+      lastcol = grep(paste0("condition", i, "_point100$"), 
+                     colnames(conditionGenes.smooth))[length(grep(paste0("condition", i, "_point100$"), colnames(conditionGenes.smooth)))]
+      
+      cond.pheatmap <- NA
+      if (length(mainconditions.list) < 1){
+        cond.pheatmap <- pheatmap::pheatmap(conditionGenes.smooth.scaled[,  firstcol:lastcol],
+                                            cluster_cols = FALSE,
+                                            show_rownames = FALSE, show_colnames = FALSE, main = i, legend = FALSE, silent = TRUE)
+      } else if (c < length(unique(sce@colData@listData[["group"]]))){
+        cond.pheatmap <- pheatmap::pheatmap(conditionGenes.smooth.scaled[mainconditions.list[[1]][["order"]], firstcol:lastcol],
+                                            cluster_cols = FALSE, cluster_rows = FALSE,
+                                            show_rownames = FALSE, show_colnames = FALSE, main = i, legend = FALSE, silent = TRUE)
+      } else if (c == length(unique(sce@colData@listData[["group"]]))){
+        cond.pheatmap <- pheatmap::pheatmap(conditionGenes.smooth.scaled[mainconditions.list[[1]][["order"]], firstcol:lastcol],
+                                            cluster_cols = FALSE, cluster_rows = FALSE,
+                                            show_rownames = TRUE, show_colnames = FALSE, main = i, legend = TRUE, silent = TRUE)
+      }
+      mainconditions.list <- append(mainconditions.list, cond.pheatmap)
+      c = c + 1
+    }
+    
+    hm.coord <- c()
+    for (i in 1:length(mainconditions.list)){
+      if (i %% 4 != 0){
+        hm.coord <- c(hm.coord, i)
+      } 
+    }
+    mainconditions.list.filt <- mainconditions.list[-hm.coord]
+    
+    pdf(paste0('ti_deg_between_', "group", ".pdf"), width = 8, height = 6)
+    do.call("grid.arrange", c(mainconditions.list.filt, ncol=length(mainconditions.list.filt), top="Temporally DEGs across Main Grouping"))
+    #PrintSave(p3, paste0('ti_deg_between_', "group", ".pdf"))
+    graphics.off()
+    
+    write.table(as.data.frame(conditionGenes), "ti_de_between_group.txt", sep="\t", quote=F, row.names=FALSE)
+    
+  } else {
+    sce <- fitGAM(sce.filtered)
+  }
   print("finished GAM computation")
   
   saveRDS(sce, "sce_slingshot.rds")
+  
   # res <- tibble(
   #   id = names(gam.pval),
   #   pvals = gam.pval,
@@ -110,26 +175,46 @@ TrajectoryInferenceSlingshotCurved <- function(se.integrated, start.clus){
   #   arrange(qval) # sorts the qval from least to highest
   # rm(gam.pval)
   # gc()
-  res <- associationTest(sce) #find if the gene expression is actually associated with pseudotime
-  res <- res[complete.cases(res), ]
-  res$qval <- p.adjust(res$pvalue, method = "fdr") # BH correction
   
-  # iterate over the number of lineages -> output DEG heatmap for each
+  res <- associationTest(sce, l2fc = log2(2), lineages = TRUE) # find if the gene expression is associated with pseudotime for each specific lineage comparison
+  #res <- res[complete.cases(res), ]
+  #res$qval <- p.adjust(res$pvalue, method = "fdr") # BH correction
+  
+  # iterate over the number of lineages -> output how the top 100 DEGs are changing over each different lineage
   for (i in 1:ncol(sce@colData@listData[["slingshot"]])){
     ptime.str <- paste0("slingPseudotime_", i)
     print(paste0("plotting DEGs for TI for ", ptime.str))
     ptime <- sce@colData@listData[[ptime.str]] # pseudotime values
     lineage_cells <- colnames(sce)[!is.na(ptime)] # cells associated with the pseudotime
     ptime <- ptime[!is.na(ptime)]
-
+    
+    lineage.cols = grep(paste0("lineage", i), colnames(res))
+    lineage.res <- res[, c(lineage.cols)]
+    lineage.res <- lineage.res[complete.cases(lineage.res), ]
+    
+    lineage.pval.cols = grep(paste0("pvalue"), colnames(lineage.res))
+    
+    lineage.qval.colnames <- c()
+    for (j in lineage.pval.cols){
+      qval.col <- paste0(colnames(lineage.res)[j],"_qval")
+      lineage.res[, qval.col] <-  p.adjust(lineage.res[,j], method = "fdr")
+      
+      lineage.qval.colnames <- c(lineage.qval.colnames, qval.col)
+    }
+    
+    lineage.res <-  lineage.res %>% select(all_of(lineage.qval.colnames))
+    lineage.res <- filter_all(lineage.res, any_vars(. < 0.05))
+    
+    ## Rank genes by lowest FDR value
+    lineage.res <- mutate(lineage.res, Rank = min_rank(paste(eval(parse(text = lineage.qval.colnames)))))
     
     # get log normalized counts
     to_plot <- NA
-    if (length(rownames(res)) >= 100){
-      to_plot <- as.matrix(logcounts(sce)[rownames(res[order(res$qval), ])[1:100], lineage_cells]) # get the top 100 genes and filter by
+    if (length(rownames(lineage.res)) >= 100){
+      to_plot <- as.matrix(logcounts(sce)[rownames(lineage.res[order(lineage.res$Rank), ])[1:100], lineage_cells]) # get the top 100 genes and filter by
       #to_plot <- as.matrix(logcounts(sce)[res$id, lineage_cells]) 
     } else {
-      to_plot <- as.matrix(logcounts(sce)[rownames(res[order(res$qval), ])[1:length(rownames(res))], lineage_cells]) # get the top 100 genes
+      to_plot <- as.matrix(logcounts(sce)[rownames(lineage.res[order(lineage.res$Rank), ])[1:length(rownames(lineage.res))], lineage_cells]) # get the top 100 genes
     }
     
     # arrange cells by pseudotime
@@ -155,7 +240,7 @@ TrajectoryInferenceSlingshotCurved <- function(se.integrated, start.clus){
     PrintSave(p2, paste0('ti_de_', ptime.str, ".pdf"))
     graphics.off()
     
-    ## old method of seperating into clusters, but dont really need since its the same 100 genes
+    ## old method of seperating into clusters, but dont really need since cluster names are printed
     # p2 <- draw(p2)
     # rcl.list <- row_order(p2)
     # 
@@ -168,15 +253,18 @@ TrajectoryInferenceSlingshotCurved <- function(se.integrated, start.clus){
     # })  %>%  #pipe (forward) the output 'out' to the function rbind to create 'clu_df'
     #   do.call(rbind, .)
     # write.table(clu_df, file= paste0("ti_gene_clusters_", ptime.str, ".txt"), sep="\t", quote=F, row.names=FALSE)
+    write.table(lineage.res, paste0("ti_DEGs_qval_full_lineage_", i,".txt"), sep="\t", quote=F, row.names=FALSE)
+    
   }
-  top.100.gene.list <- NA
-  if (length(rownames(res)) >= 100){
-    top.100.gene.list <- as.data.frame(rownames(res[order(res$qval), ])[1:100])
-    colnames(top.100.gene.list)[1] <- "genes"
-  } else {
-    top.100.gene.list <- as.data.frame(rownames(res[order(res$qval), ])[1:length(rownames(res))])
-    colnames(top.100.gene.list)[1] <- "genes"
-  }
-  write.table(top.100.gene.list, "top_100_temporally_dynamic_genes.txt", sep="\t", quote=F, row.names=FALSE)
+  # top.100.gene.list <- NA
+  # if (length(rownames(res)) >= 100){
+  #   top.100.gene.list <- as.data.frame(rownames(lineage.res[order(lineage.res$qval), ])[1:100])
+  #   colnames(top.100.gene.list)[1] <- "genes"
+  # } else {
+  #   top.100.gene.list <- as.data.frame(rownames(lineage.res[order(lineage.res$qval), ])[1:length(rownames(lineage.res))])
+  #   colnames(top.100.gene.list)[1] <- "genes"
+  # }
+
+  #write.table(top.100.gene.list, paste0("ti_DEGs_qval_full_lineage_", i,".txt"), sep="\t", quote=F, row.names=FALSE)
   se.integrated$ti.clusters <- NULL
 }

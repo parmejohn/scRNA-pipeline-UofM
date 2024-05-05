@@ -12,6 +12,7 @@ library(gam)
 library(tradeSeq)
 library(ComplexHeatmap)
 library(magrittr)
+library(gridExtra)
 
 set.seed(333)
 

@@ -183,7 +183,7 @@ if (file.exists(paste0(res.loc,"plots/ti"))){
     
     ReadImageAndTrim(paste0(res.loc, "plots/ti/ti_start_smooth.pdf"))
     plots <- list.files(paste0(res.loc, "plots/ti/"), full.names=TRUE)
-    plots <- plots[grep("de_sling", plots)]
+    plots <- plots[grep("ti_de", plots)]
     
     for(i in plots){
       #cat("![example](",i,"){width=100%, height=500}")
@@ -219,6 +219,8 @@ if(file.exists(paste0(res.loc, "data/se_integrated_tempora_seurat_v3.rds"))){
 
 
 #' ## Differential Abundance analysis with miloR
+#' Sorted by character string and numbers, where the first element will have a negative logFC and vice versa. Ex. D100, D56, D70 = D56, D70, D100.
+#' Individual GO pathways in a geyser plot can be found at 
 {{if(length(list.files(paste0(res.loc, "plots/da/"), full.names=TRUE)) == 3){"No Differential Abundant neighborhoods were found, so no DEG heatmaps will be made."}}}
 #+ warning=FALSE, echo=FALSE, fig.height = 10, fig.width = 10, results='asis'
 plots <- list.files(paste0(res.loc, "plots/da/"), full.names=TRUE)

@@ -13,6 +13,7 @@ library(ggrepel)
 library(SingleCellExperiment)
 library(patchwork)
 library(ggbeeswarm)
+library(gtools)
 
 set.seed(333)
 
@@ -53,6 +54,9 @@ thisFile <- function() {
 }
 source(paste0(file.path(dirname(dirname(
   thisFile()
+))), "/utils/miloR_fixes.R"))
+source(paste0(file.path(dirname(dirname(
+  thisFile()
 ))), "/utils/da_analysis.R"))
 source(paste0(file.path(dirname(dirname(
   thisFile()
@@ -67,7 +71,6 @@ print("Differential Abundance")
 DifferentialAbundanceMilo(
   se.integrated,
   'sample',
-  'group',
   k = args$clusters_optimal,
   d = 50,
   toupper(args$reduced_dim)
