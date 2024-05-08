@@ -8,6 +8,7 @@ library(presto)
 library(dplyr)
 library(tidyverse)
 library(pheatmap)
+library(dittoSeq)
 
 set.seed(333)
 

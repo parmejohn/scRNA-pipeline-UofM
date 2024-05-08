@@ -140,7 +140,7 @@ TrajectoryInferenceSlingshotCurved <- function(se.integrated, start.clus){
       } else if (c == length(unique(sce@colData@listData[["group"]]))){
         cond.pheatmap <- pheatmap::pheatmap(conditionGenes.smooth.scaled[mainconditions.list[[1]][["order"]], firstcol:lastcol],
                                             cluster_cols = FALSE, cluster_rows = FALSE,
-                                            show_rownames = TRUE, show_colnames = FALSE, main = i, legend = TRUE, silent = TRUE)
+                                            show_rownames = FALSE, show_colnames = FALSE, main = i, legend = TRUE, silent = TRUE)
       }
       mainconditions.list <- append(mainconditions.list, cond.pheatmap)
       c = c + 1

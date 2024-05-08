@@ -56,9 +56,6 @@ print(dir2)
 plots <- list.files(paste0(res.loc, "plots/qc/"), full.names=TRUE)
 
 for(i in plots){
-  #cat("![example](",i,"){width=100%, height=500}")
-  #cat("\includepdf[pages={1}](",i,"){width=100%}")
-  #cat("<iframe src=",i,"width='100%' height='500' frameborder='0' />")
   ReadImageAndTrim(i)
 }
 
@@ -89,6 +86,8 @@ ReadImageAndTrim(paste0(res.loc,"plots/integrated_umap_unlabelled.pdf"))
 se.integrated <- readRDS(paste0(res.loc, "data/se_integrated_dimred.rds"))
 md <- se.integrated@meta.data %>% as.data.table()
 
+ReadImageAndTrim(paste0(res.loc,"plots/percent_cells_group_unlabelled.pdf"))
+
 kable(md[, .N, by = c("group", "seurat_clusters")] %>% dcast(., group ~ seurat_clusters, value.var = "N"), caption = "Number of cells per seurat_cluster")
 
 ReadImageAndTrim(paste0(res.loc,"plots/integrated_umap_grouped.pdf"))
@@ -115,6 +114,8 @@ if (file.exists(paste0(res.loc,"data/se_integrated_auto_label.rds"))){
   ReadImageAndTrim(paste0(res.loc,"plots/reference_marker_mapping_heatmap.pdf"))
   ReadImageAndTrim(paste0(res.loc,"plots/integrated_umap_labelled.pdf"))
 
+  ReadImageAndTrim(paste0(res.loc,"plots/percent_cells_group_labelled.pdf"))
+  
   se.integrated <- readRDS(paste0(res.loc, "data/se_integrated_auto_label.rds"))
   
   se.integrated$labelled <- Idents(se.integrated)
@@ -137,9 +138,7 @@ if (file.exists(paste0(res.loc,"data/se_integrated_auto_label.rds"))){
 plots <- list.files(paste0(res.loc, "plots/deseq2/"), full.names=TRUE)
 
 for(i in 1:length(plots)){
-  #cat("![example](",i,"){width=100%, height=500}")
-  #cat("\includepdf[pages={1}](",i,"){width=100%}")
-  if (i != 10){
+  if (i <= 10){
     ReadImageAndTrim(plots[i])
   } else {
     break
@@ -155,9 +154,7 @@ for(i in 1:length(plots)){
 plots <- list.files(paste0(res.loc, "plots/gsea/comparative/"), full.names=TRUE)
 
 for(i in 1:length(plots)){
-  #cat("![example](",i,"){width=100%, height=500}")
-  #cat("\includepdf[pages={1}](",i,"){width=100%}")
-  if (i != 10){
+  if (i <= 10){
     ReadImageAndTrim(plots[i])
   } else {
     break
@@ -170,11 +167,25 @@ for(i in 1:length(plots)){
 {{paste0(res.loc, "plots/gsea/escape")}}
 
 #+ warning=FALSE, echo=FALSE, fig.height = 8, fig.width = 9, out.width = "100%", results='asis'
+plots <- list.files(paste0(res.loc, "plots/gsea/escape/"), full.names=TRUE)
+plots <- plots[grep(".pdf", plots)]
+
+geyser_plots <- list.files(paste0(res.loc, "plots/gsea/escape/"), full.names=TRUE, recursive = TRUE)
+geyser_plots <- geyser_plots[grep("geyser", geyser_plots)]
+
 if (file.exists(paste0(res.loc,"data/se_integrated_escape_norm.rds"))){
-  ReadImageAndTrim(paste0(res.loc,"plots/gsea/escape/escape_heatmap_top5.pdf"))
+  for(i in plots){
+    ReadImageAndTrim(i)
+  }
+  
+  for (i in 1:5){
+    ReadImageAndTrim(geyser_plots[i])
+  }
+  
 } else {
   print("escape analysis was set to false, if you wanted this analysis please set '-run_escape true'")
 }
+
 #' ## Trajectory Inference
 #' ### slingshot
 #+ warning=FALSE, echo=FALSE, fig.height = 10, fig.width = 10, results='asis'
@@ -182,35 +193,27 @@ if (file.exists(paste0(res.loc,"plots/ti"))){
   if(file.exists(paste0(res.loc, "plots/ti/ti_start_smooth.pdf"))){
     
     ReadImageAndTrim(paste0(res.loc, "plots/ti/ti_start_smooth.pdf"))
+    
+    if(file.exists(paste0(res.loc, "plots/ti/ti_start_smooth.pdf"))){
+      ReadImageAndTrim(paste0(res.loc, "plots/ti/ti_deg_between_group.pdf"))
+    }
+    
     plots <- list.files(paste0(res.loc, "plots/ti/"), full.names=TRUE)
-    plots <- plots[grep("ti_de", plots)]
+    plots <- plots[grep("slingPseudotime", plots)]
     
     for(i in plots){
-      #cat("![example](",i,"){width=100%, height=500}")
-      #cat("\includepdf[pages={1}](",i,"){width=100%}")
-#      plot(image_read_pdf(i))
       ReadImageAndTrim(i)
     }
   } else {
     ReadImageAndTrim(paste0(res.loc,"plots/ti/ti_no_start_not_smooth.pdf"))
-#    plot(image_read_pdf(paste0(res.loc,"plots/ti/ti_no_start_not_smooth.pdf")))
   }
 } else {
   print("slingshot analysis was set to false, if you wanted this analysis please set '-run_sling true'")
 }
 
 #' ### tempora
-#' #+ warning=FALSE, echo=FALSE, fig.height = 10, fig.width = 10, results='asis'
+#+ warning=FALSE, echo=FALSE, fig.height = 10, fig.width = 10, results='asis'
 if(file.exists(paste0(res.loc, "data/se_integrated_tempora_seurat_v3.rds"))){
-  # plots <- list.files(paste0(res.loc, "plots/ti/"), full.names=TRUE)
-  # plots <- plots[grep("tempora", plots)]
-  # 
-  # for(i in plots){
-  #   #cat("![example](",i,"){width=100%, height=500}")
-  #   #cat("\includepdf[pages={1}](",i,"){width=100%}")
-  #   #      plot(image_read_pdf(i))
-  #   ReadImageAndTrim(i)
-  # }
   ReadImageAndTrim(paste0(res.loc, "plots/ti/tempora_screeplot.pdf"))
   ReadImageAndTrim(paste0(res.loc, "plots/ti/tempora_inferred_lineages.pdf"))
 } else {
@@ -224,13 +227,23 @@ if(file.exists(paste0(res.loc, "data/se_integrated_tempora_seurat_v3.rds"))){
 {{if(length(list.files(paste0(res.loc, "plots/da/"), full.names=TRUE)) == 3){"No Differential Abundant neighborhoods were found, so no DEG heatmaps will be made."}}}
 #+ warning=FALSE, echo=FALSE, fig.height = 10, fig.width = 10, results='asis'
 plots <- list.files(paste0(res.loc, "plots/da/"), full.names=TRUE)
+plots <- plots[grep("pval|volcano", plots)]
 
 for(i in plots){
-  #cat("![example](",i,"){width=100%, height=500}")
-  #cat("\includepdf[pages={1}](",i,"){width=100%}")
   ReadImageAndTrim(i)
 }
 
-#knitr::spin(thisFile())
-#knitr::spin("/home/projects/sc_pipelines/scRNA-pipeline-UofM_harmony/src/SummaryReport.R")
-# rmarkdown::render("/home/projects/sc_pipelines/scRNA-pipeline-UofM_harmony/src/SummaryReport.R")
+plots <- list.files(paste0(res.loc, "plots/da/"), full.names=TRUE)
+plots <- plots[grep("umap|fc_dist", plots)]
+
+for(i in plots){
+  ReadImageAndTrim(i)
+}
+
+#+ warning=FALSE, echo=FALSE, fig.height = 10, fig.width = 10, out.width = "50%", fig.show = 'hold', results='asis'
+plots <- list.files(paste0(res.loc, "plots/da/"), full.names=TRUE)
+plots <- plots[grep("DE_heatmap", plots)]
+
+for(i in plots){
+  ReadImageAndTrim(i)
+}

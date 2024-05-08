@@ -1,6 +1,4 @@
-#source(paste0(dirname(dirname(dirname(getwd()))),"/utils/misc.R"))
 set.seed(333)
-
 
 DESeq2ConditionPerCluster <-  function(se.integrated, species){
   se.integrated$de.clusters <- Idents(se.integrated)
@@ -108,6 +106,7 @@ GseaComparison <- function(de.markers, cluster.name, ident.1, ident.2, fgsea.set
     scale_size_continuous(range = c(2,10)) +
     geom_hline(yintercept = 0) +
     coord_flip() +
+    theme_bw() +
     labs(x="Pathway", y="Normalized Enrichment Score") + 
     ggtitle(paste0("GSEA: ", cluster.name, " ", ident.1, " vs ", ident.2))
   

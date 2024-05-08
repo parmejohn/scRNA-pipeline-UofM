@@ -64,7 +64,7 @@ RunTempora <- function(se.integrated){
   # loadfonts()
 
   pdf('tempora_inferred_lineages.pdf', width = 8, height = 6)
-  se.integrated.tempora <- PlotTrajectory_font_fix(se.integrated.tempora, hgap=1, vgap=1)
+  se.integrated.tempora <- PlotTrajectory_font_fix(se.integrated.tempora)
   # p2 <- recordPlot()
   # PrintSave(p2, "tempora_inferred_lineages.pdf")
   title("Time-Series Trajectory Inference")

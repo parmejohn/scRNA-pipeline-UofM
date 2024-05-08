@@ -20,6 +20,7 @@ process ESCAPEANALYSIS {
     input:
     path integrated
     val species
+    val pathways
 
     output:
     path "*.rds", emit: se_integrated_escape
@@ -28,6 +29,6 @@ process ESCAPEANALYSIS {
     
     script:
        """
-        ${projectDir}/src/EscapeMain.R --i $integrated --s $species
+        ${projectDir}/src/EscapeMain.R --i $integrated --s $species -pathways $pathways
        """
 }

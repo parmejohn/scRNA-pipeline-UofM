@@ -20,7 +20,7 @@ Image can be downloaded from [Sylabs](https://cloud.sylabs.io/library/parmejohn/
 ```
 apptainer pull --arch amd64 library://parmejohn/uofm/scrnaseq_singularity:latest
 ```
-Apptainer and singularity are the same, but apptainer is the new name. Also to note, when using apptainer, library may not be set up which could lead to pull errors if using the command above.
+Apptainer and singularity is the same tool, but apptainer is the new naming scheme. Also to note, when using apptainer, library may not be set up which could lead to pull errors if using the command above.
 
 
 ## Usage
@@ -35,9 +35,14 @@ nextflow run scRNA_pipeline.nf \
 	--reference_seurat [path(s) to labelled reference seurat object] \
 	--beginning_cluster [inferred earliest celltype] \
 	--clusters_optimal [optimal number of clusters] \
-	--resolution [a chosen resolution] \
-	--run_escape [True/False] \
-	-with-apptainer path_to_image/scrnaseq_singularity_tmp.sif
+	--resolution [0-9*] \
+	--run_escape [true/false] \
+	--pathways [PATHWAY1,PATHWAY2,...] \
+	--run_sling [true/false] \
+	--co_conditions [X1,X2,...] \
+	--reduced_dim [integrated.cca | integrated.mnn | harmony] \
+	--test_data [0-9*] \
+	-with-apptainer path_to_image/scrnaseq_singularity_latest.sif
 ```
 
 ### Arguments
@@ -55,12 +60,22 @@ nextflow run scRNA_pipeline.nf \
 	- DEFAULT: ''
 - clusters_optimal: Number of optimal clusters/dimensionality for machine learning methods. If set to 0, will be calculated automatically through NbClust() Calinski-Harabasz (ch) index.
 	- DEFAULT: 0
-- resolution: Desired resolution, increasing this will increase the number of clusters and vice versa. WILL IMPLEMENT AUTOMATICALLY THROUGH CLUSTTREE LATER
+- resolution: Desired resolution, increasing this will increase the number of clusters and vice versa.
 	- DEFAULT: 1
-- run_escape: Performs escape analysis to provide single-cell GSEA results. IMPORTANT: This analysis takes a substantial amount of time and memory, so ensure that you provide enough of both before setting to 'True'. With Nextflow capabilities as well, it is fine to run the pipeline once without escape and then with, since the pipeline will cache the rest of the data.
-	- Default: False
+- run_escape: Performs escape analysis to provide single-cell GSEA results. IMPORTANT: This analysis takes a substantial amount of time and memory, so ensure that you provide enough of both before setting to 'True'. With Nextflow capabilities as well, it is fine to run the pipeline once without escape and then with  '-resume', since the pipeline will cache the rest of the data.
+	- DEFAULT: false
+- pathways: List of desired pathways/phrases separated by ',' to search on the Gene onotology: biological processes for MsigDB for the escape analysis. Setting this option will make it so the top 5 pathways will not be printed during escape.
+	- DEFAULT: 'none'
+- run_sling: Performs slingshot trajectory inference analysis
+	- DEFAULT: false
+- co_conditions: List of co-conditions for each sample separated by ','. Your sample name should contain an underscore for each condition, including the main one being tested for. For instance, SAMPLE1_MUT_DAY50_treated, could have the arguement of '-co_condition time,treatment'
+	- DEFAULT: 'none'
+- reduced_dim: Batch correction method to carry out while integrating samples. Possible arguements are "integrated.cca (CCA), integrated.mnn (FastMNN), or harmony"
+	- DEFAULT: 'integrated.cca'
+- test_data: Number of cells to downsample for, if 0 take all cells into account
+	- DEFAULT: 0
 - with-apptainer: path to downloaded image (REQUIRED)
-	- When this option is not set, you will use your native environment, which may be missing packages, dependecies, or have version mismatches.
+	- When this option is not set, you will use your native environment, which may be missing packages, dependencies, or have version mismatches.
 
 ### Outputs
 Analysis folder:
@@ -137,8 +152,7 @@ analysis/
 - se_filtered_singlets_list.rds: List of Seurat objects with removed doublets from ScDblFinder
 - se_integrated_auto_label.rds: Integrated Seurat object from automatic labelling from reference Seurat object(s)
 - se_integrated_dimred.rds: Integrated Seurat object with Seurat dimensional reduction techniques saved (FindClusters, RunPCA, RunUMAP)
-- se_integrated_escape_norm.rds: Integrated Seurat object with UCell enrichment scores calculated for each cell, which is normalized in respect to the number of genes
-- se_integrated_escape.rds: Integrated Seurat object with UCell enrichment scores calculated for each cell
+- se_integrated_escape_norm.rds: Integrated Seurat object with UCell enrichment scores calculated for each cell, with normalized in respect to the number of genes and unormalized values
 - se_integrated.rds: Seurat object that has all samples over all conditions integrated in order to be comparable downstream
 - se_list_raw.rds: Seurat object list of corrected for ambient RNA
 - se_markers_presto_integrated.txt: Results from FindAllMarkers (presto implementation), where differential expression (1 cluster against the rest) is calculated for each gene.
@@ -175,7 +189,7 @@ analysis/
 - top3_markers_expr_heatmap.pdf: Top 3 genes for each cluster from FindAllMarkers call
 
 ### Example
-From Cisplatin-treated and non-treated mice data.
+Cisplatin-treated and non-treated mice data.
 
 Counts folder:
 ```
@@ -187,7 +201,7 @@ counts
     ├── pilot_study_T1 -> /home/projects/CIO/yard/run_cellranger_count/pilot_study_T1
     └── pilot_study_T2 -> /home/projects/CIO/yard/run_cellranger_count/pilot_study_T2
 ```
-Above I am using symlinks to save space (the symlink path also needs to be included in the binded paths).Ensure that REAL paths are used, an error will occur if attempting to use a symlink path name since apptainer/singularity does not run with root access and needs to be explicitly told where the files can be found.
+Above I am using symlinks to save space (the symlink path also needs to be included in the binded paths). Ensure that REAL paths are used, an error will occur if attempting to use a symlink path name since apptainer/singularity does not run with root access and needs to be explicitly told where the files can be found.
 
 ```
 nextflow run scRNA_pipeline.nf \
@@ -199,3 +213,21 @@ nextflow run scRNA_pipeline.nf \
 	--beginning_cluster Osteoblasts \ 
 	-with-apptainer /home/phamj7@med.umanitoba.ca/bin/scrnaseq_singularity.sif
 ```
+
+## References
+### Bioinformatics Tools
+- batchelor: Haghverdi, L., Lun, A. T. L., Morgan, M. D. & Marioni, J. C. Batch effects in single-cell RNA-sequencing data are corrected by matching mutual nearest neighbors. Nat Biotechnol 36, 421–427 (2018).
+- Comparing batch corrections: Luecken, M. D. et al. Benchmarking atlas-level data integration in single-cell genomics. Nat Methods 19, 41–50 (2022).
+- DESeq2: Love, M. I., Huber, W. & Anders, S. Moderated estimation of fold change and dispersion for RNA-seq data with DESeq2. Genome Biology 15, 550 (2014).
+- Escape: Borcherding, N. et al. Mapping the immune environment in clear cell renal carcinoma by single-cell genomics. Commun Biol 4, 1–11 (2021).
+- fgsea: Korotkevich, G. et al. Fast gene set enrichment analysis. 060012 Preprint at https://doi.org/10.1101/060012 (2021).
+- harmony: Korsunsky, I. et al. Fast, sensitive and accurate integration of single-cell data with Harmony. Nat Methods 16, 1289–1296 (2019).
+- miloR: Dann, E., Henderson, N. C., Teichmann, S. A., Morgan, M. D. & Marioni, J. C. Differential abundance testing on single-cell data using k-nearest neighbor graphs. Nat Biotechnol 40, 245–253 (2022).
+- presto: Korsunsky, I., Nathan, A., Millard, N. & Raychaudhuri, S. Presto scales Wilcoxon and auROC analyses to millions of observations. 653253 Preprint at https://doi.org/10.1101/653253 (2019).
+- scDblFinder: Germain, P.-L., Lun, A., Meixide, C. G., Macnair, W. & Robinson, M. D. Doublet identification in single-cell sequencing data using scDblFinder. Preprint at https://doi.org/10.12688/f1000research.73600.2 (2022).
+- Seurat: Hao, Y. et al. Dictionary learning for integrative, multimodal and scalable single-cell analysis. Nat Biotechnol 42, 293–304 (2024).
+- Slingshot: Street, K. et al. Slingshot: cell lineage and pseudotime inference for single-cell transcriptomics. BMC Genomics 19, 477 (2018).
+- SoupX: Young, M. D. & Behjati, S. SoupX removes ambient RNA contamination from droplet-based single-cell RNA sequencing data. GigaScience 9, giaa151 (2020).
+- Tempora: Tran, T. N. & Bader, G. D. Tempora: Cell trajectory inference using time-series single-cell RNA sequencing data. PLOS Computational Biology 16, e1008205 (2020).
+- tradeSeq: Van den Berge, K. et al. Trajectory-based differential expression analysis for single-cell sequencing data. Nat Commun 11, 1201 (2020).
+

@@ -15,6 +15,7 @@ params.run_sling = false
 params.test_data = 0
 params.co_conditions = 'none'
 params.reduced_dim = 'integrated.cca'
+params.pathways = 'none'
 
 include {AMBIENTRNAREMOVAL} from './modules/ambientremoval.nf'
 include {FILTERLOWQUALDOUBLETS} from './modules/filterlowqualdoublets.nf'
@@ -98,8 +99,9 @@ workflow {
     COMPARATIVEANALYSIS(identified_ch, params.species)
 
 	if (params.run_escape){
+	  processed_pathways = params.pathways.replaceAll(',', ' ')
 		println "WARNING: This may take a while"
-		ESCAPEANALYSIS(identified_ch, params.species)
+		ESCAPEANALYSIS(identified_ch, params.species, processed_pathways)
 		escape_ch = ESCAPEANALYSIS.out.se_integrated_escape
 	} else {
 		escape_ch = "SKIPPING ESCAPE ANALYSIS, RERUN WITH '--run_escape true' if you desired those results"

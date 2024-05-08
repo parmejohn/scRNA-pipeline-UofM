@@ -6,6 +6,7 @@ library(Seurat)
 library(dplyr)
 library(tidyverse)
 library(NbClust)
+library(dittoSeq)
 
 set.seed(333)
 

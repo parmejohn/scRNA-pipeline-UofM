@@ -45,7 +45,7 @@ PlotTrajectory_font_fix <- function (object, layout = NULL, ...)
   }
   edge_graph <- igraph::graph_from_data_frame(d = object@trajectory, 
                                               vertices = object@cluster.metadata, directed = T)
-  object@cluster.metadata$Cluster_time_score_round <- round(object@cluster.metadata$Cluster_time_score)
+  #object@cluster.metadata$Cluster_time_score_round <- round(object@cluster.metadata$Cluster_time_score)
   if (is.null(layout)) {
     l <- igraph::layout_with_sugiyama(edge_graph, layers = object@cluster.metadata$Cluster_time_score, 
                                       maxiter = 2000 , hgap=1, vgap=1
@@ -63,6 +63,17 @@ PlotTrajectory_font_fix <- function (object, layout = NULL, ...)
                   edge.arrow.size = 0.5, edge.width = 1.5,
                   vertex.label.color = "black", edge.lty = E(edge_graph)$type, 
                   ...)
+      
+      # plot.igraph(edge_graph, ylim = c(-1, 1), layout = l$ext_graph, 
+      #             ylab = "Inferred time", vertex.shape = "pie", 
+      #             vertex.pie = lapply(1:nrow(object@cluster.metadata), 
+      #                                 function(x) as.numeric(object@cluster.metadata[x, 
+      #                                                                                2:((length(levels(object@meta.data$Timepoints))) + 
+      #                                                                                     1)])), vertex.pie.color = list(colours(length(levels(object@meta.data$Timepoints)))), 
+      #             pie.border = list(rep("white", 4)), vertex.frame.color = "white", 
+      #             edge.arrow.size = 0.5, edge.width = 1.5,
+      #             vertex.label.color = "black", edge.lty = E(edge_graph)$type, 
+      #             )
       axis(side = 2, at = c(-1, 1), labels = c("Late", 
                                                "Early"), las = 1)
       legend("topleft", legend = levels(object@meta.data$Timepoints), 
@@ -86,6 +97,7 @@ PlotTrajectory_font_fix <- function (object, layout = NULL, ...)
                                                "Early"), las = 1)
     }
     object@layouts <- l$layout
+    #object@ext_graph <- l$ext_graph
   }
   else {
     if (length(levels(object@meta.data$Timepoints)) > 9) {

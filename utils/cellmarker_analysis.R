@@ -86,6 +86,15 @@ ReferenceMarkerMapping <- function(reference, query, dims){
   umap.labelled <- DimPlot(query, reduction = "umap", group.by = "celltype", label = TRUE, alpha = 0.5) +
     ggtitle("UMAP Reference Labelled Clusters")
   PrintSave(umap.labelled, "integrated_umap_labelled.pdf")
+  
+  p2 <- dittoBarPlot(
+    object = query,
+    var = "celltype",
+    group.by = "group",
+    retain.factor.levels=TRUE,
+    main = "Percent of cells by Labelled Clusters")
+  PrintSave(p2, "percent_cells_group_labelled.pdf")
+  
   reference$reference.cell.meta <- NULL
   
   query

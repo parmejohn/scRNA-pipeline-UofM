@@ -31,6 +31,13 @@ parser$add_argument(
   nargs = 1,
   help = 'Species name (Mus musculus, Homo sapiens); CASE-SENSITIVE'
 )
+parser$add_argument(
+  '-pathways',
+  type = "character",
+  required = TRUE,
+  nargs = '*',
+  help = 'Find pathways matching the phrase(s)'
+)
 args <- parser$parse_args()
 
 indir <- args$i
@@ -66,4 +73,4 @@ if (args$s == "musmusculus") {
 }
 
 print("single-cell GSEA")
-EscapeGSEA(se.integrated, species)
+EscapeGSEA(se.integrated, species, toupper(args$pathways))

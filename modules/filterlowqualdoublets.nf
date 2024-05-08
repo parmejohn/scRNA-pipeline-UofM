@@ -19,7 +19,7 @@ process FILTERLOWQUALDOUBLETS {
     input:
     path ambient_rmv
     val species
-	val conditions
+    val conditions
 
     output:
     path "*.pdf"

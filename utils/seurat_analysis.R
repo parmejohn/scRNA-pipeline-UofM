@@ -63,5 +63,14 @@ SeuratDimReduction <- function(se.integrated, dims, group, res = 1, reduction){
     ggtitle("UMAP Unlabelled Seurat Clusters")
   PrintSave(p3, "integrated_umap_unlabelled.pdf")
   
+  p4 <- dittoBarPlot(
+    object = se.integrated,
+    var = "seurat_clusters",
+    group.by = "group",
+    retain.factor.levels=TRUE,
+    main = "Percent of cells for Unlabelled Clusters")
+  PrintSave(p4, "percent_cells_group_unlabelled.pdf")
+
   se.integrated <- se.integrated
 }
+
