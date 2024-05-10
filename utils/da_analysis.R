@@ -237,40 +237,44 @@ DifferentialAbundanceMilo <-
             filter_at(vars(starts_with("adj.P.Val_")), any_vars(. <= 0.01))
           print("renaming genes")
           markers <- dge.smp.filt[, "GeneID"]
-          print("renamed")
-          
-          logcounts(sc.integrated.milo.traj) <-
-            log1p(counts(sc.integrated.milo.traj))
-          print("get log counts again")
-          sc.integrated.milo.traj <-
-            calcNhoodExpression(sc.integrated.milo.traj, subset.row = markers)
-          #paste("traj")
-          
-          da.results.filt <-
-            filter(da.results, da.clusters == i & SpatialFDR < 0.1) # Error in hclust(dist(expr_mat)) : must have n >= 2 objects to cluster -> filtered sets mustve had nothing
-          #print("dafilt")
-          
-          if (!is.null(dim(da.results.filt)[1]) & !is.null(markers)) {
-            if (dim(da.results.filt)[1] >= 2 &
-                length(markers) >= 2) {
-              # have to check if there are any that meet the spatialFDR or marker cutoff to begin with
-              print("plotting deg")
-              p5 <-
-                plotNhoodExpressionDA_fixed(
-                  sc.integrated.milo.traj,
-                  da.results.filt,
-                  features = markers,
-                  subset.nhoods = da.results$da.clusters %in% c(i),
-                  assay = "logcounts",
-                  scale_to_1 = TRUE,
-                  cluster_features = TRUE,
-                  show_rownames = FALSE,
-                  group = c(i),
-                  condition = condition
-                ) + 
-                ggtitle(paste0(i, ": DA DEGs for condition ", condition))
-              PrintSave(p5, paste0("milo_DA_DE_heatmap_", i, "_", condition, ".pdf"))
+          if (!is.null(markers)){
+            print("renamed")
+            
+            logcounts(sc.integrated.milo.traj) <-
+              log1p(counts(sc.integrated.milo.traj))
+            print("get log counts again")
+            sc.integrated.milo.traj <-
+              calcNhoodExpression(sc.integrated.milo.traj, subset.row = markers)
+            #paste("traj")
+            
+            da.results.filt <-
+              filter(da.results, da.clusters == i & SpatialFDR < 0.1) # Error in hclust(dist(expr_mat)) : must have n >= 2 objects to cluster -> filtered sets mustve had nothing
+            #print("dafilt")
+            
+            if (!is.null(dim(da.results.filt)[1]) & !is.null(markers)) {
+              if (dim(da.results.filt)[1] >= 2 &
+                  length(markers) >= 2) {
+                # have to check if there are any that meet the spatialFDR or marker cutoff to begin with
+                print("plotting deg")
+                p5 <-
+                  plotNhoodExpressionDA_fixed(
+                    sc.integrated.milo.traj,
+                    da.results.filt,
+                    features = markers,
+                    subset.nhoods = da.results$da.clusters %in% c(i),
+                    assay = "logcounts",
+                    scale_to_1 = TRUE,
+                    cluster_features = TRUE,
+                    show_rownames = FALSE,
+                    group = c(i),
+                    condition = condition
+                  ) + 
+                  ggtitle(paste0(i, ": DA DEGs for condition ", condition))
+                PrintSave(p5, paste0("milo_DA_DE_heatmap_", i, "_", condition, ".pdf"))
+              }
             }
+          } else {
+            print("no sig markers")
           }
         } else {
           print("skipped")
