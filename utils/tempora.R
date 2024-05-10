@@ -4,6 +4,7 @@ RunTempora <- function(se.integrated){
   se.integrated$tempora.labels <- Idents(se.integrated)
   
   cluster.names <- NA
+  se.integrated@assays[["RNA3_var"]] <- CreateAssayObject(GetAssayData(se.integrated, assay = "RNA3")[se.integrated@assays[["RNA3"]]@var.features,]) # take the 2000 most variable features
   if (all(levels(se.integrated@active.ident) != levels(se.integrated$seurat_clusters))){
     
     ## This is to grab which cluster name correlates with which seurat clustering labels
@@ -17,7 +18,7 @@ RunTempora <- function(se.integrated){
     # cluster.names <- colnames(prediction.matrix)[max.col(prediction.matrix,ties.method="first")]
     # 
     # se.integrated <- SetIdent(se.integrated, value = se.integrated@meta.data$seurat_clusters)
-    se.integrated@assays[["RNA3_var"]] <- CreateAssayObject(GetAssayData(se.integrated, assay = "RNA3")[se.integrated@assays[["RNA3"]]@var.features,]) # take the 2000 most variable features
+    
     # 
     # se.integrated.tempora <-  ImportSeuratObject(se.integrated,  clusters = "seurat_clusters", 
     #                                              timepoints = "time", assayType = "RNA3_var", 

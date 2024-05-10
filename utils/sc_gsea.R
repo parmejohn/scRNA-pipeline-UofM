@@ -71,7 +71,7 @@ EscapeGSEA <- function(se.integrated, species, pathways){
   } else {
     ## if specified pathways were wanted, folders will be split by the general phrase and then filled with geyser plots
     for (i in 1:length(pathways)){
-      if (grep(pathways[i], ucell.markers$gene)){
+      if (grepl(pathways[i], ucell.markers$gene)){
         ucell.markers.specific <- ucell.markers[grep(pathways[i], ucell.markers$gene),]
         ucell.markers.specific.filtered <- as.data.frame(ucell.markers.specific %>% filter(p_val_adj <= 0.05) %>% group_by(cluster))
         
