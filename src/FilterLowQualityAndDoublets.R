@@ -95,8 +95,8 @@ for (i in 1:length(se.list)) {
     for (j in 1:length(args$coconditions)){
       se.list[[i]] <- AddMetaData(se.list[[i]], sapply(strsplit(sample.name, "_"), function(x) x[j+2]), args$coconditions[j])
     }
+    Misc(se.list[[i]], slot = "co.conditions") <- args$coconditions
   }
-  Misc(se.list[[i]], slot = "co.conditions") <- args$coconditions
 }
 saveRDS(se.list, "se_list_raw.rds")
 

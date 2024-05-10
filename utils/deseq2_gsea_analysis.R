@@ -2,7 +2,7 @@ set.seed(333)
 
 DESeq2ConditionPerCluster <-  function(se.integrated, species){
   se.integrated$de.clusters <- Idents(se.integrated)
-  if (length(se.integrated@misc[[1]]) > 0 ){
+  if (length(se.integrated@misc) != 0 ){
     bulk <- AggregateExpression(se.integrated, return.seurat = T, 
                                 assays = "RNA", 
                                 group.by = c("de.clusters", "sample", "group", se.integrated@misc[["co.conditions"]]))
@@ -40,7 +40,7 @@ DESeq2ConditionPerCluster <-  function(se.integrated, species){
     
     group.pairs <- NA
     list.comparisons <- list("group")
-    if (length(se.integrated@misc[[1]]) > 0 ){
+    if (length(se.integrated@misc) != 0 ){
       for (j in se.integrated@misc$co.conditions){
         group.co <- paste0("group_", j)
         cluster.bulk <- AddMetaData(cluster.bulk, paste(cluster.bulk$group, cluster.bulk@meta.data[[j]], sep = "_"), group.co)

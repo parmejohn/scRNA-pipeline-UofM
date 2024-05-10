@@ -132,7 +132,7 @@ DifferentialAbundanceMilo <-
     ## get the list of conditions
     condition.list <- list()
     condition.list <- append(condition.list, "group")
-    if (length(se.integrated@misc[[1]]) > 0 ){
+    if (length(se.integrated@misc) != 0 ){
       condition.list <- append(condition.list, se.integrated@misc$co.conditions)
     }
     
@@ -194,7 +194,7 @@ DifferentialAbundanceMilo <-
       
       # print("Finding DEGs for DA neighborhoods, this may take a while") https://marionilab.github.io/miloR/articles/milo_gastrulation.html
       for (i in levels(droplevels(se.integrated@meta.data[["da.clusters"]]))) {
-        print(paste0("Working on DA DE heatmap for cluster ", i, "for condition ", condition))
+        print(paste0("Working on DA DE heatmap for cluster ", i, " for condition ", condition))
         logcounts(sc.integrated.milo.traj) <-
           log1p(counts(sc.integrated.milo.traj))
         
@@ -228,16 +228,15 @@ DifferentialAbundanceMilo <-
             sample_col = sample,
             subset.nhoods = da.results$da.clusters %in% c(i)
           )
+          print("found group markers")
+          #print(dge_smp)
         }
         
-        if (!is.null(dge_smp)) {
-          #paste("findNhoodMarkers")
+        if (!is.null(dge_smp) | length(dge_smp) != 0) {
           dge.smp.filt <- dge_smp %>%
             filter_at(vars(starts_with("adj.P.Val_")), any_vars(. <= 0.01))
-          #paste("filt adjpval")
           print("renaming genes")
           markers <- dge.smp.filt[, "GeneID"]
-          #markers <- sub("HLA.", "HLA-", markers) #temporary solution
           print("renamed")
           
           logcounts(sc.integrated.milo.traj) <-
@@ -273,6 +272,8 @@ DifferentialAbundanceMilo <-
               PrintSave(p5, paste0("milo_DA_DE_heatmap_", i, "_", condition, ".pdf"))
             }
           }
+        } else {
+          print("skipped")
         }
       }
       
@@ -281,6 +282,7 @@ DifferentialAbundanceMilo <-
       #   - color = fold change
       #   - node layout -> based on index node in UMAP of single cells
       # - edges = number cells shared btw adjacent neighborhoods
+      print("plotnhood")
       p3 <-
         plotNhoodGraphDA(sc.integrated.milo.traj,
                          da.results,
@@ -289,8 +291,9 @@ DifferentialAbundanceMilo <-
       # also can look at the your design -> should be ordered correspondingly; https://github.com/MarioniLab/miloR/issues/81
         ggtitle(paste0("DA Analysis UMAP for ", condition))
       
-      da.results <-
-        annotateNhoods(sc.integrated.milo.traj, da.results, coldata_col = "da.clusters")
+      print("recalc da.results")
+      # da.results <-
+      #   annotateNhoods(sc.integrated.milo.traj, da.results, coldata_col = "da.clusters")
       #p4 <- plotDAbeeswarm(da.results, group.by = "da.clusters") # gives a distribution view instead of UMAP
       
       #dir.create(paste(plot.path, "da", sep=""))
@@ -301,5 +304,6 @@ DifferentialAbundanceMilo <-
       #sc.integrated.milo.traj
       saveRDS(sc.integrated.milo.traj, paste0("sc_integrated_milo_traj_", condition, ".rds"))
     }
+    print("setnull")
     se.integrated$da.clusters <- NULL
   }

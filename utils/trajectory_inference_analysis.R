@@ -211,7 +211,7 @@ TrajectoryInferenceSlingshotCurved <- function(se.integrated, start.clus){
     # get log normalized counts
     to_plot <- NA
     if (length(rownames(lineage.res)) >= 100){
-      to_plot <- as.matrix(logcounts(sce)[rownames(lineage.res[order(lineage.res$Rank), ])[1:100], lineage_cells]) # get the top 100 genes and filter by
+      to_plot <- as.matrix(logcounts(sce)[rownames(lineage.res[order(lineage.res$Rank), ])[1:50], lineage_cells]) # get the top 100 genes and filter by
       #to_plot <- as.matrix(logcounts(sce)[res$id, lineage_cells]) 
     } else {
       to_plot <- as.matrix(logcounts(sce)[rownames(lineage.res[order(lineage.res$Rank), ])[1:length(rownames(lineage.res))], lineage_cells]) # get the top 100 genes

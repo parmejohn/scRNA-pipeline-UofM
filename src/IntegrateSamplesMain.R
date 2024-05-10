@@ -57,5 +57,7 @@ source(paste0(file.path(dirname(dirname(
 ))), "/utils/misc.R"))
 
 se.integrated <- IntegrateSamples(se.filtered.singlets.list, group, args$reduced_dim)
-Misc(se.integrated, slot = "co.conditions") <- args$coconditions
+if (args$coconditions[1] != 'none'){
+  Misc(se.integrated, slot = "co.conditions") <- args$coconditions
+}
 saveRDS(se.integrated, "se_integrated.rds")
