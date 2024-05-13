@@ -74,6 +74,10 @@ plotNhoodExpressionDA_fixed <-
       gsub(pattern = "\\)",
            replacement = ".",
            rownames(expr_mat)) ## To avoid problems when converting to data.frame
+        rownames(expr_mat) <-
+		gsub(pattern = "\\/",
+		replacement = ".",
+		rownames(expr_mat)) ## To avoid problems when converting to data.frame
     
     pl_df <- data.frame(t(expr_mat)) %>%
       rownames_to_column("Nhood") %>%
@@ -270,7 +274,36 @@ plotDAbeeswarm_fixed <-
     }
   }
 
-.calc_expression <- function(nhoods, data.set, subset.row=NULL){
+calcNhoodExpression <- function(x, assay="logcounts", subset.row=NULL, exprs=NULL){
+
+	    if(is(x, "Milo")){
+		            # are neighbourhoods calculated?
+		            if(ncol(nhoods(x)) == 1 & nrow(nhoods(x)) == 1){
+				                stop("No neighbourhoods found - run makeNhoods first")
+        }
+
+        if(!is.null(assay(x, assay))){
+		            n.exprs <- .calc_expression_fixed(nhoods=nhoods(x),
+							                                        data.set=assay(x, assay),
+												                                        subset.row=subset.row)
+	            nhoodExpression(x) <- n.exprs
+		                return(x)
+		            }
+	    } else if(is(x, "Matrix")){
+		            if(is.null(exprs)){
+				                stop("No expression data found. Please specific a gene expression matrix to exprs")
+	            } else{
+			                n.exprs <- .calc_expression(nhoods=x,
+								                                            data.set=exprs,
+													                                            subset.row=subset.row)
+		                x.milo <- Milo(SingleCellExperiment(assay=list(logcounts=exprs)))
+				            nhoodExpression(x.milo) <- n.exprs
+				            return(x.milo)
+					            }
+	        }
+}
+
+.calc_expression_fixed <- function(nhoods, data.set, subset.row=NULL){
   # neighbour.model <- matrix(0L, ncol=length(nhoods), nrow=ncol(data.set))
   #
   # for(x in seq_along(1:length(nhoods))){
@@ -279,9 +312,14 @@ plotDAbeeswarm_fixed <-
   
   if(!is.null(subset.row)){
     if(is(data.set[subset.row,], "Matrix")){
+	    print(dim(Matrix::t(nhoods)))
+	    print(dim(data.set[subset.row,]))
       neigh.exprs <- Matrix::tcrossprod(Matrix::t(nhoods), data.set[subset.row,])
     }else{
-      neigh.exprs <- Matrix::tcrossprod(Matrix::t(nhoods), as(as(as(data.set[subset.row,], "dMatrix"), "generalMatrix"), "unpackedMatrix"))
+	print(dim(Matrix::t(nhoods)))
+    	print(dim(as(as(as(data.set[subset.row,], "dMatrix"), "generalMatrix"), "unpackedMatrix")))
+	#neigh.exprs <- Matrix::tcrossprod(Matrix::t(nhoods), as(data.set[subset.row,], "sparseMatrix"))
+      neigh.exprs <- Matrix::tcrossprod(Matrix::t(nhoods), t(as(as(as(data.set[subset.row,], "dMatrix"), "generalMatrix"), "unpackedMatrix")))
       #neigh.exprs <- Matrix::tcrossprod(Matrix::t(nhoods), as(data.set[subset.row,], "dgeMatrix"))
     }
   } else{
