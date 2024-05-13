@@ -269,3 +269,31 @@ plotDAbeeswarm_fixed <-
       print("there are no significant spatial FDR for any neighbourhood")
     }
   }
+
+.calc_expression <- function(nhoods, data.set, subset.row=NULL){
+  # neighbour.model <- matrix(0L, ncol=length(nhoods), nrow=ncol(data.set))
+  #
+  # for(x in seq_along(1:length(nhoods))){
+  #     neighbour.model[nhoods[[x]], x] <- 1
+  # }
+  
+  if(!is.null(subset.row)){
+    if(is(data.set[subset.row,], "Matrix")){
+      neigh.exprs <- Matrix::tcrossprod(Matrix::t(nhoods), data.set[subset.row,])
+    }else{
+      neigh.exprs <- Matrix::tcrossprod(Matrix::t(nhoods), as(as(as(data.set[subset.row,], "dMatrix"), "generalMatrix"), "unpackedMatrix"))
+      #neigh.exprs <- Matrix::tcrossprod(Matrix::t(nhoods), as(data.set[subset.row,], "dgeMatrix"))
+    }
+  } else{
+    neigh.exprs <- Matrix::tcrossprod(Matrix::t(nhoods), data.set)
+  }
+  neigh.exprs <- t(apply(neigh.exprs, 2, FUN=function(XP) XP/colSums(nhoods)))
+  
+  if(is.null(subset.row)){
+    rownames(neigh.exprs) <- rownames(data.set)
+  } else{
+    rownames(neigh.exprs) <- rownames(data.set[subset.row, , drop=FALSE])
+  }
+  
+  return(neigh.exprs)
+}
