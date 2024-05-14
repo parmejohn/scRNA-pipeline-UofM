@@ -1,6 +1,8 @@
 set.seed(333)
 
 EscapeGSEA <- function(se.integrated, species, pathways){
+  se.integrated$es.clusters <- Idents(se.integrated)
+  
   dir.create('escape')
   geneset.c5 <- getGeneSets(species = species, library = 'C5', subcategory = 'BP')
 
@@ -44,29 +46,36 @@ EscapeGSEA <- function(se.integrated, species, pathways){
 
   if (length(pathways) == 1 & pathways[1] == "none"){
     ucell.markers.top5 <-  as.data.frame(ucell.markers %>% filter(p_val_adj <= 0.05) %>% group_by(cluster) %>% top_n(n = 5, wt = avg_log2FC))
-    
-    p1 <- heatmapEnrichment(se.integrated,
-                            group.by = "ident",
-                            gene.set.use = unique(ucell.markers.top5$gene),
-                            assay = "escape.UCell_normalized",
-                            scale = TRUE) +
-      theme(legend.position = "right", axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
-      ggtitle("Top 5 GO Pathways per Cluster")
-    ggsave(paste0("escape/", "escape_heatmap_top5.pdf"), p1, width = 20, height = 10)
-    
-    for (i in 1:nrow(ucell.markers.top5)){
-      p2 <- geyserEnrichment(se.integrated, 
-                             assay = "escape.UCell_normalized",
-                             group.by = "ident",
-                             gene.set = ucell.markers.top5[i,7], 
-                             facet.by = "group",
-                             scale = TRUE) +
-        theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
-        ggtitle(paste0("Geyser Enrichment: ", levels(droplevels(ucell.markers.top5[i,6])))) + 
-        theme(legend.position = "none")
-      tar.dir <- paste0("escape/", levels(droplevels(ucell.markers.top5[i,6])), "/")
-      dir.create(tar.dir)
-      ggsave(paste0(tar.dir, ucell.markers.top5[i,7], "_geyser.pdf"), p2, width = 12, height = 12)
+    if (dim(ucell.markers.top5)[1] != 0 & dim(ucell.markers.top5)[2] != 0){
+      if (length(unique(ucell.markers.top5$gene)) > 1){
+        p1 <- heatmapEnrichment(se.integrated,
+                                group.by = "es.clusters",
+                                gene.set.use = unique(ucell.markers.top5$gene),
+                                assay = "escape.UCell_normalized",
+                                scale = TRUE) +
+          theme(legend.position = "right", axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
+          ggtitle("Top 5 GO Pathways per Cluster")
+        ggsave(paste0("escape/", "escape_heatmap_top5.pdf"), p1, width = 20, height = 10)
+      } else {
+        print("Only 1 significant pathway")
+      }
+      
+      for (i in 1:nrow(ucell.markers.top5)){
+        p2 <- geyserEnrichment(se.integrated, 
+                               assay = "escape.UCell_normalized",
+                               group.by = "es.clusters",
+                               gene.set = ucell.markers.top5[i,7], 
+                               facet.by = "group",
+                               scale = TRUE) +
+          theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
+          ggtitle(paste0("Geyser Enrichment: ", levels(droplevels(ucell.markers.top5[i,6])))) + 
+          theme(legend.position = "none")
+        tar.dir <- paste0("escape/", levels(droplevels(ucell.markers.top5[i,6])), "/")
+        dir.create(tar.dir)
+        ggsave(paste0(tar.dir, ucell.markers.top5[i,7], "_geyser.pdf"), p2, width = 12, height = 12)
+      }
+    } else {
+      print("No significant pathways")
     }
   } else {
     ## if specified pathways were wanted, folders will be split by the general phrase and then filled with geyser plots
@@ -75,33 +84,42 @@ EscapeGSEA <- function(se.integrated, species, pathways){
         ucell.markers.specific <- ucell.markers[grep(pathways[i], ucell.markers$gene),]
         ucell.markers.specific.filtered <- as.data.frame(ucell.markers.specific %>% filter(p_val_adj <= 0.05) %>% group_by(cluster))
         
-        p1 <- heatmapEnrichment(se.integrated,
-                                group.by = "ident",
-                                gene.set.use = unique(ucell.markers.specific.filtered$gene),
-                                assay = "escape.UCell_normalized",
-                                scale = TRUE) +
-          theme(legend.position = "right", axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
-          ggtitle(paste0(pathways[i], " GO related Pathways"))
-        ggsave(paste0("escape/", "escape_heatmap_", pathways[i], ".pdf"), p1, width = 20, height = 10)
-        
-        for (j in 1:length(unique(ucell.markers.specific.filtered$gene))){
-          p2 <- geyserEnrichment(se.integrated, 
-                                 assay = "escape.UCell_normalized",
-                                 group.by = "ident",
-                                 gene.set = unique(ucell.markers.specific.filtered$gene)[j], 
-                                 facet.by = "group",
-                                 scale = TRUE) +
-            theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
-            ggtitle(paste0("Geyser Enrichment")) + 
-            theme(legend.position = "none")
-          tar.dir <- paste0("escape/", pathways[i], "/")
-          dir.create(tar.dir)
-          ggsave(paste0(tar.dir, unique(ucell.markers.specific.filtered$gene)[j], 
-                        "_geyser.pdf"), p2, width = 12, height = 12)
+        if (dim(ucell.markers.specific.filtered)[1] != 0 & dim(ucell.markers.specific.filtered)[2] != 0){
+          if (length(unique(ucell.markers.specific.filtered$gene)) > 1){
+            p1 <- heatmapEnrichment(se.integrated,
+                                    group.by = "es.clusters",
+                                    gene.set.use = unique(ucell.markers.specific.filtered$gene),
+                                    assay = "escape.UCell_normalized",
+                                    scale = TRUE) +
+              theme(legend.position = "right", axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
+              ggtitle(paste0(pathways[i], " GO related Pathways"))
+            ggsave(paste0("escape/", "escape_heatmap_", pathways[i], ".pdf"), p1, width = 20, height = 10)
+          } else {
+            print("Only 1 significant pathway")
+          }
+          
+          for (j in 1:length(unique(ucell.markers.specific.filtered$gene))){
+            p2 <- geyserEnrichment(se.integrated, 
+                                   assay = "escape.UCell_normalized",
+                                   group.by = "es.clusters",
+                                   gene.set = unique(ucell.markers.specific.filtered$gene)[j], 
+                                   facet.by = "group",
+                                   scale = TRUE) +
+              theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
+              ggtitle(paste0("Geyser Enrichment")) + 
+              theme(legend.position = "none")
+            tar.dir <- paste0("escape/", pathways[i], "/")
+            dir.create(tar.dir)
+            ggsave(paste0(tar.dir, unique(ucell.markers.specific.filtered$gene)[j], 
+                          "_geyser.pdf"), p2, width = 12, height = 12)
+          }
+        } else {
+          print(paste0("No significant pathways for "), pathways[i])
         }
       } else {
         print("PATHWAY WITH PHRASE DOES NOT EXIST: rerun the escape analyses with with proper name")
       }
     }
   }
+  se.integrated$es.clusters <- NULL
 }
