@@ -188,7 +188,7 @@ if (file.exists(paste0(res.loc,"data/se_integrated_escape_norm.rds"))){
 
 #' ## Trajectory Inference
 #' ### slingshot
-#+ warning=FALSE, echo=FALSE, fig.height = 10, fig.width = 10, results='asis'
+#+ warning=FALSE, echo=FALSE, fig.height = 10, fig.width = 10, results='asis', out.width = "100%"
 if (file.exists(paste0(res.loc,"plots/ti"))){
   if(file.exists(paste0(res.loc, "plots/ti/ti_start_smooth.pdf"))){
     
@@ -204,22 +204,47 @@ if (file.exists(paste0(res.loc,"plots/ti"))){
     for(i in plots){
       ReadImageAndTrim(i)
     }
-  } else {
+  } else if (file.exists(paste0(res.loc,"plots/ti/ti_no_start_not_smooth.pdf"))) {
     ReadImageAndTrim(paste0(res.loc,"plots/ti/ti_no_start_not_smooth.pdf"))
+  } else {
+    print("slingshot analysis was set to false, if you wanted this analysis please set '-run_sling true'")
   }
 } else {
   print("slingshot analysis was set to false, if you wanted this analysis please set '-run_sling true'")
 }
 
 #' ### tempora
-#+ warning=FALSE, echo=FALSE, fig.height = 10, fig.width = 10, results='asis'
+#+ warning=FALSE, echo=FALSE, fig.height = 10, fig.width = 10, results='asis', out.width = "100%"
 if(file.exists(paste0(res.loc, "data/se_integrated_tempora_seurat_v3.rds"))){
-  ReadImageAndTrim(paste0(res.loc, "plots/ti/tempora_screeplot.pdf"))
-  ReadImageAndTrim(paste0(res.loc, "plots/ti/tempora_inferred_lineages.pdf"))
+  plots <- list.files(paste0(res.loc, "plots/ti/"), full.names=TRUE)
+  plots <- plots[grep("tempora", plots)]
+  
+  for(i in plots){
+    ReadImageAndTrim(i)
+  }
+  
+  # ReadImageAndTrim(paste0(res.loc, "plots/ti/tempora_screeplot.pdf"))
+  # ReadImageAndTrim(paste0(res.loc, "plots/ti/tempora_inferred_lineages.pdf"))
 } else {
-  print("no time was specified under co-conditions, please rerun with '--co_conditions ...,time,...' and ensure your sample names contain it")
+  print("no time was specified under co-conditions or as the main condition, please rerun with '--co_conditions ...,time,...' or '--main_time true' and ensure your sample names contain it")
 }
 
+#' ### psupertime
+#+ warning=FALSE, echo=FALSE, fig.height = 10, fig.width = 10, results='asis'
+if(dir.exists(paste0(res.loc, "plots/ti/psupertime_plots/"))){
+  plots <- list.files(paste0(res.loc, "plots/ti/psupertime_plots/"), full.names=TRUE, recursive = TRUE)
+  plots <- plots[grep("psuper_top_20_gene", plots)]
+  
+  for(i in 1:length(plots)){
+    if (i <= 4){
+      ReadImageAndTrim(plots[i])
+    } else {
+      break
+    }
+  }
+} else {
+  print("no time was specified under co-conditions or as the main condition, please rerun with '--co_conditions ...,time,...' or '--main_time true' and ensure your sample names contain it")
+}
 
 #' ## Differential Abundance analysis with miloR
 #' Sorted by character string and numbers, where the first element will have a negative logFC and vice versa. Ex. D100, D56, D70 = D56, D70, D100.

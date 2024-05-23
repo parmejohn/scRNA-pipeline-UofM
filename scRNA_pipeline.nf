@@ -16,6 +16,7 @@ params.test_data = 0
 params.co_conditions = 'none'
 params.reduced_dim = 'integrated.cca'
 params.pathways = 'none'
+params.main_time = false
 
 include {AMBIENTRNAREMOVAL} from './modules/ambientremoval.nf'
 include {FILTERLOWQUALDOUBLETS} from './modules/filterlowqualdoublets.nf'
@@ -27,6 +28,7 @@ include {TRAJECTORYINFERENCE} from './modules/trajectoryinference.nf'
 include {ESCAPEANALYSIS} from './modules/escapeanalysis.nf'
 include {DAANALYSIS} from './modules/daanalysis.nf'
 include {TEMPORAANALYSIS} from './modules/temporaanalysis.nf'
+include {PSUPERTIME} from './modules/psupertime.nf'
 include {SUMMARYREPORT} from './modules/summaryreport.nf'
 
 process INITIALIZEFOLDERS {
@@ -90,10 +92,22 @@ workflow {
   m = params.co_conditions ==~ '.*time.*'
   assert m instanceof Boolean
   if (m){
-    TEMPORAANALYSIS(identified_ch)
+    TEMPORAANALYSIS(identified_ch, "no")
     tempora_ch = TEMPORAANALYSIS.out.report
+    
+    PSUPERTIME(identified_ch, "no")
+    psupertime_ch = PSUPERTIME.out.report
+    
+  } else if (params.main_time) {
+    TEMPORAANALYSIS(identified_ch, "yes")
+    tempora_ch = TEMPORAANALYSIS.out.report
+    
+    PSUPERTIME(identified_ch, "yes")
+    psupertime_ch = PSUPERTIME.out.report
+    
   } else {
-    tempora_ch = "SKIPPING TEMPORA, no time co-condition set"
+    tempora_ch = "SKIPPING TEMPORA, no time condition set"
+    psupertime_ch = "SKIPPING PSUPERTIME, no time condition set"
   }
 
     COMPARATIVEANALYSIS(identified_ch, params.species)
@@ -116,6 +130,7 @@ workflow {
         DAANALYSIS.out.report,
         escape_ch,
         tempora_ch,
+        psupertime_ch,
         "${params.outdir}/analysis/",
         new_opt_clust
         )

@@ -27,6 +27,13 @@ parser$add_argument(
   nargs = 1,
   help = 'Contains CellRanger count outputs folder seperated by condition'
 )
+parser$add_argument(
+  '-main_time',
+  type = "character",
+  required = TRUE,
+  nargs = 1,
+  help = 'Is the main condition time?'
+)
 args <- parser$parse_args()
 
 thisFile <- function() {
@@ -54,5 +61,5 @@ source(paste0(file.path(dirname(dirname(
 input <- args$i
 se.integrated <- readRDS(input)
 
-se.integrated.tempora.seurat.v3 <- RunTempora(se.integrated)
+se.integrated.tempora.seurat.v3 <- RunTempora(se.integrated, args$main_time)
 saveRDS(se.integrated.tempora.seurat.v3, "se_integrated_tempora_seurat_v3.rds")

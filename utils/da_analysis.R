@@ -15,12 +15,8 @@ CellProportionByCluster <- function(se.integrated) {
       as.data.frame()
     cond.num$group <- i
     group.num <- rbind(group.num, cond.num)
-    # treat.num <- subset(se.integrated, group == ident.2) %>% Idents() %>% table() %>%
-    #   as.data.frame()
-    # treat.num$group <- ident.2
   }
   
-  # group.num <- rbind(ctrl.num, treat.num) %>%
   group.num <- dplyr::rename(group.num, cluster = '.')
   
   cond.prop.plot <- group.num %>%
@@ -54,8 +50,7 @@ DifferentialAbundanceMilo <-
            prop = 0.05) {
     DefaultAssay(se.integrated) <- "RNA"
     se.integrated$da.clusters <- Idents(se.integrated)
-    #se.integrated@reductions[["harmony"]]@stdev <- as.numeric(apply(se.integrated@reductions[["harmony"]]@cell.embeddings, 2, stats::sd))
-    
+
     # make sure that reduced dims is carried over to save on time
     sc.integrated <-
       as.SingleCellExperiment(se.integrated,  assay = "RNA") # need to convert Seurat to SCE object
@@ -63,64 +58,18 @@ DifferentialAbundanceMilo <-
     
     # Constructing graph -> computes a k-nearest neighbour graph; Graph vertex = single cell, Edges = neighbors
     # built from PCA -> so if using integrated dataset the PCA will be corrected for using MNN
-    # sc.integrated.milo.traj <-
-    #   buildGraph(
-    #     sc.integrated.milo,
-    #     k = k,
-    #     d = d,
-    #     reduced.dim = reduced.dims
-    #   ) # d = use the corrected reduction; k is increased or decreased according to plotNhoodSizeHist but usually the same as building knn
-    # 
+
     # # Defining neigborhoods -> group of cells connected by an edge in KNN graph to an index cell
-    # sc.integrated.milo.traj <-
-    #   makeNhoods(
-    #     sc.integrated.milo.traj,
-    #     prop = prop,
-    #     k = k,
-    #     d = d,
-    #     reduced_dims = reduced.dims,
-    #     refined = TRUE
-    #   )
+
     # # If distribution peak is not ideal, have to change previous k values
     # # can calc bins automatically
     # # how many cells form each neighborhood
     # plotNhoodSizeHist(sc.integrated.milo.traj) # official vignette says it wants the distribution to peak between 50-100 but others say 5 x N samples. Using official vignette's suggestion for now
     # 
     # # counting the cells -> variation in cell numbers between replicates for the same cond to test for DA
-    # sc.integrated.milo.traj <-
-    #   countCells(sc.integrated.milo.traj,
-    #              meta.data = as.data.frame(colData(sc.integrated.milo.traj)),
-    #              sample = sample)
-    # 
-    # # Setting up the design
-    # sc.integrated.milo.traj.design <-
-    #   data.frame(colData(sc.integrated.milo.traj))[, c(sample, condition)]
-    # sc.integrated.milo.traj.design <-
-    #   distinct(sc.integrated.milo.traj.design)
-    # rownames(sc.integrated.milo.traj.design) <-
-    #   sc.integrated.milo.traj.design$sample
-    # ## Reorder rownames to match columns of nhoodCounts(milo)
-    # sc.integrated.milo.traj.design <-
-    #   sc.integrated.milo.traj.design[colnames(nhoodCounts(sc.integrated.milo.traj)), , drop =
-    #                                    FALSE]
-    # 
+    
     # # store distances -> store distances btw nearest neighbors -> Milo uses this downstream for FDR correction
-    # # this step takes long to compute
-    # print("starting long compute time")
-    # sc.integrated.milo.traj <-
-    #   calcNhoodDistance(sc.integrated.milo.traj,
-    #                     d = d,
-    #                     reduced.dim = reduced.dims)
-    # print("end of long compute time")
-    # 
-    # da.results <-
-    #   testNhoods(
-    #     sc.integrated.milo.traj,
-    #     design = ~ group,
-    #     design.df = sc.integrated.milo.traj.design,
-    #     reduced.dim = reduced.dims
-    #   )
-    # 
+ 
     ##### testing different method
     ## Build KNN graph neighbourhoods
     milo.obj <- buildGraph(sc.integrated.milo, k=k, d=d, reduced.dim = reduced.dims)
@@ -184,9 +133,8 @@ DifferentialAbundanceMilo <-
       logcounts(sc.integrated.milo.traj) <-
         log1p(counts(sc.integrated.milo.traj))
       print(paste0("buzzbuzz ", condition))
-      #da.results$da.clusters <- as.numeric(da.results$da.clusters) # if default seurat_clusters?
-      
-      p4 <- plotDAbeeswarm_fixed(da.results, group.by = "da.clusters") # gives a distribution view instead of UMAP
+
+      p4 <- plotDAbeeswarm_fixed(da.results, group.by = "da.clusters", alpha = 0.05) # gives a distribution view instead of UMAP
       if (is.ggplot(p4)) {
       	p4 <- p4 + ggtitle(paste0("DA FC Distribution: ", condition))
             PrintSave(p4, paste0("milo_DA_fc_distribution_", condition, ".pdf"))
@@ -198,25 +146,15 @@ DifferentialAbundanceMilo <-
         logcounts(sc.integrated.milo.traj) <-
           log1p(counts(sc.integrated.milo.traj))
         
-        n.da <- sum(da.results$SpatialFDR < 0.1)
+        n.da <- sum(da.results$SpatialFDR < 0.05)
         dge_smp <- 0
         if (!is.na(n.da) & n.da == 0) {
           dge_smp <- NULL
         } else {
-          # dge_smp <- findNhoodMarkers( ### METHOD IS BEING DEPRECATED
-          #   sc.integrated.milo.traj,
-          #   da.results,
-          #   assay = "logcounts",
-          #   gene.offset = FALSE,
-          #   da.fdr = 0.1,
-          #   aggregate.samples = TRUE,
-          #   sample_col = sample,
-          #   subset.nhoods = da.results$da.clusters %in% c(i)
-          # ) # seeing if this paste method works
           dge_smp <- groupNhoods(
             sc.integrated.milo.traj,
             da.results,
-            da.fdr = 0.1,
+            da.fdr = 0.05,
             subset.nhoods = da.results$da.clusters %in% c(i)
           )
           dge_smp <- findNhoodGroupMarkers(
@@ -229,7 +167,6 @@ DifferentialAbundanceMilo <-
             subset.nhoods = da.results$da.clusters %in% c(i)
           )
           print("found group markers")
-          #print(dge_smp)
         }
         
         if (!is.null(dge_smp) | length(dge_smp) != 0) {
@@ -248,7 +185,7 @@ DifferentialAbundanceMilo <-
             #paste("traj")
             
             da.results.filt <-
-              filter(da.results, da.clusters == i & SpatialFDR < 0.1) # Error in hclust(dist(expr_mat)) : must have n >= 2 objects to cluster -> filtered sets mustve had nothing
+              filter(da.results, da.clusters == i & SpatialFDR < 0.05) # Error in hclust(dist(expr_mat)) : must have n >= 2 objects to cluster -> filtered sets mustve had nothing
             #print("dafilt")
             
             if (!is.null(dim(da.results.filt)[1]) & !is.null(markers)) {
@@ -269,7 +206,7 @@ DifferentialAbundanceMilo <-
                     group = c(i),
                     condition = condition
                   ) + 
-                  ggtitle(paste0(i, ": DA DEGs for condition ", condition))
+                  ggtitle(paste0(i, ": DA DEGs for ", condition))
                 PrintSave(p5, paste0("milo_DA_DE_heatmap_", i, "_", condition, ".pdf"))
               }
             }
@@ -291,21 +228,12 @@ DifferentialAbundanceMilo <-
         plotNhoodGraphDA(sc.integrated.milo.traj,
                          da.results,
                          layout = "UMAP",
-                         alpha = 0.1) +  # for my UMAP negative FC denoted CTRL and positive values denoted TREAT -> will have to look at your original UMAP for density of cells
+                         alpha = 0.05) +  # for my UMAP negative FC denoted CTRL and positive values denoted TREAT -> will have to look at your original UMAP for density of cells
       # also can look at the your design -> should be ordered correspondingly; https://github.com/MarioniLab/miloR/issues/81
         ggtitle(paste0("DA Analysis UMAP for ", condition))
       
       print("recalc da.results")
-      # da.results <-
-      #   annotateNhoods(sc.integrated.milo.traj, da.results, coldata_col = "da.clusters")
-      #p4 <- plotDAbeeswarm(da.results, group.by = "da.clusters") # gives a distribution view instead of UMAP
-      
-      #dir.create(paste(plot.path, "da", sep=""))
-      #PrintSave(p1, "milo_pval_distribution.pdf")
-      #PrintSave(p2, "milo_volcano_plot.pdf")
       PrintSave(p3, paste0("milo_DA_umap_", condition,".pdf"))
-      #PrintSave(p4, "milo_DA_fc_distribution.pdf")
-      #sc.integrated.milo.traj
       saveRDS(sc.integrated.milo.traj, paste0("sc_integrated_milo_traj_", condition, ".rds"))
     }
     print("setnull")

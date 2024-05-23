@@ -1,21 +1,20 @@
-process TEMPORAANALYSIS {
+process PSUPERTIME {
     debug true
-    //cache 'deep'
     cache 'deep'
 
     publishDir (
-        path: "$params.outdir/analysis/data/",
+        path: "$params.outdir/analysis/plots/ti/",
         mode: 'copy',
         overwrite: true,
-        pattern: "*.rds"
+        pattern: "*plots"
     )
     publishDir (
-        path: "$params.outdir/analysis/plots/ti",
+        path: "$params.outdir/analysis/data/ti/",
         mode: 'copy',
         overwrite: true,
-        pattern: "*.pdf"
+        pattern: "*data"
     )
-
+    
     containerOptions "--bind $params.bind"
 
     input:
@@ -23,13 +22,13 @@ process TEMPORAANALYSIS {
     val main_time
 
     output:
-    path "*.pdf"
-    path "*.rds"
+    path "psupertime_plots"
+    path "psupertime_data"
     val true, emit: report
-    // val true, emit: report
+
     
     script:
        """
-        ${projectDir}/src/TemporaMain.R --i $integrated -main_time $main_time
+        ${projectDir}/src/PsupertimeMain.R --i $integrated -main_time $main_time
        """
 }
