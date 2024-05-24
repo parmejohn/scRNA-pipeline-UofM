@@ -73,5 +73,6 @@ DifferentialAbundanceMilo(
   'sample',
   k = args$clusters_optimal,
   d = 50,
-  toupper(args$reduced_dim)
+  toupper(args$reduced_dim),
+  fdr.cutoff = 0.01
 )

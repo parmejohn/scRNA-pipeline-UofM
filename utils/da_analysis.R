@@ -47,7 +47,8 @@ DifferentialAbundanceMilo <-
            k,
            d,
            reduced.dims,
-           prop = 0.05) {
+           prop = 0.05,
+           fdr.cutoff = 0.05) {
     DefaultAssay(se.integrated) <- "RNA"
     se.integrated$da.clusters <- Idents(se.integrated)
 
@@ -118,7 +119,7 @@ DifferentialAbundanceMilo <-
       p2 <-
         ggplot(da.results, aes(logFC,-log10(SpatialFDR))) + #volcano plot to see how many neighborhoods are above a fdr threshold
         geom_point() +
-        geom_hline(yintercept = 1) +## Mark significance threshold (10% FDR)
+        geom_hline(yintercept = -log10(fdr.cutoff)) + ## Mark significance threshold (10% FDR)
         ggtitle(paste0("Significant Neighborhoods over ", condition))
       PrintSave(p1, paste0("milo_pval_distribution_", condition, ".pdf"))
       PrintSave(p2, paste0("milo_volcano_plot_", condition, ".pdf"))
@@ -134,7 +135,7 @@ DifferentialAbundanceMilo <-
         log1p(counts(sc.integrated.milo.traj))
       print(paste0("buzzbuzz ", condition))
 
-      p4 <- plotDAbeeswarm_fixed(da.results, group.by = "da.clusters", alpha = 0.05) # gives a distribution view instead of UMAP
+      p4 <- plotDAbeeswarm_fixed(da.results, group.by = "da.clusters", alpha = fdr.cutoff) # gives a distribution view instead of UMAP
       if (is.ggplot(p4)) {
       	p4 <- p4 + ggtitle(paste0("DA FC Distribution: ", condition))
             PrintSave(p4, paste0("milo_DA_fc_distribution_", condition, ".pdf"))
@@ -146,7 +147,7 @@ DifferentialAbundanceMilo <-
         logcounts(sc.integrated.milo.traj) <-
           log1p(counts(sc.integrated.milo.traj))
         
-        n.da <- sum(da.results$SpatialFDR < 0.05)
+        n.da <- sum(da.results$SpatialFDR < fdr.cutoff)
         dge_smp <- 0
         if (!is.na(n.da) & n.da == 0) {
           dge_smp <- NULL
@@ -154,7 +155,7 @@ DifferentialAbundanceMilo <-
           dge_smp <- groupNhoods(
             sc.integrated.milo.traj,
             da.results,
-            da.fdr = 0.05,
+            da.fdr = fdr.cutoff,
             subset.nhoods = da.results$da.clusters %in% c(i)
           )
           dge_smp <- findNhoodGroupMarkers(
@@ -185,7 +186,7 @@ DifferentialAbundanceMilo <-
             #paste("traj")
             
             da.results.filt <-
-              filter(da.results, da.clusters == i & SpatialFDR < 0.05) # Error in hclust(dist(expr_mat)) : must have n >= 2 objects to cluster -> filtered sets mustve had nothing
+              filter(da.results, da.clusters == i & SpatialFDR < fdr.cutoff) # Error in hclust(dist(expr_mat)) : must have n >= 2 objects to cluster -> filtered sets mustve had nothing
             #print("dafilt")
             
             if (!is.null(dim(da.results.filt)[1]) & !is.null(markers)) {
@@ -204,7 +205,8 @@ DifferentialAbundanceMilo <-
                     cluster_features = TRUE,
                     show_rownames = FALSE,
                     group = c(i),
-                    condition = condition
+                    condition = condition,
+                    alpha = fdr.cutoff
                   ) + 
                   ggtitle(paste0(i, ": DA DEGs for ", condition))
                 PrintSave(p5, paste0("milo_DA_DE_heatmap_", i, "_", condition, ".pdf"))
@@ -228,7 +230,7 @@ DifferentialAbundanceMilo <-
         plotNhoodGraphDA(sc.integrated.milo.traj,
                          da.results,
                          layout = "UMAP",
-                         alpha = 0.05) +  # for my UMAP negative FC denoted CTRL and positive values denoted TREAT -> will have to look at your original UMAP for density of cells
+                         alpha = fdr.cutoff) +  # for my UMAP negative FC denoted CTRL and positive values denoted TREAT -> will have to look at your original UMAP for density of cells
       # also can look at the your design -> should be ordered correspondingly; https://github.com/MarioniLab/miloR/issues/81
         ggtitle(paste0("DA Analysis UMAP for ", condition))
       
