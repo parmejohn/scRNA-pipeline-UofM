@@ -1,36 +1,5 @@
 set.seed(333)
 
-CellProportionByCluster <- function(se.integrated) {
-  conditions <- unique(se.integrated@meta.data[["group"]])
-  group.num <- data.frame(
-    . = character(),
-    Freq = character(),
-    group = character(),
-    stringsAsFactors = FALSE
-  )
-  
-  for (i in conditions) {
-    cond.num <-
-      subset(se.integrated, group == i) %>% Idents() %>% table() %>%
-      as.data.frame()
-    cond.num$group <- i
-    group.num <- rbind(group.num, cond.num)
-  }
-  
-  group.num <- dplyr::rename(group.num, cluster = '.')
-  
-  cond.prop.plot <- group.num %>%
-    group_by(cluster) %>%
-    mutate(prop = Freq / sum(Freq)) %>%
-    ggplot(aes(x = cluster, y = prop)) +
-    geom_col(aes(color = group, fill = group),
-             position = position_dodge(0.8),
-             width = 0.7) +
-    theme(axis.text.x = element_text(angle = 90)) +
-    ylim(0, 1)
-  PrintSave(cond.prop.plot, 'condition_proportion_per_cluster.pdf')
-}
-
 #se.integrated <- readRDS("/home/projects/sc_pipelines/scrna_deanne_harmony_low_res/pipeline/analysis/data/se_integrated_auto_label.rds")
 # k = 16
 # d = 50
@@ -171,8 +140,12 @@ DifferentialAbundanceMilo <-
         }
         
         if (!is.null(dge_smp) | length(dge_smp) != 0) {
-          dge.smp.filt <- dge_smp %>%
-            filter_at(vars(starts_with("adj.P.Val_")), any_vars(. <= 0.01))
+          # dge.smp.filt <- dge_smp %>%
+          #   filter_at(vars(starts_with("adj.P.Val_")), any_vars(. <= 0.01)) %>%
+          #   filter_at(vars(starts_with("logFC_")), any_vars(abs(.) >= 1))
+          
+          dge.smp.filt <- dynamic_filter_function(dge_smp)
+          
           print("renaming genes")
           markers <- dge.smp.filt[, "GeneID"]
           if (!is.null(markers)){
@@ -195,7 +168,7 @@ DifferentialAbundanceMilo <-
                 # have to check if there are any that meet the spatialFDR or marker cutoff to begin with
                 print("plotting deg")
                 p5 <-
-                  plotNhoodExpressionDA_fixed(
+                  plotNhoodExpressionDA_fixed (
                     sc.integrated.milo.traj,
                     da.results.filt,
                     features = markers,

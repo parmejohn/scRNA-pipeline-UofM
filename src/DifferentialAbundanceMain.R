@@ -14,6 +14,8 @@ library(SingleCellExperiment)
 library(patchwork)
 library(ggbeeswarm)
 library(gtools)
+library(purrr)
+library(rlang)
 
 set.seed(333)
 
@@ -73,6 +75,5 @@ DifferentialAbundanceMilo(
   'sample',
   k = args$clusters_optimal,
   d = 50,
-  toupper(args$reduced_dim),
-  fdr.cutoff = 0.01
+  toupper(args$reduced_dim)
 )

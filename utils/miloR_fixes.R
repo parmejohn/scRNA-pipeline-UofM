@@ -8,12 +8,13 @@ set.seed(333)
 # scale_to_1 = TRUE
 # cluster_features = TRUE
 # show_rownames = FALSE
+# alpha = 0.01
 
 plotNhoodExpressionDA_fixed <-
   function(x,
            da.res,
            features,
-           alpha = 0.1,
+           alpha = 0.05,
            subset.nhoods = NULL,
            cluster_features = FALSE,
            assay = "logcounts",
@@ -85,7 +86,9 @@ plotNhoodExpressionDA_fixed <-
       inner_join(da.res, by = "Nhood") %>% # changed from a left join since this will save on compute time
       mutate(logFC_rank = percent_rank(logFC))
     
-    pl_df_t <- column_to_rownames(pl_df, "Nhood") %>% select(1:(length(pl_df)-10)) %>% t()
+    pl_df_sig <- subset(pl_df, SpatialFDR < alpha)
+    
+    pl_df_t <- column_to_rownames(pl_df_sig, "Nhood") %>% select(1:(length(pl_df_sig)-10)) %>% t()
     write.table(pl_df_t, paste0("da_", group, "_markers_by_neighborhood_", condition, ".txt"), quote = FALSE,row.names = T, sep = "\t", col.names = T)
     
     ## Top plot: nhoods ranked by DA log FC
@@ -203,7 +206,7 @@ plotNhoodExpressionDA_fixed <-
 plotDAbeeswarm_fixed <-
   function(da.res,
            group.by = NULL,
-           alpha = 0.1,
+           alpha = 0.05,
            subset.nhoods = NULL) {
     if (!is.null(group.by)) {
       if (!group.by %in% colnames(da.res)) {
@@ -334,4 +337,19 @@ calcNhoodExpression <- function(x, assay="logcounts", subset.row=NULL, exprs=NUL
   }
   
   return(neigh.exprs)
+}
+
+## this function will take into account which genes has a high enough logFC and adj.Pval after performing DEGs on the group of neighborhoods in a given cluster
+dynamic_filter_function <- function(data, logfc_pattern = "^logFC_", pval_pattern = "^adj\\.P.Val_", logfc_threshold = 1, pval_threshold = 0.01) {
+  logfc_cols <- grep(logfc_pattern, names(data), value = TRUE)
+  pval_cols <- grep(pval_pattern, names(data), value = TRUE)
+  
+  filter_expr <- purrr::map2(logfc_cols, pval_cols, function(logfc_col, pval_col) {
+    rlang::expr((abs(!!rlang::sym(logfc_col)) >= logfc_threshold & !!rlang::sym(pval_col) <= pval_threshold))
+  }) %>%
+    purrr::reduce(~rlang::expr((!!.x) | (!!.y)))
+  #print(filter_expr)
+  
+  data %>%
+    filter(!!filter_expr)
 }
