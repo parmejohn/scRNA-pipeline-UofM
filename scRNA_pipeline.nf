@@ -122,7 +122,7 @@ workflow {
 	}
 	println escape_ch
 
-    DAANALYSIS(identified_ch, new_opt_clust, params.reduced_dim)
+    DAANALYSIS(identified_ch, new_opt_clust, params.reduced_dim, params.species)
 
     SUMMARYREPORT(
         COMPARATIVEANALYSIS.out.report,

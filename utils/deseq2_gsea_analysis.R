@@ -88,7 +88,7 @@ DESeq2ConditionPerCluster <-  function(se.integrated, species){
 }
 
 GseaComparison <- function(de.markers, cluster.name, ident.1, ident.2, fgsea.sets){
-  cluster.genes<- de.markers %>%
+  cluster.genes <- de.markers %>%
     arrange(desc(avg_log2FC)) %>% 
     dplyr::select(gene, avg_log2FC) # use avg_log2FC as ranking for now; https://www.biostars.org/p/9526168/
   

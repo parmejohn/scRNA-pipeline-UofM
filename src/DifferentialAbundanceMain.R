@@ -16,6 +16,8 @@ library(ggbeeswarm)
 library(gtools)
 library(purrr)
 library(rlang)
+library(fgsea)
+library(msigdbr)
 
 set.seed(333)
 
@@ -37,6 +39,14 @@ parser$add_argument('-reduced_dim',
                     type = "character",
                     nargs = 1,
                     help = 'Reduced dimensions used')
+parser$add_argument(
+  '-species',
+  '--s',
+  type = "character",
+  required = TRUE,
+  nargs = 1,
+  help = 'Species name (Mus musculus, Homo sapiens); CASE-SENSITIVE'
+)
 args <- parser$parse_args()
 
 indir <- args$i
@@ -68,6 +78,15 @@ source(paste0(file.path(dirname(dirname(
 ##### Differential Abundance #####
 print("Differential Abundance")
 
+species <- NA
+if (args$s == "musmusculus") {
+  species <- "Mus musculus"
+} else if (args$s == "homosapiens") {
+  species <- "Homo sapiens"
+} else {
+  print("bad")
+}
+
 # make sure idents are set correctly
 # Idents(object = se.integrated) <- "celltype"
 DifferentialAbundanceMilo(
@@ -75,5 +94,6 @@ DifferentialAbundanceMilo(
   'sample',
   k = args$clusters_optimal,
   d = 50,
-  toupper(args$reduced_dim)
+  toupper(args$reduced_dim),
+  species
 )

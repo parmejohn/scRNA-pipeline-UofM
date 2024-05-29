@@ -1,10 +1,10 @@
 set.seed(333)
 
-#se.integrated <- readRDS("/home/projects/sc_pipelines/scrna_deanne_harmony_low_res/pipeline/analysis/data/se_integrated_auto_label.rds")
+# se.integrated <- readRDS("/research/2024_scrnaseq_pipeline/organoid_work/organoid_3k_ti_changes/pipeline/analysis/data/se_integrated_auto_label.rds")
 # k = 16
 # d = 50
 # sample = "sample"
-# condition = "group"
+# condition = "time"
 # reduced.dims = "INTEGRATED.CCA"
 # prop = 0.05
 # 
@@ -25,6 +25,8 @@ DifferentialAbundanceMilo <-
     sc.integrated <-
       as.SingleCellExperiment(se.integrated,  assay = "RNA") # need to convert Seurat to SCE object
     sc.integrated.milo <- Milo(sc.integrated) # make a Milo obj
+    m_df <- msigdbr(species = species, category = "C5", subcategory = "BP") # dont need to reload the dataset every time for GSEA
+    fgsea.sets <- m_df %>% split(x = .$gene_symbol, f = .$gs_name)
     
     # Constructing graph -> computes a k-nearest neighbour graph; Graph vertex = single cell, Edges = neighbors
     # built from PCA -> so if using integrated dataset the PCA will be corrected for using MNN
@@ -43,7 +45,7 @@ DifferentialAbundanceMilo <-
     ##### testing different method
     ## Build KNN graph neighbourhoods
     milo.obj <- buildGraph(sc.integrated.milo, k=k, d=d, reduced.dim = reduced.dims)
-    milo.obj <- makeNhoods(milo.obj, k=k, d=d, refined=T, prop=0.2, refinement_scheme="graph", reduced_dims = reduced.dims)
+    milo.obj <- makeNhoods(milo.obj, k=k, d=d, refined=T, prop=prop, refinement_scheme="graph", reduced_dims = reduced.dims)
 
     ## Count cells in nhoods
     milo.obj <- countCells(milo.obj, samples=sample, meta.data=as.data.frame(colData(milo.obj)))
@@ -146,6 +148,15 @@ DifferentialAbundanceMilo <-
           
           dge.smp.filt <- dynamic_filter_function(dge_smp)
           
+          ### perform GSEA analyses given the marker genes
+          dge.smp.filt.avg.fc <- column_to_rownames(dge.smp.filt, "GeneID")
+          dge.smp.filt.avg.fc <- select(dge.smp.filt.avg.fc, c(contains("logFC_")))
+          dge.smp.filt.avg.fc$avg_log2FC <- rowMeans(dge.smp.filt.avg.fc)
+          dge.smp.filt.avg.fc <- rownames_to_column(dge.smp.filt.avg.fc, "gene")
+          write.table(dge.smp.filt.avg.fc, paste0("da_", i, "_markers_avg_logfc_", condition,".txt"), quote = FALSE,row.names = T, sep = "\t", col.names = T)
+          
+          DAGseaComparison(dge.smp.filt.avg.fc, i, condition, fgsea.sets)
+          
           print("renaming genes")
           markers <- dge.smp.filt[, "GeneID"]
           if (!is.null(markers)){
@@ -179,7 +190,8 @@ DifferentialAbundanceMilo <-
                     show_rownames = FALSE,
                     group = c(i),
                     condition = condition,
-                    alpha = fdr.cutoff
+                    alpha = fdr.cutoff,
+                    avg_logfc_df = dge.smp.filt.avg.fc
                   ) + 
                   ggtitle(paste0(i, ": DA DEGs for ", condition))
                 PrintSave(p5, paste0("milo_DA_DE_heatmap_", i, "_", condition, ".pdf"))

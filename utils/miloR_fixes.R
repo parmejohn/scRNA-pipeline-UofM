@@ -22,7 +22,8 @@ plotNhoodExpressionDA_fixed <-
            show_rownames = TRUE,
            highlight_features = NULL,
            group = NULL,
-           condition = NULL) {
+           condition = NULL,
+           avg_logfc_df) {
     if (length(features) <= 0 | is.null(features)) {
       stop("features is empty")
     }
@@ -86,10 +87,10 @@ plotNhoodExpressionDA_fixed <-
       inner_join(da.res, by = "Nhood") %>% # changed from a left join since this will save on compute time
       mutate(logFC_rank = percent_rank(logFC))
     
-    pl_df_sig <- subset(pl_df, SpatialFDR < alpha)
+    #pl_df_sig <- subset(pl_df, SpatialFDR < alpha)
     
-    pl_df_t <- column_to_rownames(pl_df_sig, "Nhood") %>% select(1:(length(pl_df_sig)-10)) %>% t()
-    write.table(pl_df_t, paste0("da_", group, "_markers_by_neighborhood_", condition, ".txt"), quote = FALSE,row.names = T, sep = "\t", col.names = T)
+    pl_df_t <- column_to_rownames(pl_df, "Nhood") %>% select(1:(length(pl_df)-10)) %>% t()
+    #write.table(pl_df_t, paste0("da_", group, "_markers_by_neighborhood_", condition, ".txt"), quote = FALSE,row.names = T, sep = "\t", col.names = T)
     
     ## Top plot: nhoods ranked by DA log FC
     pl_top <- pl_df %>%
@@ -146,7 +147,7 @@ plotNhoodExpressionDA_fixed <-
         mutate(label = ifelse(feature %in% highlight_features, as.character(feature), NA))
     }
     
-    pl_bottom <- pl_df %>%
+    pl_bottom_old <- pl_df %>%
       ggplot(aes(logFC_rank, feature, fill = avg_expr)) +
       geom_tile() +
       scale_fill_viridis_c(option = "magma", name = "Avg.Expr.") +
@@ -164,6 +165,26 @@ plotNhoodExpressionDA_fixed <-
         legend.margin = margin(0, 0, 0, 0),
         legend.box.margin = margin(10, 10, 10, 10)
       )
+    
+    col_order <- order(pl_df$logFC_rank)
+    col_order <- unique(pl_df[col_order,]$Nhood)
+    
+    expr_mat_filt <- as.data.frame(expr_mat) %>% select(as.character(unique(da.res$Nhood)))
+    
+    pl_bottom <- Heatmap(as.matrix(expr_mat_filt),
+                  name = "Scaled Gene Expression", 
+                  show_column_names = FALSE,
+                  show_row_names = show_rownames,
+                  row_names_gp = gpar(fontsize = 6),
+                  height = 6,
+                  width = 6,
+                  show_column_dend = FALSE,
+                  show_row_dend = FALSE,
+                  column_title = "Neighbourhoods",
+                  column_title_side = "bottom",
+                  km = 10,
+                  show_parent_dend_line = FALSE,
+                  column_order = as.character(col_order))
     
     if (!is.null(highlight_features)) {
       pl_bottom <- pl_bottom +
@@ -186,17 +207,34 @@ plotNhoodExpressionDA_fixed <-
       
     }
     
-    if (isFALSE(show_rownames)) {
-      pl_bottom <- pl_bottom +
-        theme(axis.text.y = element_blank())
-    }
+    # if (isFALSE(show_rownames)) {
+    #   pl_bottom <- pl_bottom +
+    #     theme(axis.text.y = element_blank())
+    # }
     
     ## Assemble plot
-    (pl_top / pl_bottom) +
-      plot_layout(heights = c(1, 4), guides = "collect") &
-      theme(legend.justification = c(0, 1),
-            legend.margin = margin(0, 0, 0, 50))
+    # (pl_top / pl_bottom) +
+    #   plot_layout(heights = c(1, 4), guides = "collect") &
+    #   theme(legend.justification = c(0, 1),
+    #         legend.margin = margin(0, 0, 0, 50))
+    grob = grid.grabExpr(draw(pl_bottom, padding = unit(c(1, 1.25, 1, 1.8), "cm")))
+    grid.arrange(pl_top, grob, nrow = 2, heights = c(1,4))
+    
+    pl_bottom <- draw(pl_bottom)
+    rcl.list <- row_order(pl_bottom)
+
+    print("Printing gene + cluster table for DEGs in miloR")
+    clu_df <- lapply(names(rcl.list), function(j){
+      out <- data.frame(GeneID = rownames(as.data.frame(expr_mat_filt)[rcl.list[[j]],]), # for some reason rownames cant return a single row value in a matrix; have to convert matrix into a df first
+                        Cluster = paste0("cluster", j),
+                        stringsAsFactors = FALSE)
+      return(out)
+    })  %>%  #pipe (forward) the output 'out' to the function rbind to create 'clu_df'
+      do.call(rbind, .)
+    write.table(clu_df, file = paste0("da_", group, "_markers_by_neighborhood_", condition, ".txt"), sep="\t", quote=F, row.names=FALSE)
+    write.table(expr_mat_filt, paste0("da_", group, "_markers_by_neighborhood_", condition,"_expr_matrix.txt"), quote = FALSE,row.names = T, sep = "\t", col.names = T)
   }
+
 
 # da.res <- da.results
 # group.by <- "da.clusters"
@@ -352,4 +390,36 @@ dynamic_filter_function <- function(data, logfc_pattern = "^logFC_", pval_patter
   
   data %>%
     filter(!!filter_expr)
+}
+
+DAGseaComparison <- function(de.markers, cluster.name, group, fgsea.sets){
+  
+  cluster.genes <- de.markers %>%
+    arrange(desc(avg_logFC)) %>% 
+    dplyr::select(gene, avg_logFC) # use avg_log2FC as ranking for now; https://www.biostars.org/p/9526168/
+  
+  ranks <- deframe(cluster.genes)
+  
+  fgseaRes <- fgsea(fgsea.sets, stats = ranks, nperm = 1000)
+  fgseaRes <- filter(fgseaRes, pval <= 0.05) %>% arrange(desc(NES)) # be more lenient with the pval cutoff since exploratory analysis
+  fgseaRes$Enrichment = ifelse(fgseaRes$NES > 0, "Up-regulated", "Down-regulated") 
+  
+  filtRes <-  rbind(head(fgseaRes, n = 10),
+                    tail(fgseaRes, n = 10))
+  
+  if (dim(filtRes)[1] > 0){
+    p <- ggplot(filtRes, aes(reorder(pathway, NES), NES)) +
+      geom_point( aes(fill = Enrichment, size = size), shape=21) + # size is equal to the amount of genes found in the given gene set
+      scale_size_continuous(range = c(2,10)) +
+      geom_hline(yintercept = 0) +
+      coord_flip() +
+      theme_bw() +
+      labs(x="Pathway", y="Normalized Enrichment Score") + 
+      ggtitle(paste0("GSEA: ", cluster.name, " ", group))
+    
+    #dir.create(paste(plot.path, 'gsea', sep=''))
+    PrintSave(p, paste0("milo_gsea_cluster_", cluster.name, "_", group, '.pdf'), w=12)
+  } else {
+    print("No pathways are particularly enriched")
+  }
 }

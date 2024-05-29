@@ -29,6 +29,7 @@ process DAANALYSIS {
     path integrated
     val clusters_optimal
     val reduced_dim
+    val species
 
     output:
     path "*.rds"
@@ -38,6 +39,6 @@ process DAANALYSIS {
     
     script:
        """
-        ${projectDir}/src/DifferentialAbundanceMain.R --i $integrated -clusters_optimal $clusters_optimal -reduced_dim $reduced_dim
+        ${projectDir}/src/DifferentialAbundanceMain.R --i $integrated -clusters_optimal $clusters_optimal -reduced_dim $reduced_dim -species $species
        """
 }
