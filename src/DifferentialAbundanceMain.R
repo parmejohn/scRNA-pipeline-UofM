@@ -18,6 +18,8 @@ library(purrr)
 library(rlang)
 library(fgsea)
 library(msigdbr)
+library(gridExtra)
+library(ComplexHeatmap)
 
 set.seed(333)
 
@@ -90,10 +92,10 @@ if (args$s == "musmusculus") {
 # make sure idents are set correctly
 # Idents(object = se.integrated) <- "celltype"
 DifferentialAbundanceMilo(
-  se.integrated,
-  'sample',
+  se.integrated = se.integrated,
+  sample = 'sample',
   k = args$clusters_optimal,
   d = 50,
-  toupper(args$reduced_dim),
-  species
+  reduced.dims = toupper(args$reduced_dim),
+  species = species
 )

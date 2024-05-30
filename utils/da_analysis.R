@@ -17,7 +17,8 @@ DifferentialAbundanceMilo <-
            d,
            reduced.dims,
            prop = 0.05,
-           fdr.cutoff = 0.05) {
+           fdr.cutoff = 0.05,
+	   species) {
     DefaultAssay(se.integrated) <- "RNA"
     se.integrated$da.clusters <- Idents(se.integrated)
 
@@ -151,7 +152,7 @@ DifferentialAbundanceMilo <-
           ### perform GSEA analyses given the marker genes
           dge.smp.filt.avg.fc <- column_to_rownames(dge.smp.filt, "GeneID")
           dge.smp.filt.avg.fc <- select(dge.smp.filt.avg.fc, c(contains("logFC_")))
-          dge.smp.filt.avg.fc$avg_log2FC <- rowMeans(dge.smp.filt.avg.fc)
+          dge.smp.filt.avg.fc$avg_logFC <- rowMeans(dge.smp.filt.avg.fc)
           dge.smp.filt.avg.fc <- rownames_to_column(dge.smp.filt.avg.fc, "gene")
           write.table(dge.smp.filt.avg.fc, paste0("da_", i, "_markers_avg_logfc_", condition,".txt"), quote = FALSE,row.names = T, sep = "\t", col.names = T)
           
@@ -178,10 +179,10 @@ DifferentialAbundanceMilo <-
                   length(markers) >= 2) {
                 # have to check if there are any that meet the spatialFDR or marker cutoff to begin with
                 print("plotting deg")
-                p5 <-
-                  plotNhoodExpressionDA_fixed (
-                    sc.integrated.milo.traj,
-                    da.results.filt,
+                #pdf(paste0("milo_DA_DE_heatmap_", i, "_", condition, ".pdf"), width = 8, height = 6)
+                  plotNhoodExpressionDA_fixed(
+                    x = sc.integrated.milo.traj,
+                    da.res = da.results.filt,
                     features = markers,
                     subset.nhoods = da.results$da.clusters %in% c(i),
                     assay = "logcounts",
@@ -190,11 +191,10 @@ DifferentialAbundanceMilo <-
                     show_rownames = FALSE,
                     group = c(i),
                     condition = condition,
-                    alpha = fdr.cutoff,
-                    avg_logfc_df = dge.smp.filt.avg.fc
-                  ) + 
-                  ggtitle(paste0(i, ": DA DEGs for ", condition))
-                PrintSave(p5, paste0("milo_DA_DE_heatmap_", i, "_", condition, ".pdf"))
+                    alpha = fdr.cutoff
+                  )
+		#graphics.off()
+               # PrintSave(p5, paste0("milo_DA_DE_heatmap_", i, "_", condition, ".pdf"))
               }
             }
           } else {

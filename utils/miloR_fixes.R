@@ -22,8 +22,7 @@ plotNhoodExpressionDA_fixed <-
            show_rownames = TRUE,
            highlight_features = NULL,
            group = NULL,
-           condition = NULL,
-           avg_logfc_df) {
+           condition = NULL) {
     if (length(features) <= 0 | is.null(features)) {
       stop("features is empty")
     }
@@ -86,7 +85,7 @@ plotNhoodExpressionDA_fixed <-
       mutate(Nhood = as.double(Nhood)) %>%
       inner_join(da.res, by = "Nhood") %>% # changed from a left join since this will save on compute time
       mutate(logFC_rank = percent_rank(logFC))
-    
+    pl_df_full <- pl_df
     #pl_df_sig <- subset(pl_df, SpatialFDR < alpha)
     
     pl_df_t <- column_to_rownames(pl_df, "Nhood") %>% select(1:(length(pl_df)-10)) %>% t()
@@ -109,7 +108,8 @@ plotNhoodExpressionDA_fixed <-
         axis.text.x = element_blank(),
         axis.ticks.x = element_blank(),
         axis.title.x = element_blank()
-      )
+      ) + 
+	ggtitle(paste0(group, ": DA DEGs for ", condition))
     
     ## Bottom plot: gene expression heatmap
     if (isTRUE(cluster_features)) {
@@ -134,78 +134,109 @@ plotNhoodExpressionDA_fixed <-
       mutate(feature = factor(feature, levels = ordered_features))
     print("past error!")
     
-    if (!is.null(highlight_features)) {
-      if (!all(highlight_features %in% pl_df$feature)) {
-        missing <-
-          highlight_features[which(!highlight_features %in% pl_df$feature)]
-        warning(
-          'Some elements of highlight_features are not in features and will not be highlighted. \nMissing features: ',
-          paste(missing, collapse = ', ')
-        )
-      }
-      pl_df <- pl_df %>%
-        mutate(label = ifelse(feature %in% highlight_features, as.character(feature), NA))
+#    if (!is.null(highlight_features)) {
+#      if (!all(highlight_features %in% pl_df$feature)) {
+#        missing <-
+#          highlight_features[which(!highlight_features %in% pl_df$feature)]
+#        warning(
+#          'Some elements of highlight_features are not in features and will not be highlighted. \nMissing features: ',
+#          paste(missing, collapse = ', ')
+#        )
+#      }
+#      pl_df <- pl_df %>%
+#        mutate(label = ifelse(feature %in% highlight_features, as.character(feature), NA))
+#    }
+    
+#    pl_bottom_old <- pl_df %>%
+#      ggplot(aes(logFC_rank, feature, fill = avg_expr)) +
+#      geom_tile() +
+#      scale_fill_viridis_c(option = "magma", name = "Avg.Expr.") +
+#      xlab("Neighbourhoods") + ylab("Features") +
+#      scale_x_continuous(expand = c(0.01, 0)) +
+#      theme_classic(base_size = 16) +
+#      coord_cartesian(clip = "off") +
+#      theme(
+#        axis.text.x = element_blank(),
+#        axis.line.x = element_blank(),
+#        axis.ticks.x = element_blank(),
+#        axis.line.y = element_blank(),
+#        axis.ticks.y = element_blank(),
+#        panel.spacing = margin(2, 2, 2, 2, "cm"),
+#        legend.margin = margin(0, 0, 0, 0),
+#        legend.box.margin = margin(10, 10, 10, 10)
+#      )
+    
+    col_order <- order(pl_df_full$logFC_rank)
+    pl_df_sorted <- pl_df_full[col_order,]
+    col_order <- unique(pl_df_full[col_order,]$Nhood)
+    gap_col_row <- pl_df_sorted[which.min(abs(pl_df_sorted[,"logFC"])),]
+    gap_col <- pl_df_sorted[which.min(abs(pl_df_sorted[,"logFC"])),]$Nhood
+    gap_col <- match(gap_col, col_order)
+    if(gap_col_row$logFC > 0){
+                gap_col <- gap_col - 1
     }
-    
-    pl_bottom_old <- pl_df %>%
-      ggplot(aes(logFC_rank, feature, fill = avg_expr)) +
-      geom_tile() +
-      scale_fill_viridis_c(option = "magma", name = "Avg.Expr.") +
-      xlab("Neighbourhoods") + ylab("Features") +
-      scale_x_continuous(expand = c(0.01, 0)) +
-      theme_classic(base_size = 16) +
-      coord_cartesian(clip = "off") +
-      theme(
-        axis.text.x = element_blank(),
-        axis.line.x = element_blank(),
-        axis.ticks.x = element_blank(),
-        axis.line.y = element_blank(),
-        axis.ticks.y = element_blank(),
-        panel.spacing = margin(2, 2, 2, 2, "cm"),
-        legend.margin = margin(0, 0, 0, 0),
-        legend.box.margin = margin(10, 10, 10, 10)
-      )
-    
-    col_order <- order(pl_df$logFC_rank)
-    col_order <- unique(pl_df[col_order,]$Nhood)
-    
+
     expr_mat_filt <- as.data.frame(expr_mat) %>% select(as.character(unique(da.res$Nhood)))
-    
+    slices = diff(c(0, gap_col, ncol(as.matrix(expr_mat_filt))))
+
+    print("start making heatmap")
+	is.clustered <- NA
+    if (nrow(expr_mat_filt) > 10){
+    	pl_bottom <- Heatmap(as.matrix(expr_mat_filt),
+        	          name = "Scaled Gene Expression", 
+                	  show_column_names = FALSE,
+	                  show_row_names = show_rownames,
+        	          row_names_gp = gpar(fontsize = 6),
+                	  height = 6,
+	                  width = 6,
+        	          show_column_dend = FALSE,
+                	  show_row_dend = FALSE,
+	                  column_title = "Neighbourhoods",
+        	          column_title_side = "bottom",
+                	  km = 10,
+	                  show_parent_dend_line = FALSE,
+        	          column_order = as.character(col_order),
+			  column_split = rep(seq_along(slices), times = slices))
+    is.clustered <- TRUE
+    } else {
     pl_bottom <- Heatmap(as.matrix(expr_mat_filt),
-                  name = "Scaled Gene Expression", 
-                  show_column_names = FALSE,
-                  show_row_names = show_rownames,
-                  row_names_gp = gpar(fontsize = 6),
-                  height = 6,
-                  width = 6,
-                  show_column_dend = FALSE,
-                  show_row_dend = FALSE,
-                  column_title = "Neighbourhoods",
-                  column_title_side = "bottom",
-                  km = 10,
-                  show_parent_dend_line = FALSE,
-                  column_order = as.character(col_order))
-    
-    if (!is.null(highlight_features)) {
-      pl_bottom <- pl_bottom +
-        geom_text_repel(
-          data = . %>%
-            filter(!is.na(label)) %>%
-            group_by(label) %>%
-            summarise(
-              logFC_rank = max(logFC_rank),
-              avg_expr = mean(avg_expr),
-              feature = first(feature)
-            ),
-          aes(label = label, x = logFC_rank),
-          size = 4,
-          xlim = c(max(pl_df$logFC_rank) + 0.01, max(pl_df$logFC_rank) + 0.02),
-          min.segment.length = 0,
-          max.overlaps = Inf,
-          seed = 42
-        )
-      
+	                               name = "Scaled Gene Expression",
+		                                show_column_names = FALSE,
+		                          show_row_names = TRUE,
+		                             row_names_gp = gpar(fontsize = 6),
+		                          height = 6,
+		                          width = 6,
+		                          show_column_dend = FALSE,
+		                          show_row_dend = FALSE,
+		                          column_title = "Neighbourhoods",
+		                          column_title_side = "bottom",
+		                          column_order = as.character(col_order),
+					  row_names_rot = 90,
+					  row_names_side = "left",
+					  column_split = rep(seq_along(slices), times = slices))			  
+    is.clustered <- FALSE
     }
+    print("made heatmap")
+#    if (!is.null(highlight_features)) {
+#      pl_bottom <- pl_bottom +
+#        geom_text_repel(
+#          data = . %>%
+#            filter(!is.na(label)) %>%
+#            group_by(label) %>%
+#            summarise(
+#              logFC_rank = max(logFC_rank),
+#              avg_expr = mean(avg_expr),
+#              feature = first(feature)
+#            ),
+#          aes(label = label, x = logFC_rank),
+#          size = 4,
+#          xlim = c(max(pl_df$logFC_rank) + 0.01, max(pl_df$logFC_rank) + 0.02),
+#          min.segment.length = 0,
+#          max.overlaps = Inf,
+#          seed = 42
+#        )
+#      
+#    }
     
     # if (isFALSE(show_rownames)) {
     #   pl_bottom <- pl_bottom +
@@ -216,23 +247,39 @@ plotNhoodExpressionDA_fixed <-
     # (pl_top / pl_bottom) +
     #   plot_layout(heights = c(1, 4), guides = "collect") &
     #   theme(legend.justification = c(0, 1),
-    #         legend.margin = margin(0, 0, 0, 50))
-    grob = grid.grabExpr(draw(pl_bottom, padding = unit(c(1, 1.25, 1, 1.8), "cm")))
-    grid.arrange(pl_top, grob, nrow = 2, heights = c(1,4))
-    
+    #         legend.margin = margin(0, 0, 0, 50)
+    print("plot_both")
+    #print(class(pl_bottom))
+
+    #pl_bottom <- draw(pl_bottom, padding = unit(c(1, 1.25, 1, 1.8), "cm"))
+    print("grab expr")
+    grob = grid.grabExpr(draw(pl_bottom, padding = unit(c(1, 1.3, 1, 1.8), "cm")))
+    print("arrange")
+
+    graphics.off()
+    pdf(paste0("milo_DA_DE_heatmap_", group, "_", condition, ".pdf"), width = 8, height = 6)
+    pl_both <- grid.arrange(pl_top, grob, nrow = 2, heights = c(1,4))
+    graphics.off()
+
+    if(is.clustered){
+    print("get row order")
     pl_bottom <- draw(pl_bottom)
     rcl.list <- row_order(pl_bottom)
 
     print("Printing gene + cluster table for DEGs in miloR")
-    clu_df <- lapply(names(rcl.list), function(j){
-      out <- data.frame(GeneID = rownames(as.data.frame(expr_mat_filt)[rcl.list[[j]],]), # for some reason rownames cant return a single row value in a matrix; have to convert matrix into a df first
-                        Cluster = paste0("cluster", j),
+    clu_df <- lapply(names(rcl.list), function(p){
+      out <- data.frame(GeneID = rownames(as.data.frame(expr_mat_filt)[rcl.list[[p]],]), # for some reason rownames cant return a single row value in a matrix; have to convert matrix into a df first
+                        Cluster = paste0("cluster", p),
                         stringsAsFactors = FALSE)
       return(out)
     })  %>%  #pipe (forward) the output 'out' to the function rbind to create 'clu_df'
       do.call(rbind, .)
     write.table(clu_df, file = paste0("da_", group, "_markers_by_neighborhood_", condition, ".txt"), sep="\t", quote=F, row.names=FALSE)
+    }
+    print("writing table")
     write.table(expr_mat_filt, paste0("da_", group, "_markers_by_neighborhood_", condition,"_expr_matrix.txt"), quote = FALSE,row.names = T, sep = "\t", col.names = T)
+
+    return(pl_both)
   }
 
 
