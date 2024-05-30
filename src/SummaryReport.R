@@ -272,3 +272,10 @@ plots <- plots[grep("DE_heatmap", plots)]
 for(i in plots){
   ReadImageAndTrim(i)
 }
+
+plots <- list.files(paste0(res.loc, "plots/da/"), full.names=TRUE)
+plots <- plots[grep("gsea", plots)]
+
+for(i in plots){
+	  ReadImageAndTrim(i)
+}
