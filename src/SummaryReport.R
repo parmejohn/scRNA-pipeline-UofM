@@ -232,6 +232,14 @@ if(file.exists(paste0(res.loc, "data/se_integrated_tempora_seurat_v3.rds"))){
 #' ### psupertime
 #+ warning=FALSE, echo=FALSE, fig.height = 10, fig.width = 10, results='asis'
 if(dir.exists(paste0(res.loc, "plots/ti/psupertime_plots/"))){
+  
+  plots <- list.files(paste0(res.loc, "plots/ti/psupertime_plots/"), full.names=TRUE, recursive = TRUE)
+  plots <- plots[grep("compare_dist", plots)]
+  
+  for(i in plots){
+    ReadImageAndTrim(i)
+  }
+  
   plots <- list.files(paste0(res.loc, "plots/ti/psupertime_plots/"), full.names=TRUE, recursive = TRUE)
   plots <- plots[grep("psuper_top_20_gene", plots)]
   
