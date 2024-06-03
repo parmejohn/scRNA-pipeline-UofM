@@ -95,6 +95,7 @@ GseaComparison <- function(de.markers, cluster.name, ident.1, ident.2, fgsea.set
   ranks <- deframe(cluster.genes)
   
   fgseaRes <- fgsea(fgsea.sets, stats = ranks, nperm = 1000)
+  fgseaRes$leadingEdge <- as.character(fgseaRes$leadingEdge)
   write.table(fgseaRes, paste0("gsea_cluster_", cluster.name, "_", ident.1, "_vs_", ident.2,".txt"), quote = FALSE,row.names = T, sep = "\t", col.names = T)
   fgseaRes <- filter(fgseaRes, pval <= 0.01) %>% arrange(desc(NES))
   fgseaRes$Enrichment = ifelse(fgseaRes$NES > 0, "Up-regulated", "Down-regulated") 

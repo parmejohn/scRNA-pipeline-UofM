@@ -448,6 +448,7 @@ DAGseaComparison <- function(de.markers, cluster.name, group, fgsea.sets){
   ranks <- deframe(cluster.genes)
   
   fgseaRes <- fgsea(fgsea.sets, stats = ranks, nperm = 1000)
+  fgseaRes$leadingEdge <- as.character(fgseaRes$leadingEdge)
   write.table(fgseaRes, paste0("milo_gsea_cluster_", cluster.name, "_", group,".txt"), quote = FALSE,row.names = T, sep = "\t", col.names = T)
   fgseaRes <- filter(fgseaRes, pval <= 0.05) %>% arrange(desc(NES)) # be more lenient with the pval cutoff since exploratory analysis
   fgseaRes$Enrichment = ifelse(fgseaRes$NES > 0, "Up-regulated", "Down-regulated") 
