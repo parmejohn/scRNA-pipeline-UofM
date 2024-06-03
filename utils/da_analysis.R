@@ -1,12 +1,14 @@
 set.seed(333)
 
 # se.integrated <- readRDS("/research/2024_scrnaseq_pipeline/organoid_work/organoid_3k_ti_changes/pipeline/analysis/data/se_integrated_auto_label.rds")
-# k = 16
-# d = 50
-# sample = "sample"
-# condition = "time"
-# reduced.dims = "INTEGRATED.CCA"
-# prop = 0.05
+k = 16
+d = 50
+sample = "sample"
+condition = "group"
+reduced.dims = "INTEGRATED.CCA"
+prop = 0.05
+species = "Mus musculus"
+fdr.cutoff = 0.05
 # 
 # sc.integrated.milo.traj <- readRDS("/home/projects/sc_pipelines/scrna_deanne_harmony_low_res/pipeline/analysis/data/sc_integrated_milo_traj.rds")
 
@@ -123,6 +125,8 @@ DifferentialAbundanceMilo <-
         dge_smp <- 0
         if (!is.na(n.da) & n.da == 0) {
           dge_smp <- NULL
+        } else if (!(i %in% da.results$da.clusters)){
+          dge_smp <- NULL
         } else {
           dge_smp <- groupNhoods(
             sc.integrated.milo.traj,
@@ -143,10 +147,6 @@ DifferentialAbundanceMilo <-
         }
         
         if (!is.null(dge_smp) | length(dge_smp) != 0) {
-          # dge.smp.filt <- dge_smp %>%
-          #   filter_at(vars(starts_with("adj.P.Val_")), any_vars(. <= 0.01)) %>%
-          #   filter_at(vars(starts_with("logFC_")), any_vars(abs(.) >= 1))
-          
           dge.smp.filt <- dynamic_filter_function(dge_smp)
           
           ### perform GSEA analyses given the marker genes
