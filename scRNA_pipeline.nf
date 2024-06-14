@@ -29,6 +29,7 @@ include {ESCAPEANALYSIS} from './modules/escapeanalysis.nf'
 include {DAANALYSIS} from './modules/daanalysis.nf'
 include {TEMPORAANALYSIS} from './modules/temporaanalysis.nf'
 include {PSUPERTIME} from './modules/psupertime.nf'
+include {CELLCHAT} from './modules/cellchat.nf'
 include {SUMMARYREPORT} from './modules/summaryreport.nf'
 
 process INITIALIZEFOLDERS {
@@ -123,6 +124,8 @@ workflow {
 	println escape_ch
 
     DAANALYSIS(identified_ch, new_opt_clust, params.reduced_dim, params.species)
+    
+    CELLCHAT(identified_ch, params.species)
 
     SUMMARYREPORT(
         COMPARATIVEANALYSIS.out.report,
@@ -131,6 +134,7 @@ workflow {
         escape_ch,
         tempora_ch,
         psupertime_ch,
+        CELLCHAT.out.report,
         "${params.outdir}/analysis/",
         new_opt_clust
         )

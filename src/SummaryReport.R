@@ -77,7 +77,7 @@ kable(doub.table, caption = "Number of Doublets Detected with scDblFinder")
 {{list.dirs(paste0(res.loc, "/data/qc"), recursive = FALSE, full.names = FALSE)}}
 #' , which will be named 'group' in the seurat metadata
 #' Optimal clustering was inputed as 
-{{params$optc}}
+{{params$opt_c}}
 
 #' Please view the grouped plot below to ensure that integration was sufficient for your given dataset
 #+ warning=FALSE, echo=FALSE, fig.height = 10, fig.width = 10
@@ -286,4 +286,58 @@ plots <- plots[grep("gsea", plots)]
 
 for(i in plots){
 	  ReadImageAndTrim(i)
+}
+
+#' ## Ligand-receptor analysis with CellChat
+#' - Bubbleplot is filtered by the missing presence of the communication prob in the other condition, or if there is an abs(log2FC) >= 0.6 -> ~50% increase in prob,  
+#' sometimes the dataset cannot be filtered (NA source targets after filtering), so print the unfiltered option in these situations.  
+#' - All communication probability graphs can be found in the cellchat_plots folder  
+#' - Significant information flow pathways were also plotted separately in the signaling_pathways folder
+#+ warning=FALSE, echo=FALSE, fig.height = 10, fig.width = 10, results='asis'
+plots <- list.files(paste0(res.loc, "plots/cellchat_plots/"), full.names=TRUE)
+#plots <- list.files(plots[1], full.names=TRUE)
+
+ReadImageAndTrim(paste0(plots[1], "cellchat_interaction_summary_bar.pdf"))
+
+ReadImageAndTrim(paste0(plots[1], "cellchat_differential_interaction_circle.pdf"))
+ReadImageAndTrim(paste0(plots[1], "cellchat_differential_interaction_heatmap.pdf"))
+
+ReadImageAndTrim(paste0(plots[1], "cellchat_num_interactions_circle.pdf"))
+ReadImageAndTrim(paste0(plots[1], "cellchat_population_send_receive.pdf"))
+
+ReadImageAndTrim(paste0(plots[1], "cellchat_compare_outgoing_signal_heatmap.pdf"))
+ReadImageAndTrim(paste0(plots[1], "cellchat_compare_incoming_signal_heatmap.pdf"))
+ReadImageAndTrim(paste0(plots[1], "cellchat_compare_all_signal_heatmap.pdf"))
+
+
+commun_prob_plots <- list.files(plots[10], full.names=TRUE)
+
+for(i in 1:length(commun_prob_plots)){
+  if (i <= 3){
+    ReadImageAndTrim(commun_prob_plots[i])
+  } else {
+    break
+  }
+}
+
+ReadImageAndTrim(paste0(plots[1], "cellchat_information_flow_compare.pdf"))
+
+if (length(plots) >= 11){
+  sig_path_plots <- list.files(plots[11], full.names=TRUE)
+  
+  if (length(sig_path_plots) == 0){
+    print("no significant signalling paths were found")
+    
+  } else if (length(sig_path_plots) <= 3){
+    sig_path_plots_all <- list.files(sig_path_plots, full.names=TRUE, recursive = T)
+    for(i in sig_path_plots_all){
+      ReadImageAndTrim(i)
+    }
+    
+  } else {
+    sig_path_plots_all <- list.files(sig_path_plots[1:3], full.names=TRUE, recursive = T)
+    for(i in sig_path_plots_all){
+      ReadImageAndTrim(i)
+    }
+  }
 }

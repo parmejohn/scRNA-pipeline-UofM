@@ -14,6 +14,7 @@ process SUMMARYREPORT{
     val escape_signal
     val tempora_signal
     val psupertime_signal
+    val cellchat_signal
     val analysis_dir
     val opt_clusters
 

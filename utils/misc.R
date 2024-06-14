@@ -3,7 +3,7 @@ set.seed(333)
 PrintSave <- function(plot, title, path="",  w=8, h=6){
   pdf(paste(path, title, sep=""), width = w, height = h)
   print(plot)
-  dev.off()
+  graphics.off()
 }
 
 Correcth5SeuratFile <- function(file){
