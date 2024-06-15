@@ -132,8 +132,8 @@ if (file.exists(paste0(res.loc,"data/se_integrated_auto_label.rds"))){
 #' 
 #' ### Differential Gene Expression Analysis with DESeq2
 #' Please note that only 10 comparisons were chosen and printed here, if you would like to see all the DESeq2 plots generated, go to
-{{paste0(res.loc, "plots/deseq2")}}
-
+{{paste0(res.loc, "plots/deseq2")}}  
+#' Cutoffs: p_val_adj < 0.05 & |avg_log2FC| >= 2
 #+ warning=FALSE, echo=FALSE, fig.height = 10, fig.width = 10, out.width = "50%", fig.show = 'hold', results='asis'
 plots <- list.files(paste0(res.loc, "plots/deseq2/"), full.names=TRUE)
 
@@ -146,10 +146,10 @@ for(i in 1:length(plots)){
 }
 
 #' ### GSEA Analysis
-#' This uses the DESeq2 results for the ranked gene list, which is used to calculate the enrichment score
+#' This uses the DESeq2 results for the ranked gene list, which is used to calculate the enrichment score  
 #' All the GSEA plots are available at 
-{{paste0(res.loc, "plots/gsea/comparative")}}
-
+{{paste0(res.loc, "plots/gsea/comparative")}}  
+#' Cutoffs: p_val_adj < 0.05
 #+ warning=FALSE, echo=FALSE, fig.height = 8, fig.width = 10, out.width = "50%", fig.show = 'hold', results='asis'
 plots <- list.files(paste0(res.loc, "plots/gsea/comparative/"), full.names=TRUE)
 
@@ -162,10 +162,10 @@ for(i in 1:length(plots)){
 }
 
 #' ## Single-cell GSEA with escape
-#' Printed is the top 5 average normalized enrichment scores from the escape analysis.
+#' Printed is the top 5 average normalized enrichment scores from the escape analysis.  
 #' Individual GO pathways in a geyser plot can be found at 
-{{paste0(res.loc, "plots/gsea/escape")}}
-
+{{paste0(res.loc, "plots/gsea/escape")}}  
+#' Cutoffs: p_val_adj <= 0.05
 #+ warning=FALSE, echo=FALSE, fig.height = 8, fig.width = 9, out.width = "100%", results='asis'
 plots <- list.files(paste0(res.loc, "plots/gsea/escape/"), full.names=TRUE)
 plots <- plots[grep(".pdf", plots)]
@@ -188,6 +188,8 @@ if (file.exists(paste0(res.loc,"data/se_integrated_escape_norm.rds"))){
 
 #' ## Trajectory Inference
 #' ### slingshot
+#' Condition Heatmap Cutoffs: p_val_adj <= 0.05 & |log2FC| >= 1  
+#' DEGs Heatmap Cutoffs: p_val_adj < 0.05 and if there were > 50 genes, only choose 50 to plot
 #+ warning=FALSE, echo=FALSE, fig.height = 10, fig.width = 10, results='asis', out.width = "100%"
 if (file.exists(paste0(res.loc,"plots/ti"))){
   if(file.exists(paste0(res.loc, "plots/ti/ti_start_smooth.pdf"))){
@@ -255,9 +257,12 @@ if(dir.exists(paste0(res.loc, "plots/ti/psupertime_plots/"))){
 }
 
 #' ## Differential Abundance analysis with miloR
-#' Sorted by character string and numbers, where the first element will have a negative logFC and vice versa. Ex. D100, D56, D70 = D56, D70, D100.
+#' Sorted by character string and numbers, where the first element will have a negative logFC and vice versa. Ex. D100, D56, D70 = D56, D70, D100.  
 #' Individual GO pathways in a geyser plot can be found at 
-{{if(length(list.files(paste0(res.loc, "plots/da/"), full.names=TRUE)) == 3){"No Differential Abundant neighborhoods were found, so no DEG heatmaps will be made."}}}
+{{if(length(list.files(paste0(res.loc, "plots/da/"), full.names=TRUE)) == 3){"No Differential Abundant neighborhoods were found, so no DEG heatmaps will be made."}}}  
+#' Neighborhood cutoff: SpatialFDR < 0.05  
+#' DEGs cutoff: |logFC| >= 1 and adj.Pval <= 0.01  
+#' GSEA cutoff: p_val_adj <= 0.05
 #+ warning=FALSE, echo=FALSE, fig.height = 10, fig.width = 10, results='asis'
 plots <- list.files(paste0(res.loc, "plots/da/"), full.names=TRUE)
 plots <- plots[grep("pval|volcano", plots)]
@@ -297,17 +302,17 @@ for(i in plots){
 plots <- list.files(paste0(res.loc, "plots/cellchat_plots/"), full.names=TRUE)
 #plots <- list.files(plots[1], full.names=TRUE)
 
-ReadImageAndTrim(paste0(plots[1], "cellchat_interaction_summary_bar.pdf"))
+ReadImageAndTrim(paste0(plots[1], "/cellchat_interaction_summary_bar.pdf"))
 
-ReadImageAndTrim(paste0(plots[1], "cellchat_differential_interaction_circle.pdf"))
-ReadImageAndTrim(paste0(plots[1], "cellchat_differential_interaction_heatmap.pdf"))
+ReadImageAndTrim(paste0(plots[1], "/cellchat_differential_interaction_circle.pdf"))
+ReadImageAndTrim(paste0(plots[1], "/cellchat_differential_interaction_heatmap.pdf"))
 
-ReadImageAndTrim(paste0(plots[1], "cellchat_num_interactions_circle.pdf"))
-ReadImageAndTrim(paste0(plots[1], "cellchat_population_send_receive.pdf"))
+ReadImageAndTrim(paste0(plots[1], "/cellchat_num_interactions_circle.pdf"))
+ReadImageAndTrim(paste0(plots[1], "/cellchat_population_send_receive.pdf"))
 
-ReadImageAndTrim(paste0(plots[1], "cellchat_compare_outgoing_signal_heatmap.pdf"))
-ReadImageAndTrim(paste0(plots[1], "cellchat_compare_incoming_signal_heatmap.pdf"))
-ReadImageAndTrim(paste0(plots[1], "cellchat_compare_all_signal_heatmap.pdf"))
+ReadImageAndTrim(paste0(plots[1], "/cellchat_compare_outgoing_signal_heatmap.pdf"))
+ReadImageAndTrim(paste0(plots[1], "/cellchat_compare_incoming_signal_heatmap.pdf"))
+ReadImageAndTrim(paste0(plots[1], "/cellchat_compare_all_signal_heatmap.pdf"))
 
 
 commun_prob_plots <- list.files(plots[10], full.names=TRUE)
