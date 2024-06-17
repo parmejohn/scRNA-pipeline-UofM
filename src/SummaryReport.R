@@ -294,6 +294,7 @@ for(i in plots){
 }
 
 #' ## Ligand-receptor analysis with CellChat
+#' If multiple condition comparisons are expected, only one is shown in this summary  
 #' - Bubbleplot is filtered by the missing presence of the communication prob in the other condition, or if there is an abs(log2FC) >= 0.6 -> ~50% increase in prob,  
 #' sometimes the dataset cannot be filtered (NA source targets after filtering), so print the unfiltered option in these situations.  
 #' - All communication probability graphs can be found in the cellchat_plots folder  
@@ -315,7 +316,7 @@ ReadImageAndTrim(paste0(plots[1], "/cellchat_compare_incoming_signal_heatmap.pdf
 ReadImageAndTrim(paste0(plots[1], "/cellchat_compare_all_signal_heatmap.pdf"))
 
 
-commun_prob_plots <- list.files(plots[10], full.names=TRUE)
+commun_prob_plots <- list.files(paste0(plots[1], "/commun_prob/"), full.names=TRUE)
 
 for(i in 1:length(commun_prob_plots)){
   if (i <= 3){
@@ -325,10 +326,10 @@ for(i in 1:length(commun_prob_plots)){
   }
 }
 
-ReadImageAndTrim(paste0(plots[1], "cellchat_information_flow_compare.pdf"))
+ReadImageAndTrim(paste0(plots[1], "/cellchat_information_flow_compare.pdf"))
 
-if (length(plots) >= 11){
-  sig_path_plots <- list.files(plots[11], full.names=TRUE)
+
+  sig_path_plots <- list.files(paste0(plots[1], "/signaling_pathways/"), full.names=TRUE)
   
   if (length(sig_path_plots) == 0){
     print("no significant signalling paths were found")
@@ -345,4 +346,4 @@ if (length(plots) >= 11){
       ReadImageAndTrim(i)
     }
   }
-}
+
