@@ -451,8 +451,8 @@ DAGseaComparison <- function(de.markers, cluster.name, group, fgsea.sets){
   fgseaRes$leadingEdge <- as.character(fgseaRes$leadingEdge)
   write.table(fgseaRes, paste0("milo_gsea_cluster_", cluster.name, "_", group,".txt"), quote = FALSE,row.names = T, sep = "\t", col.names = T)
   fgseaRes <- filter(fgseaRes, padj <= 0.05 & size >= 3) %>% arrange(desc(NES)) # be more lenient with the pval cutoff since exploratory analysis
-  fgseaRes$Enrichment = ifelse(fgseaRes$NES > 0, "Up-regulated", "Down-regulated") 
-
+  fgseaRes$Enrichment = ifelse(fgseaRes$NES > 0, "blue", "red") 
+  
   filtRes <-  rbind(head(fgseaRes, n = 10),
                     tail(fgseaRes, n = 10))
   
@@ -464,6 +464,7 @@ DAGseaComparison <- function(de.markers, cluster.name, group, fgsea.sets){
       coord_flip() +
       theme_bw() +
       labs(x="Pathway", y="Normalized Enrichment Score") + 
+      scale_fill_identity() + 
       ggtitle(paste0("GSEA: ", cluster.name, " ", group))
     
     #dir.create(paste(plot.path, 'gsea', sep=''))

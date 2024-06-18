@@ -98,18 +98,20 @@ GseaComparison <- function(de.markers, cluster.name, ident.1, ident.2, fgsea.set
   fgseaRes$leadingEdge <- as.character(fgseaRes$leadingEdge)
   write.table(fgseaRes, paste0("gsea_cluster_", cluster.name, "_", ident.1, "_vs_", ident.2,".txt"), quote = FALSE,row.names = T, sep = "\t", col.names = T)
   fgseaRes <- filter(fgseaRes, padj <= 0.05 & size >= 3) %>% arrange(desc(NES))
-  fgseaRes$Enrichment = ifelse(fgseaRes$NES > 0, "Up-regulated", "Down-regulated") 
+  fgseaRes$Enrichment = ifelse(fgseaRes$NES > 0, "blue", "red") 
   
   filtRes <-  rbind(head(fgseaRes, n = 10),
                     tail(fgseaRes, n = 10 ))
   
   p1 <- ggplot(filtRes, aes(reorder(pathway, NES), NES)) +
-    geom_point( aes(fill = Enrichment, size = size), shape=21) + # size is equal to the amount of genes found in the given gene set
+    geom_point(aes(fill = Enrichment, size = size), shape=21) + # size is equal to the amount of genes found in the given gene set
     scale_size_continuous(range = c(2,10)) +
     geom_hline(yintercept = 0) +
     coord_flip() +
     theme_bw() +
     labs(x="Pathway", y="Normalized Enrichment Score") + 
+    scale_fill_identity() + 
+    theme(legend.position = 'none') + 
     ggtitle(paste0("GSEA: ", cluster.name, " ", ident.1, " vs ", ident.2))
   
   #dir.create(paste(plot.path, 'gsea', sep=''))

@@ -271,7 +271,7 @@ filterLRPairsBubble <- function(cellchat.merged, gg1, i, max.dataset, title.name
   if (length(unique(gg1[["gg.obj"]][["data"]]$interaction_name)) != 0){
     interaction_name.filtered <- as.data.frame(unique(gg1[["gg.obj"]][["data"]]$interaction_name))
     colnames(interaction_name.filtered)[1] <- "interaction_name"
-    if (length(which(is.na(as.character(gg1[["gg.obj"]][["data"]]$source.target)))) >= 4){
+    if (length(which(is.na(as.character(gg1[["gg.obj"]][["data"]]$source.target)))) == 0 & length(gg1[["gg.obj"]][["data"]]$source.target) >= 4){
       p1 <- netVisual_bubble(cellchat.merged, sources.use = i, pairLR.use = interaction_name.filtered, comparison = c(1, 2), 
                              max.dataset = max.dataset, title.name = title.name, angle.x = 45, remove.isolate = T)
       return(p1)
