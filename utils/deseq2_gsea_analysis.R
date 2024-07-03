@@ -48,16 +48,34 @@ DESeq2ConditionPerCluster <-  function(se.integrated, species){
       }
     }
     
-    for (k in list.comparisons){
-      Idents(cluster.bulk) <- k
-      if (any(duplicated(as.data.frame(cluster.bulk@active.ident)))){ # check if you have at least more than 1 sample for the comparison
+    for (k in 1:length(list.comparisons)){
+      Idents(cluster.bulk) <- list.comparisons[[k]]
+      grouping <- list.comparisons[[k]]
+      if (any(duplicated(as.data.frame(cluster.bulk@meta.data[[grouping]])))){ # check if you have at least more than 1 sample for the comparison
         
         # create pairs for each possible combination
-        group.pairs <- as.data.frame(combn(unique(cluster.bulk@meta.data[[k]]), 2))
+        group.pairs <- as.data.frame(combn(unique(cluster.bulk@meta.data[[grouping]]), 2))
         group.pairs <- sapply(group.pairs, function(x) as.character(x), simplify = FALSE)
+        
+        if (k >= 2){
+          group.pairs.filt <- list()
+          for (z in group.pairs){
+            time.match <- sub("^[^_]*_", "", z)
+            if (time.match[1] == time.match[2]) {
+              cond.mismatch <- sub("_.*", "", z)
+              if (cond.mismatch[1] != cond.mismatch[2]){
+                group.pairs.filt <- append(group.pairs.filt, list(z))
+              }
+            }
+          }
+          group.pairs <- group.pairs.filt
+          print(group.pairs)
+        }
         
         for (j in 1:length(group.pairs)){ # perform each pairwise comparison
           target <- group.pairs[[j]]
+          print(target[1])
+          print(target[2])
           de_markers <- FindMarkers(cluster.bulk, ident.1 = target[1], ident.2 = target[2], slot = "counts", test.use = "DESeq2",
                                     verbose = T, min.cells.feature = 0, min.cells.group = 0)
           # start GSEA analysis here too since will be doing all the comparisons here
