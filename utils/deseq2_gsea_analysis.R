@@ -76,8 +76,98 @@ DESeq2ConditionPerCluster <-  function(se.integrated, species){
           target <- group.pairs[[j]]
           print(target[1])
           print(target[2])
-          de_markers <- FindMarkers(cluster.bulk, ident.1 = target[1], ident.2 = target[2], slot = "counts", test.use = "DESeq2",
-                                    verbose = T, min.cells.feature = 0, min.cells.group = 0)
+          
+          if (list.comparisons[[k]] == "group" & length(se.integrated@misc) != 0){
+            # add 1 so that DESeq2 will run
+            # order of sig genes are slightly changed -> generally the same order/magnitude of importance though
+            cluster.bulk[["RNA"]]$counts <- 
+              as.matrix(cluster.bulk[["RNA"]]$counts) + 1
+            
+            cells.1 <- WhichCells(cluster.bulk, idents = target[1])
+            cells.2 <- WhichCells(cluster.bulk, idents = target[2])
+            
+            group.info <- data.frame(row.names = colnames(cluster.bulk))
+            group.info[cells.1, "group"] <- target[1]
+            group.info[cells.2, "group"] <- target[2]
+            group.info[, "group"] <- factor(x = group.info[, "group"])
+            group.info$wellKey <- rownames(x = group.info)
+            
+            for (z in se.integrated@misc$co.conditions){
+              group.info[,z] <- NA
+              for (l in unique(cluster.bulk@meta.data[[z]])){
+                group.info[,z][which(grepl(paste0("\\<", l, "\\>"), group.info$wellKey))] <- l
+              }
+              group.info[,z] <- factor(x = group.info[, z])
+            }
+            
+            condition.list <- c("group", se.integrated@misc$co.conditions)
+            condition.list.combos <- do.call("c", lapply(seq_along(condition.list), function(i) combn(condition.list, i, FUN = list)))
+            condition.list.combos.filtered <- list()
+            for (z in condition.list.combos){
+              if (any(grepl('group', z))){
+                condition.list.combos.filtered <- append(condition.list.combos.filtered, list(z))
+              }
+            }
+            
+            condition.list.combos.filtered <- rev(condition.list.combos.filtered)
+            
+            best.formula.rank <- 0
+            best.formula <- NA
+            for (z in condition.list.combos.filtered){
+              
+              design_formula <-eval(parse(text = paste("~", paste(z, collapse='+'))))
+              
+              # Create the design matrix
+              design_matrix <- model.matrix(design_formula, data = group.info)
+              
+              # Check the rank of the design matrix
+              qr_decomp <- qr(design_matrix)
+              rank <- qr_decomp$rank
+              print(ncol(design_matrix))
+              cat("Rank of the design matrix:", rank, "\n") # if less than the number of col in the design matrix -> there is linear dependency
+              if (rank >= ncol(design_matrix) & rank > best.formula.rank){
+                best.formula.rank <- rank
+                best.formula <- design_formula
+                print(best.formula)
+              }
+            }
+            
+            # Design formula
+            dds1 <- DESeq2::DESeqDataSetFromMatrix(
+              countData =  cluster.bulk[["RNA"]]$counts,
+              colData = group.info,
+              design = best.formula
+            )
+            
+            dds1 <- DESeq2::estimateSizeFactors(object = dds1)
+            dds1 <- DESeq2::estimateDispersions(object = dds1, fitType = "local")
+            dds1 <- DESeq2::nbinomWaldTest(object = dds1)
+            
+            resultsNames(dds1)
+            
+            
+            res <- results(dds1,
+                               name = paste0("group_", target[1], "_vs_", target[2]),
+                               alpha = 0.05)
+            
+            ## shrinking make the estimates of log-fc more robust when some genes do not have enough information
+            ## was cutting down on the fgsea downstream analysis by a lot
+            # res <- lfcShrink(dds1,
+            #                  coef = paste0("group_", target[1], "_vs_", target[2]),
+            #                  res=res_pre,
+            #                  type = "apeglm")
+            
+            de_markers <- as.data.frame(res[!is.na(res$padj),])
+            de_markers <- de_markers %>%
+              dplyr::rename(avg_log2FC = log2FoldChange,
+                     p_val_adj = padj,
+                     p_val = pvalue
+                    )
+          } else {
+            de_markers <- FindMarkers(cluster.bulk, ident.1 = target[1], ident.2 = target[2], slot = "counts", test.use = "DESeq2",
+                                      verbose = T, min.cells.feature = 0, min.cells.group = 0)
+          }
+          
           # start GSEA analysis here too since will be doing all the comparisons here
           de_markers$gene <- rownames(de_markers)
           GseaComparison(de_markers, cluster.name, target[1], target[2], fgsea_sets)
