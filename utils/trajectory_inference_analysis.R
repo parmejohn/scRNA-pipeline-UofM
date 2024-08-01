@@ -253,7 +253,7 @@ TrajectoryInferenceSlingshotCurved <- function(se.integrated, start.clus){
     # })  %>%  #pipe (forward) the output 'out' to the function rbind to create 'clu_df'
     #   do.call(rbind, .)
     # write.table(clu_df, file= paste0("ti_gene_clusters_", ptime.str, ".txt"), sep="\t", quote=F, row.names=FALSE)
-    write.table(lineage.res, paste0("ti_DEGs_qval_full_lineage_", i,".txt"), sep="\t", quote=F, row.names=FALSE)
+    write.table(lineage.res, paste0("ti_DEGs_qval_full_lineage_", i,".txt"), sep="\t", quote=F, row.names=TRUE)
     
   }
   # top.100.gene.list <- NA
