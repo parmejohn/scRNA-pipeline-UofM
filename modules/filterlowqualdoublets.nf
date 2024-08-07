@@ -20,6 +20,8 @@ process FILTERLOWQUALDOUBLETS {
     path ambient_rmv
     val species
     val conditions
+    val atac
+    val og
 
     output:
     path "*.pdf"
@@ -30,6 +32,6 @@ process FILTERLOWQUALDOUBLETS {
     
     script:
        """
-        ${projectDir}/src/FilterLowQualityAndDoublets.R --i $ambient_rmv -species $species -coconditions $conditions
+        ${projectDir}/src/FilterLowQualityAndDoublets.R --i $ambient_rmv -species $species -coconditions $conditions -atac $atac -original_files $og
        """
 }

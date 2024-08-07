@@ -1,15 +1,23 @@
 ##### fxns for QC #####
 AmbientRNARemoval <- function(pair_list, test){
   #save.loc <- paste(outdir, '/analysis/data/qc/', sep='')
+  print(paste("Loading ", pair_list[1], " and ", pair_list[2], sep=''))
   
-  print(paste("Loading ", pair_list[1], "and ", pair_list[2], sep=''))
+  # check if it is a multiome experiment format
   filt.matrix <- Read10X_h5(pair_list[1],use.names = T)
   raw.matrix <- Read10X_h5(pair_list[2],use.names = T)
   
-  se <- CreateSeuratObject(counts = filt.matrix) # create seurat object
-  
-  print("Providing Soup")
-  soup.channel <- SoupChannel(raw.matrix, filt.matrix)   # soup channel stpres all info related to a single 10X channel
+  if (!is.list(filt.matrix)){
+    se <- CreateSeuratObject(counts = filt.matrix) # create seurat object
+    
+    print("Providing Soup")
+    soup.channel <- SoupChannel(raw.matrix, filt.matrix)   # soup channel stpres all info related to a single 10X channel
+  } else {
+    se <- CreateSeuratObject(counts = filt.matrix$`Gene Expression`) # create seurat object
+    
+    print("Providing Soup multiome")
+    soup.channel <- SoupChannel(raw.matrix$`Gene Expression`, filt.matrix$`Gene Expression`)   # soup channel stpres all info related to a single 10X channel
+  }
   
   # Quickly perform clustering -> not looking for optimal clustering since this is a filtering step
   # Reports to have better results if some basic clustering is provided, even with basic seurat clustering
@@ -44,7 +52,7 @@ AmbientRNARemoval <- function(pair_list, test){
   DropletUtils:::write10xCounts(paste('./qc/', group.name, '/', sample.name, "_soupx",sep=''), adj.matrix, overwrite = TRUE) # name will be the fo;der before the /outs/ folder
 }
 
-BasicQC <- function(seurat_obj, species){
+BasicQC <- function(seurat_obj, species, atac){
   
   print("Removing low quality cells based on MAD thresholds")
   
@@ -72,6 +80,15 @@ BasicQC <- function(seurat_obj, species){
   VlnPlot(seurat_obj, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3)   # view distribution and to spot any obvious outliers; not saved so can remove
   
   # perform MAD to determine automatic cutoffs
+  
+  if(atac == "yes"){
+    DefaultAssay(seurat_obj) <- "ATAC"
+    
+    seurat_obj <- NucleosomeSignal(seurat_obj)
+    seurat_obj <- TSSEnrichment(seurat_obj, fast=FALSE)
+    
+    DefaultAssay(seurat_obj) <- "RNA"
+  }
   Cell.QC.Stat <- seurat_obj@meta.data
   
   ###### Percent mitochondrial filtering #####
@@ -124,12 +141,68 @@ BasicQC <- function(seurat_obj, species){
     ylab("Number of Genes")
   ggsave(paste0(seurat_obj@misc[[1]], "_nGenes_nUMI.pdf"), plot=p2)
   
-  
-  Cell.QC.Stat.nfeature.numi <- Cell.QC.Stat %>% # removing the low quality cells
-    filter(log10(nFeature_RNA) > min.Genes.thr) %>%
-    filter(log10(nFeature_RNA) < max.Genes.thr) %>%
-    filter(log10(nCount_RNA) > min.nUMI.thr) %>%
-    filter(log10(nCount_RNA) < max.nUMI.thr)
+  if(atac == "yes"){
+    DefaultAssay(seurat_obj) <- "ATAC"
+
+    # https://stuartlab.org/signac/articles/pbmc_vignette view QC section for QC filtering techniques
+    min.peaks.thr <- median(log10(Cell.QC.Stat$nCount_ATAC)) - 3*mad(log10(Cell.QC.Stat$nCount_ATAC))
+    max.peaks.thr <- median(log10(Cell.QC.Stat$nCount_ATAC)) + 3*mad(log10(Cell.QC.Stat$nCount_ATAC))
+    
+    max.nuc.thr <- median(Cell.QC.Stat$nucleosome_signal) + 3*mad(Cell.QC.Stat$nucleosome_signal)
+    min.TSS.thr <- median(Cell.QC.Stat$TSS.enrichment) - 3*mad(Cell.QC.Stat$TSS.enrichment)
+    
+    # TSS score graph
+    seurat_obj$high.tss <- ifelse(seurat_obj$TSS.enrichment > min.TSS.thr, 'High', 'Low')
+    p3 <- TSSPlot(seurat_obj, group.by = 'high.tss') + NoLegend() +
+      ggtitle(paste0(seurat_obj@misc[[1]], " QC: \nTranscriptional start site (TSS) enrichment score")) +
+      labs(tag = paste0(as.numeric(table(Cell.QC.Stat$TSS.enrichment < min.TSS.thr)[2])," cells removed\n",
+                        as.numeric(table(Cell.QC.Stat$TSS.enrichment < min.TSS.thr)[1])," cells remain")) +
+      theme(plot.tag.position = c(0, 0))
+    ggsave(paste0(seurat_obj@misc[[1]], "_tss.pdf"), plot=p3)
+    
+    # Nucleosome signal graph
+    seurat_obj$nucleosome_group <- ifelse(seurat_obj$nucleosome_signal > max.nuc.thr, 
+                                    paste0('NS >', max.nuc.thr), 
+                                    paste0('NS <', max.nuc.thr))
+    p4 <- FragmentHistogram(object = seurat_obj, group.by = 'nucleosome_group') + 
+      ggtitle(paste0(seurat_obj@misc[[1]], " QC: \nNucleosome banding pattern")) +
+      labs(tag = paste0(as.numeric(table(Cell.QC.Stat$nucleosome_signal > max.nuc.thr)[2])," cells removed\n",
+                        as.numeric(table(Cell.QC.Stat$nucleosome_signal > max.nuc.thr)[1])," cells remain")) +  
+      theme(plot.tag.position = c(0, 0))
+    ggsave(paste0(seurat_obj@misc[[1]], "_nucleosome_signal.pdf"), plot=p4)
+    
+    seurat_obj$log10_nCount_ATAC <- log10(seurat_obj$nCount_ATAC)
+    p5 <- VlnPlot(object = seurat_obj, features = "log10_nCount_ATAC", 
+                  pt.size = 1, alpha = 0.2) + 
+      geom_hline(yintercept = c(min.peaks.thr, max.peaks.thr), linetype = "dashed", color = "red") + 
+      ylab("log10(nCount_ATAC)") +
+      ggtitle(paste0(seurat_obj@misc[[1]], " QC: \nTotal number of fragments in peaks")) + 
+      labs(tag = paste0(as.numeric(table(log10(Cell.QC.Stat$nCount_RNA) > max.peaks.thr | 
+                                log10(Cell.QC.Stat$nCount_ATAC) < min.peaks.thr)[2])," cells removed\n",
+             as.numeric(table(log10(Cell.QC.Stat$nCount_ATAC) > max.peaks.thr | 
+                                log10(Cell.QC.Stat$nCount_ATAC) < min.peaks.thr)[1])," cells remain")) +  
+      theme(plot.tag.position = c(0, 0))
+    ggsave(paste0(seurat_obj@misc[[1]], "_ncount_atac.pdf"), plot=p5) 
+    
+    Cell.QC.Stat.nfeature.numi <- Cell.QC.Stat %>% # removing the low quality cells from scATAC standards
+      filter(log10(nCount_ATAC) > min.peaks.thr) %>%
+      filter(log10(nCount_ATAC) < max.peaks.thr) %>%
+      filter((nucleosome_signal) < max.nuc.thr) %>%
+      filter((TSS.enrichment) > min.TSS.thr) %>%
+      filter(log10(nFeature_RNA) > min.Genes.thr) %>%
+      filter(log10(nFeature_RNA) < max.Genes.thr) %>%
+      filter(log10(nCount_RNA) > min.nUMI.thr) %>%
+      filter(log10(nCount_RNA) < max.nUMI.thr)
+    
+    DefaultAssay(seurat_obj) <- "RNA"
+  } else {
+    
+    Cell.QC.Stat.nfeature.numi <- Cell.QC.Stat %>% # removing the low quality cells
+      filter(log10(nFeature_RNA) > min.Genes.thr) %>%
+      filter(log10(nFeature_RNA) < max.Genes.thr) %>%
+      filter(log10(nCount_RNA) > min.nUMI.thr) %>%
+      filter(log10(nCount_RNA) < max.nUMI.thr)
+  }
   
   if(nrow(Cell.QC.Stat.nfeature.numi)/nrow(Cell.QC.Stat) > .5){
     Cell.QC.Stat <- Cell.QC.Stat.nfeature.numi

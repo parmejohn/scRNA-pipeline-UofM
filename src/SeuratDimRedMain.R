@@ -1,5 +1,4 @@
 #!/usr/local/bin/Rscript
-#source(paste0(dirname(dirname(dirname(getwd()))),"/utils/seurat_analysis.R"))
 
 library(argparse)
 library(Seurat)
@@ -74,10 +73,10 @@ if (args$clusters_optimal == 0) {
 
 if (args$resolution == 1) {
   se.integrated <-
-    SeuratDimReduction(se.integrated, 1:opt.clusters, 'group', reduction = args$reduced_dim)
+    SeuratDimReduction(se.integrated, opt.clusters, 'group', reduction = args$reduced_dim)
 } else {
   se.integrated <-
-    SeuratDimReduction(se.integrated, 1:opt.clusters, 'group', args$resolution, reduction = args$reduced_dim)
+    SeuratDimReduction(se.integrated, opt.clusters, 'group', args$resolution, reduction = args$reduced_dim)
 }
 
 # have to use visual check to find optimal # of clusters for now

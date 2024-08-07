@@ -17,6 +17,7 @@ params.co_conditions = 'none'
 params.reduced_dim = 'integrated.cca'
 params.pathways = 'none'
 params.main_time = false
+params.sc_atac = false
 
 include {AMBIENTRNAREMOVAL} from './modules/ambientremoval.nf'
 include {FILTERLOWQUALDOUBLETS} from './modules/filterlowqualdoublets.nf'
@@ -55,12 +56,20 @@ process INITIALIZEFOLDERS {
 
 workflow {
     INITIALIZEFOLDERS(params.outdir)
-    ambient_ch = AMBIENTRNAREMOVAL(params.indir, params.test_data) // array of conditions
-    // ambient_ch.view() // outputs just the qc folder, for downstream qc, all samples need to be loaded as a list
     
     processed_co_condition = params.co_conditions.replaceAll(',', ' ')
-    FILTERLOWQUALDOUBLETS(ambient_ch, params.species, processed_co_condition)
-    filtered_ch = FILTERLOWQUALDOUBLETS.out.se_filtered_singlets_list
+    ambient_ch = AMBIENTRNAREMOVAL(params.indir, params.test_data) // array of conditions
+    
+    if (params.sc_atac){
+  
+      FILTERLOWQUALDOUBLETS(ambient_ch, params.species, processed_co_condition, "yes", params.indir)
+      filtered_ch = FILTERLOWQUALDOUBLETS.out.se_filtered_singlets_list
+      
+    } else {
+
+      FILTERLOWQUALDOUBLETS(ambient_ch, params.species, processed_co_condition, "no", params.indir)
+      filtered_ch = FILTERLOWQUALDOUBLETS.out.se_filtered_singlets_list
+    }
     
     // integrated seurat object
     integrated_ch = INTEGRATEDATA(filtered_ch, params.reduced_dim, processed_co_condition)

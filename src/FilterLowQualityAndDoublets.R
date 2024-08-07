@@ -6,8 +6,11 @@ library(Seurat)
 library(ggplot2)
 library(scDblFinder)
 library(SingleCellExperiment)
+library(EnsDb.Mmusculus.v79)
+library(EnsDb.Hsapiens.v86)
 library(dplyr)
 library(tidyverse)
+library(Signac)
 
 set.seed(333)
 
@@ -35,6 +38,20 @@ parser$add_argument(
   required = TRUE,
   nargs = '*',
   help = 'Co-conditions listed'
+)
+parser$add_argument(
+  '-atac',
+  type = "character",
+  required = TRUE,
+  nargs = 1,
+  help = 'Is this a multiome experiment?'
+)
+parser$add_argument(
+  '-original_files',
+  type = "character",
+  required = TRUE,
+  nargs = 1,
+  help = 'Contains CellRanger count outputs folder seperated by condition'
 )
 args <- parser$parse_args()
 
@@ -72,7 +89,65 @@ print(indir)
 se.list <-
   lapply(foldernames, Read10X) %>% lapply(CreateSeuratObject) # load the SoupX corrected data as a adj.matrix and then convert it into a SeuratObject
 print(se.list)
-#filenames.filt <- filenames[grepl("filtered", filenames)]
+
+species <- args$s
+
+if (args$atac == "yes"){
+  if (species == "musmusculus"){
+    
+    
+    annotation <- GetGRangesFromEnsDb(ensdb = EnsDb.Mmusculus.v79)
+    seqlevels(annotation) <- paste0('chr', seqlevels(annotation))
+    
+  } else if (species == "homosapiens"){
+    
+    
+    annotation <- GetGRangesFromEnsDb(ensdb = EnsDb.Hsapiens.v86)
+    seqlevels(annotation) <- paste0('chr', seqlevels(annotation))
+    
+  }
+  
+  # should be the same length and order as the se.list below
+  filenames <-
+    list.files(
+      path = args$original_files,
+      pattern = "filtered_feature_bc_matrix.h5|fragments.tsv.gz$",
+      full.names = TRUE,
+      recursive = T,
+      include.dirs = T
+    )
+  print(filenames)
+  filenames <- filenames[grepl("outs", filenames)]
+  
+  list_of_pairs <- list()
+  for (i in 1:length(filenames)) {
+    if (i %% 2 == 1) {
+      temp_list <- list(c(filenames[i], filenames[i + 1]))
+      list_of_pairs <- append(list_of_pairs, temp_list)
+    }
+  }
+  
+  for (i in 1:length(se.list)){
+    filt.matrix <- Read10X_h5(list_of_pairs[[i]][2], use.names = T)
+    
+    se.temp <- se.list[[i]]
+    
+    existing_cells <- colnames(se.temp)
+    filtered_chromatin_data <- filt.matrix$Peaks[, existing_cells, drop = FALSE]
+    
+    ## need to reload the chromatin assay after
+    chrom_assay <- CreateChromatinAssay(
+      counts = filtered_chromatin_data,
+      sep = c(":", "-"),
+      fragments = list_of_pairs[[i]][1],
+      annotation = annotation
+    )
+    
+    se.temp[["ATAC"]] <- chrom_assay
+    DefaultAssay(se.temp) <- "RNA"
+    se.list[[i]] <-  se.temp
+  }
+}
 
 # set up sample and conditions
 print("Setting up se objects")
@@ -103,7 +178,7 @@ saveRDS(se.list, "se_list_raw.rds")
 ##### Basic QC #####
 print("Basic QC")
 se.filtered.list <-
-  lapply(se.list, BasicQC, species = args$species) # removal of low quality cells by percentage of mitochondrial reads, number of genes, and number of UMIs
+  lapply(se.list, BasicQC, species = species, atac = args$atac) # removal of low quality cells by percentage of mitochondrial reads, number of genes, and number of UMIs
 saveRDS(se.filtered.list, "se_filtered_list.rds")
 
 ##### Doublet Removal #####

@@ -8,6 +8,7 @@ library(tidyverse)
 library(harmony)
 library(batchelor)
 library(SeuratWrappers)
+library(Signac)
 
 set.seed(333)
 
