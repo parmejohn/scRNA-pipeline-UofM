@@ -1,5 +1,4 @@
 #!/usr/local/bin/Rscript
-#source(paste0(dirname(dirname(dirname(getwd()))),"/utils/qc.R"))
 
 library(argparse)
 library(Seurat)
@@ -106,6 +105,27 @@ if (args$atac == "yes"){
     seqlevels(annotation) <- paste0('chr', seqlevels(annotation))
     
   }
+  # find common peak set
+  bedfiles <-
+    list.files(
+      path = args$original_files,
+      pattern = ".bed",
+      full.names = TRUE,
+      recursive = T,
+      include.dirs = T
+    )
+  print("read tables")
+  bed.list <- lapply(bedfiles, read.table, header = FALSE, col.names = c("chr", "start", "end"), sep = "\t")
+  print("make granges")
+  gr.list <- lapply(bed.list, makeGRangesFromDataFrame)
+  #gr.list <- GRangesList(gr.list)
+  gr.vector <- unlist(gr.list)
+  print(class(gr.vector))
+  print("combining peaks")
+  #combined.peaks <- Signac::reduce(x = gr.vector)
+  combined.peaks <- UnifyPeaks(object.list = gr.list)
+  peakwidths <- width(combined.peaks)
+  combined.peaks <- combined.peaks[peakwidths  < 10000 & peakwidths > 20] # filtering bad peaks based on length
   
   # should be the same length and order as the se.list below
   filenames <-
@@ -133,13 +153,22 @@ if (args$atac == "yes"){
     se.temp <- se.list[[i]]
     
     existing_cells <- colnames(se.temp)
-    filtered_chromatin_data <- filt.matrix$Peaks[, existing_cells, drop = FALSE]
+    #filtered_chromatin_data <- filt.matrix$Peaks[, existing_cells, drop = FALSE]
+    
+    frags.obj <- CreateFragmentObject(path = list_of_pairs[[i]][1])
+    
+    feature.counts <- FeatureMatrix(
+      fragments = frags.obj,
+      features = combined.peaks
+    )
+    
+    filtered.feature.counts <- feature.counts[, existing_cells, drop = FALSE]
     
     ## need to reload the chromatin assay after
     chrom_assay <- CreateChromatinAssay(
-      counts = filtered_chromatin_data,
+      counts = filtered.feature.counts,
       sep = c(":", "-"),
-      fragments = list_of_pairs[[i]][1],
+      fragments = frags.obj,
       annotation = annotation
     )
     

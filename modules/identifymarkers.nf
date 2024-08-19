@@ -32,6 +32,7 @@ process IDENTIFYMARKERS {
     path "*.pdf"
     path "se_markers_presto_integrated.txt"
     path "se_integrated_auto_label.rds", emit: se_integrated_auto_label, optional: true
+    val true, emit: report
     
     script:
        """

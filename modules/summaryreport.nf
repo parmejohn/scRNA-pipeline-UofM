@@ -9,6 +9,7 @@ process SUMMARYREPORT{
 
     input:
     val comparative_signal
+    val identify_signal
     val trajectory_signal
     val da_signal
     val escape_signal

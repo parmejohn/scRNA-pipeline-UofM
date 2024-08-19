@@ -3,8 +3,16 @@ set.seed(333)
 #setwd("/research/2024_scrnaseq_pipeline/organoid_work/cellchat_testing_mult_cond")
 
 CellChatAnalysis <- function(se.integrated, species){
+  if(any(colnames(se.integrated[[]]) == "celltype")){
+    Idents(se.integrated) <- se.integrated$celltype
+  } else if (any(colnames(se.integrated[[]]) == "wsnn_res.1")) {
+    se.integrated$cluster_wsnn<- paste0("cluster_", se.integrated$wsnn_res.1)
+    Idents(se.integrated) <- se.integrated$cluster_wsnn
+  } else {
+    se.integrated$cluster_seurat <- paste0("cluster_", se.integrated$seurat_clusters)
+    Idents(se.integrated) <- se.integrated$cluster_seurat
+  }
   
-  Idents(se.integrated) <- se.integrated$celltype
   
   ##### Setting up database #####
   CellChatDB <- NA

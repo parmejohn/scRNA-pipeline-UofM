@@ -13,11 +13,11 @@ PreprocessingSeurat <- function(seurat_object){
   
   if ("ATAC" %in% SeuratObject::Assays(seurat_object)) {
     DefaultAssay(seurat_object) <- "ATAC"
-    seurat_object <- FindTopFeatures(seurat_object, min.cutoff = "q5", assay = "ATAC")
-    print("found top features")
-    
     seurat_object <- RunTFIDF(seurat_object, assay = "ATAC")
     print("runtfidf")
+    
+    seurat_object <- FindTopFeatures(seurat_object, min.cutoff = "q5", assay = "ATAC")
+    print("found top features")
     
     seurat_object <- RunSVD(seurat_object, assay = "ATAC")
     print("run svd")
@@ -26,18 +26,27 @@ PreprocessingSeurat <- function(seurat_object){
     print("reset default")
     print(seurat_object)
   }
+  return(seurat_object)
 }
 
 # integratation
-IntegrateSamples <- function(seurat_obj_list, group, reduction){
+IntegrateSamples <- function(seurat_obj_list, reduction){
   if (length(seurat_obj_list) >= 2){
     se.merged <- merge(seurat_obj_list[[1]], seurat_obj_list[c(2:length(seurat_obj_list))])
     se.merged[["RNA"]] <- split(se.merged[["RNA"]], f = se.merged$group) # whether the data is split by sample or by treatment does not matter for downstream analysis
-    #se.merged[["ATAC"]] <- split(se.merged[["ATAC"]], f = se.merged$group) # whether the data is split by sample or by treatment does not matter for downstream analysis
-    
+
     se.merged <- UpdateSeuratObject(se.merged)
-    
     se.merged.preprocessed <- PreprocessingSeurat(se.merged)
+    
+    if ("ATAC" %in% SeuratObject::Assays(se.merged.preprocessed)) {
+      se.merged.preprocessed.atac <- IntegrateAtac(se.merged.preprocessed)
+      # se.merged.preprocessed[["integrated_lsi"]] <- 
+      #   CreateDimReducObject(embeddings = se.merged.preprocessed.atac@reductions[["integrated_lsi"]], 
+      #                        key = "integrated_lsi", 
+      #                        assay = "ATAC")
+      se.merged.preprocessed[['ATAC']] <- se.merged.preprocessed.atac[['ATAC']]
+      se.merged.preprocessed[['integrated.lsi']] <- se.merged.preprocessed.atac[['integrated.lsi']]
+    }
     
     # CCA integration background; https://hbctraining.github.io/scRNA-seq_online/lessons/06_integration.html
     # - It is a form of PCA, in that it identifies the greatest sources of variation in the data, but only if it is shared or conserved across the conditions/groups
@@ -62,11 +71,6 @@ IntegrateSamples <- function(seurat_obj_list, group, reduction){
     } else {
       stop(print0(reduction, " is not implemented. Please use harmony, integrated.cca, or integracted.mnn"))
     }
-    
-    if ("ATAC" %in% SeuratObject::Assays(seurat_object)) {
-      
-    }
-    
   } else {
     print('Only 1 sample, no need to integrate')
   }
@@ -77,17 +81,18 @@ IntegrateSamples <- function(seurat_obj_list, group, reduction){
 SeuratDimReduction <- function(se.integrated, dims, group, res = 1, reduction){
   se.integrated[["RNA"]] <- JoinLayers(se.integrated[["RNA"]])
   
-  # se.integrated <- FindMultiModalNeighbors(
-  #   object = se.integrated,
-  #   reduction.list = list("pca", "lsi"), 
-  #   dims.list = list(1:dims, 2:dims),
-  #   modality.weight.name = "RNA.weight",
-  #   verbose = TRUE
-  # )
-
-  se.integrated <- FindNeighbors(se.integrated, reduction = reduction, dims = 1:dims) # returns KNN graph using the PC or CCA
-  se.integrated <- FindClusters(se.integrated, resolution = res) # find clusters of cells by shared SNN
-  se.integrated <- RunUMAP(se.integrated, dims = 1:dims, reduction = reduction) # optimizes the low-dimensional graph representation to be as similar to og graph
+  
+  if ("ATAC" %in% SeuratObject::Assays(se.integrated)) {
+    se.integrated[["ATAC"]] <- JoinLayers(se.integrated[["ATAC"]])
+    se.integrated <- FindMultiModalNeighbors(se.integrated, reduction.list = list(reduction, "integrated.lsi"), dims.list = list(1:dims, 2:50))
+    #se.integrated <- FindNeighbors(se.integrated, reduction = reduction, dims = 1:dims) # returns KNN graph using the PC or CCA
+    se.integrated <- FindClusters(se.integrated, resolution = res, graph.name = "wsnn")
+    se.integrated <- RunUMAP(se.integrated, nn.name = "weighted.nn", assay = "RNA")
+  } else {
+    se.integrated <- FindNeighbors(se.integrated, reduction = reduction, dims = 1:dims) # returns KNN graph using the PC or CCA
+    se.integrated <- FindClusters(se.integrated, resolution = res) # find clusters of cells by shared SNN
+    se.integrated <- RunUMAP(se.integrated, dims = 1:dims, reduction = reduction) # optimizes the low-dimensional graph representation to be as similar to og graph
+  }
   
   p1 <- DimPlot(se.integrated, reduction = "umap", group.by = group, alpha = 0.5) + 
     ggtitle("UMAP with Highlighted Conditions")
@@ -112,3 +117,45 @@ SeuratDimReduction <- function(se.integrated, dims, group, res = 1, reduction){
   se.integrated <- se.integrated
 }
 
+IntegrateAtac <- function(se.merged.preprocessed){
+  
+  se.merged.preprocessed[['ATAC']]<- CreateAssay5Object(counts = se.merged.preprocessed@assays[["ATAC"]]@counts,
+                                                        se.merged.preprocessed@assays[["ATAC"]]@data)
+  
+  seurat_obj_list <- SplitObject(se.merged.preprocessed, split.by = "sample")
+  
+  seurat_obj_list <- lapply(seurat_obj_list, function(x) {
+    DefaultAssay(x) <- "ATAC" # or "RNA" or any other assay name you want to set as default
+    return(x)
+  })
+  
+ #features <- SelectIntegrationFeatures(object.list = seurat_obj_list)
+  
+  integration.anchors <- FindIntegrationAnchors(
+    object.list = seurat_obj_list,
+    reduction = "rlsi",
+    dims = 2:50
+  )
+  print("found anchors")
+  # anchor.features = rownames(seurat_obj_list[[1]]), # believe this can be any would this not be needed?
+
+  # integrate LSI embeddings
+  DefaultAssay(se.merged.preprocessed) <- "ATAC"
+  
+  
+  se.merged.preprocessed.atac <- IntegrateEmbeddings(
+    anchorset = integration.anchors,
+    reductions = se.merged.preprocessed[["lsi"]],
+    new.reduction.name = "integrated.lsi",
+    dims.to.integrate = 1:50
+  )
+  print("completed integrated embeddings")
+  
+  return(se.merged.preprocessed.atac)
+}
+# lapply(seurat_obj_list, function(x) {
+#   print(DefaultAssay(x))
+#   #print(names(x[["ATAC"]]))
+#   print(slotNames(x[["ATAC"]]))
+#   print(is.null(x[["ATAC"]]@counts))
+# })

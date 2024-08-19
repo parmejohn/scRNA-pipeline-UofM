@@ -135,14 +135,20 @@ if (file.exists(paste0(res.loc,"data/se_integrated_auto_label.rds"))){
 {{paste0(res.loc, "plots/deseq2")}}  
 #' Cutoffs: p_val_adj < 0.05 & |avg_log2FC| >= 2
 #+ warning=FALSE, echo=FALSE, fig.height = 10, fig.width = 10, out.width = "50%", fig.show = 'hold', results='asis'
-plots <- list.files(paste0(res.loc, "plots/deseq2/"), full.names=TRUE)
 
-for(i in 1:length(plots)){
-  if (i <= 10){
-    ReadImageAndTrim(plots[i])
-  } else {
-    break
+if (file.exists(paste0(res.loc,"plots/deseq2"))){
+  
+  plots <- list.files(paste0(res.loc, "plots/deseq2/"), full.names=TRUE)
+  
+  for(i in 1:length(plots)){
+    if (i <= 10){
+      ReadImageAndTrim(plots[i])
+    } else {
+      break
+    }
   }
+} else {
+  print("No replicates")
 }
 
 #' ### GSEA Analysis
@@ -151,14 +157,19 @@ for(i in 1:length(plots)){
 {{paste0(res.loc, "plots/gsea/comparative")}}  
 #' Cutoffs: p_val_adj < 0.05
 #+ warning=FALSE, echo=FALSE, fig.height = 8, fig.width = 10, out.width = "50%", fig.show = 'hold', results='asis'
-plots <- list.files(paste0(res.loc, "plots/gsea/comparative/"), full.names=TRUE)
-
-for(i in 1:length(plots)){
-  if (i <= 10){
-    ReadImageAndTrim(plots[i])
-  } else {
-    break
+if (file.exists(paste0(res.loc,"plots/gsea/comparative"))){
+  
+  plots <- list.files(paste0(res.loc, "plots/gsea/comparative/"), full.names=TRUE)
+  
+  for(i in 1:length(plots)){
+    if (i <= 10){
+      ReadImageAndTrim(plots[i])
+    } else {
+      break
+    }
   }
+} else {
+  print("No replicates")
 }
 
 #' ## Single-cell GSEA with escape
@@ -264,33 +275,38 @@ if(dir.exists(paste0(res.loc, "plots/ti/psupertime_plots/"))){
 #' DEGs cutoff: |logFC| >= 1 and adj.Pval <= 0.01  
 #' GSEA cutoff: p_val_adj <= 0.05
 #+ warning=FALSE, echo=FALSE, fig.height = 10, fig.width = 10, results='asis'
-plots <- list.files(paste0(res.loc, "plots/da/"), full.names=TRUE)
-plots <- plots[grep("pval|volcano", plots)]
-
-for(i in plots){
-  ReadImageAndTrim(i)
-}
-
-plots <- list.files(paste0(res.loc, "plots/da/"), full.names=TRUE)
-plots <- plots[grep("umap|fc_dist", plots)]
-
-for(i in plots){
-  ReadImageAndTrim(i)
-}
-
-#+ warning=FALSE, echo=FALSE, fig.height = 10, fig.width = 10, out.width = "50%", fig.show = 'hold', results='asis'
-plots <- list.files(paste0(res.loc, "plots/da/"), full.names=TRUE)
-plots <- plots[grep("DE_heatmap", plots)]
-
-for(i in plots){
-  ReadImageAndTrim(i)
-}
-
-plots <- list.files(paste0(res.loc, "plots/da/"), full.names=TRUE)
-plots <- plots[grep("gsea", plots)]
-
-for(i in plots){
-	  ReadImageAndTrim(i)
+if (file.exists(paste0(res.loc,"plots/da"))){
+  
+  plots <- list.files(paste0(res.loc, "plots/da/"), full.names=TRUE)
+  plots <- plots[grep("pval|volcano", plots)]
+  
+  for(i in plots){
+    ReadImageAndTrim(i)
+  }
+  
+  plots <- list.files(paste0(res.loc, "plots/da/"), full.names=TRUE)
+  plots <- plots[grep("umap|fc_dist", plots)]
+  
+  for(i in plots){
+    ReadImageAndTrim(i)
+  }
+  
+  #+ warning=FALSE, echo=FALSE, fig.height = 10, fig.width = 10, out.width = "50%", fig.show = 'hold', results='asis'
+  plots <- list.files(paste0(res.loc, "plots/da/"), full.names=TRUE)
+  plots <- plots[grep("DE_heatmap", plots)]
+  
+  for(i in plots){
+    ReadImageAndTrim(i)
+  }
+  
+  plots <- list.files(paste0(res.loc, "plots/da/"), full.names=TRUE)
+  plots <- plots[grep("gsea", plots)]
+  
+  for(i in plots){
+  	  ReadImageAndTrim(i)
+  }
+} else {
+  print("not enough replicates")
 }
 
 #' ## Ligand-receptor analysis with CellChat
@@ -300,50 +316,53 @@ for(i in plots){
 #' - All communication probability graphs can be found in the cellchat_plots folder  
 #' - Significant information flow pathways were also plotted separately in the signaling_pathways folder
 #+ warning=FALSE, echo=FALSE, fig.height = 10, fig.width = 10, results='asis'
-plots <- list.files(paste0(res.loc, "plots/cellchat_plots/"), full.names=TRUE)
-#plots <- list.files(plots[1], full.names=TRUE)
-
-ReadImageAndTrim(paste0(plots[1], "/cellchat_interaction_summary_bar.pdf"))
-
-ReadImageAndTrim(paste0(plots[1], "/cellchat_differential_interaction_circle.pdf"))
-ReadImageAndTrim(paste0(plots[1], "/cellchat_differential_interaction_heatmap.pdf"))
-
-ReadImageAndTrim(paste0(plots[1], "/cellchat_num_interactions_circle.pdf"))
-ReadImageAndTrim(paste0(plots[1], "/cellchat_population_send_receive.pdf"))
-
-ReadImageAndTrim(paste0(plots[1], "/cellchat_compare_outgoing_signal_heatmap.pdf"))
-ReadImageAndTrim(paste0(plots[1], "/cellchat_compare_incoming_signal_heatmap.pdf"))
-ReadImageAndTrim(paste0(plots[1], "/cellchat_compare_all_signal_heatmap.pdf"))
-
-
-commun_prob_plots <- list.files(paste0(plots[1], "/commun_prob/"), full.names=TRUE)
-
-for(i in 1:length(commun_prob_plots)){
-  if (i <= 3){
-    ReadImageAndTrim(commun_prob_plots[i])
-  } else {
-    break
-  }
-}
-
-ReadImageAndTrim(paste0(plots[1], "/cellchat_information_flow_compare.pdf"))
-
-
-  sig_path_plots <- list.files(paste0(plots[1], "/signaling_pathways/"), full.names=TRUE)
+if (file.exists(paste0(res.loc,"plots/cellchat_plots"))){
+  plots <- list.files(paste0(res.loc, "plots/cellchat_plots/"), full.names=TRUE)
+  #plots <- list.files(plots[1], full.names=TRUE)
   
-  if (length(sig_path_plots) == 0){
-    print("no significant signalling paths were found")
-    
-  } else if (length(sig_path_plots) <= 3){
-    sig_path_plots_all <- list.files(sig_path_plots, full.names=TRUE, recursive = T)
-    for(i in sig_path_plots_all){
-      ReadImageAndTrim(i)
-    }
-    
-  } else {
-    sig_path_plots_all <- list.files(sig_path_plots[1:3], full.names=TRUE, recursive = T)
-    for(i in sig_path_plots_all){
-      ReadImageAndTrim(i)
+  ReadImageAndTrim(paste0(plots[1], "/cellchat_interaction_summary_bar.pdf"))
+  
+  ReadImageAndTrim(paste0(plots[1], "/cellchat_differential_interaction_circle.pdf"))
+  ReadImageAndTrim(paste0(plots[1], "/cellchat_differential_interaction_heatmap.pdf"))
+  
+  ReadImageAndTrim(paste0(plots[1], "/cellchat_num_interactions_circle.pdf"))
+  ReadImageAndTrim(paste0(plots[1], "/cellchat_population_send_receive.pdf"))
+  
+  ReadImageAndTrim(paste0(plots[1], "/cellchat_compare_outgoing_signal_heatmap.pdf"))
+  ReadImageAndTrim(paste0(plots[1], "/cellchat_compare_incoming_signal_heatmap.pdf"))
+  ReadImageAndTrim(paste0(plots[1], "/cellchat_compare_all_signal_heatmap.pdf"))
+  
+  
+  commun_prob_plots <- list.files(paste0(plots[1], "/commun_prob/"), full.names=TRUE)
+  
+  for(i in 1:length(commun_prob_plots)){
+    if (i <= 3){
+      ReadImageAndTrim(commun_prob_plots[i])
+    } else {
+      break
     }
   }
-
+  
+  ReadImageAndTrim(paste0(plots[1], "/cellchat_information_flow_compare.pdf"))
+  
+  
+    sig_path_plots <- list.files(paste0(plots[1], "/signaling_pathways/"), full.names=TRUE)
+    
+    if (length(sig_path_plots) == 0){
+      print("no significant signalling paths were found")
+      
+    } else if (length(sig_path_plots) <= 3){
+      sig_path_plots_all <- list.files(sig_path_plots, full.names=TRUE, recursive = T)
+      for(i in sig_path_plots_all){
+        ReadImageAndTrim(i)
+      }
+      
+    } else {
+      sig_path_plots_all <- list.files(sig_path_plots[1:3], full.names=TRUE, recursive = T)
+      for(i in sig_path_plots_all){
+        ReadImageAndTrim(i)
+      }
+    }
+} else {
+  print("NO REPLICATES")
+}

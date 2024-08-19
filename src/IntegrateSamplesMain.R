@@ -1,5 +1,4 @@
 #!/usr/local/bin/Rscript
-#source(paste0(dirname(dirname(dirname(getwd()))),"/utils/seurat_analysis.R"))
 
 library(argparse)
 library(Seurat)
@@ -57,7 +56,7 @@ source(paste0(file.path(dirname(dirname(
   thisFile()
 ))), "/utils/misc.R"))
 
-se.integrated <- IntegrateSamples(se.filtered.singlets.list, group, args$reduced_dim)
+se.integrated <- IntegrateSamples(se.filtered.singlets.list, args$reduced_dim)
 if (args$coconditions[1] != 'none'){
   Misc(se.integrated, slot = "co.conditions") <- args$coconditions
 }

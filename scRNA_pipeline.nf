@@ -18,6 +18,7 @@ params.reduced_dim = 'integrated.cca'
 params.pathways = 'none'
 params.main_time = false
 params.sc_atac = false
+params.replicates = true
 
 include {AMBIENTRNAREMOVAL} from './modules/ambientremoval.nf'
 include {FILTERLOWQUALDOUBLETS} from './modules/filterlowqualdoublets.nf'
@@ -119,9 +120,16 @@ workflow {
     tempora_ch = "SKIPPING TEMPORA, no time condition set"
     psupertime_ch = "SKIPPING PSUPERTIME, no time condition set"
   }
-
-    COMPARATIVEANALYSIS(identified_ch, params.species)
-
+  if (params.replicates){
+    comparative_ch = COMPARATIVEANALYSIS(identified_ch, params.species).out.report
+    daanalysis_ch = DAANALYSIS(identified_ch, new_opt_clust, params.reduced_dim, params.species).out.report
+    cellchat_ch = CELLCHAT(identified_ch, params.species).out.report
+  } else {
+    comparative_ch = "NO REPLICATES"
+    daanalysis_ch = "NO REPLICATES"
+    cellchat_ch = "NO REPLICATES"
+  }
+  
 	if (params.run_escape){
 	  processed_pathways = params.pathways.replaceAll(',', ' ')
 		println "WARNING: This may take a while"
@@ -132,18 +140,16 @@ workflow {
 	}
 	println escape_ch
 
-    DAANALYSIS(identified_ch, new_opt_clust, params.reduced_dim, params.species)
-    
-    CELLCHAT(identified_ch, params.species)
 
     SUMMARYREPORT(
-        COMPARATIVEANALYSIS.out.report,
+        comparative_ch,
+        identified_ch.out.report,
         sling_ch,
-        DAANALYSIS.out.report,
+        daanalysis_ch,
         escape_ch,
         tempora_ch,
         psupertime_ch,
-        CELLCHAT.out.report,
+        cellchat_ch,
         "${params.outdir}/analysis/",
         new_opt_clust
         )
