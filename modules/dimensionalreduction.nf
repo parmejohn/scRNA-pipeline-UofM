@@ -33,6 +33,7 @@ process DIMENSIONALREDUCTION {
     path "*.pdf"
     path "se_integrated_dimred.rds", emit: se_integrated_dimred
     path "optimal_clusters.txt", emit: clusters_optimal_n
+	val true, emit: report
     
     script:
        """

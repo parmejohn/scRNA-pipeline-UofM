@@ -184,7 +184,7 @@ CellChatAnalysis <- function(se.integrated, species){
           # for (j in 1:length(object.list)) {
           #   netVisual_aggregate(object.list[[j]], signaling = pathways.show, layout = "circle", edge.weight.max = weight.max[1], edge.width.max = 10, signaling.name = paste(pathways.show, names(object.list)[j]))
           # }
-          pdf(file = paste0(tar.dir, "/cellchat_", i, "_signal_path.pdf"), width = 8, height = 6)
+          pdf(file = paste0(tar.dir, "/cellchat_", i, "_signal_path.pdf"), width = 10, height = 10)
           par(mfrow = c(1,2), xpd=TRUE)
           for (j in 1:length(object.list)) {
             netVisual_aggregate(object.list[[j]], signaling = pathways.show, layout = "chord", signaling.name = paste(pathways.show, names(object.list)[j]))
@@ -226,18 +226,23 @@ CellChatAnalysis <- function(se.integrated, species){
       dir.create(paste0(plots.dir, "commun_prob"))
       for (i in 1:length(levels(se.integrated.group$ident))){
         
-        gg1 <- netVisual_bubble(cellchat.merged, sources.use = levels(se.integrated.group$ident)[i], 
-                                comparison = c(1, 2), max.dataset = 2, title.name = "", angle.x = 45, remove.isolate = T, return.data = T)
+        se.integrated.check <- subset(se.integrated.group, ident == levels(se.integrated.group$ident)[i])
+        min.cells <- ncol(se.integrated.check@assays[["RNA"]])
         
-        gg1 <- filterLRPairsBubble(cellchat.merged, gg1, i, max.dataset = 2, title.name = paste0("Increased signaling in ", z[2]), ident.1 = z[1], ident.2 = z[2])
-        
-        gg2 <- netVisual_bubble(cellchat.merged, sources.use = levels(se.integrated.group$ident)[i],
-                                comparison = c(1, 2), max.dataset = 1, title.name = "", angle.x = 45, remove.isolate = T, return.data = T)
-        
-        gg2 <- filterLRPairsBubble(cellchat.merged, gg2, i, max.dataset = 1, title.name = paste0("Decreased signaling in ", z[2]), ident.1 = z[1], ident.2 = z[2])
-        
-        p9 <- gg1 + gg2
-        ggsave(paste0(plots.dir, "commun_prob/cellchat_", levels(se.integrated.group$ident)[i], "_expression.pdf"), p9, width = 12, height = 8)
+        if (min.cells > 10){
+          gg1 <- netVisual_bubble(cellchat.merged, sources.use = levels(se.integrated.group$ident)[i], 
+                                  comparison = c(1, 2), max.dataset = 2, title.name = "", angle.x = 45, remove.isolate = T, return.data = T)
+          
+          gg1 <- filterLRPairsBubble(cellchat.merged, gg1, i, max.dataset = 2, title.name = paste0("Increased signaling in ", z[2]), ident.1 = z[1], ident.2 = z[2])
+          
+          gg2 <- netVisual_bubble(cellchat.merged, sources.use = levels(se.integrated.group$ident)[i],
+                                  comparison = c(1, 2), max.dataset = 1, title.name = "", angle.x = 45, remove.isolate = T, return.data = T)
+          
+          gg2 <- filterLRPairsBubble(cellchat.merged, gg2, i, max.dataset = 1, title.name = paste0("Decreased signaling in ", z[2]), ident.1 = z[1], ident.2 = z[2])
+          
+          p9 <- gg1 + gg2
+          ggsave(paste0(plots.dir, "commun_prob/cellchat_", levels(se.integrated.group$ident)[i], "_expression.pdf"), p9, width = 12, height = 8)
+        }
       }
     }
   }

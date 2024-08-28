@@ -28,12 +28,12 @@ TemporaHelper <- function(se.integrated.tempora, gmt_file, group_name = ""){
   return(se.integrated.tempora)
 }
 
-RunTempora <- function(se.integrated, main_time){
+RunTempora <- function(se.integrated, main_time, species){
 
   se.integrated[["RNA3"]] <- as(object = se.integrated[["RNA"]], Class = "Assay") #Tempora only works with older seurat objects
   se.integrated$tempora.labels <- Idents(se.integrated)
   
-  gmt_file <- DownloadGMT()
+  gmt_file <- DownloadGMT(species)
   
   cluster.names <- NA
   se.integrated@assays[["RNA3_var"]] <- CreateAssayObject(GetAssayData(se.integrated, assay = "RNA3")[se.integrated@assays[["RNA3"]]@var.features,]) # take the 2000 most variable features

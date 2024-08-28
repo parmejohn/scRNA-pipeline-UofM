@@ -34,6 +34,14 @@ parser$add_argument(
   nargs = 1,
   help = 'Is the main condition time?'
 )
+parser$add_argument(
+  '-species',
+  '--s',
+  type = "character",
+  required = TRUE,
+  nargs = 1,
+  help = 'Species name (Mus musculus, Homo sapiens); CASE-SENSITIVE'
+)
 args <- parser$parse_args()
 
 thisFile <- function() {
@@ -61,5 +69,14 @@ source(paste0(file.path(dirname(dirname(
 input <- args$i
 se.integrated <- readRDS(input)
 
-se.integrated.tempora.seurat.v3 <- RunTempora(se.integrated, args$main_time)
+species <- NA
+if (args$s == "musmusculus") {
+  species <- "Mus musculus"
+} else if (args$s == "homosapiens") {
+  species <- "Homo sapiens"
+} else {
+  print("bad")
+}
+
+se.integrated.tempora.seurat.v3 <- RunTempora(se.integrated, args$main_time, species)
 saveRDS(se.integrated.tempora.seurat.v3, "se_integrated_tempora_seurat_v3.rds")

@@ -76,26 +76,35 @@ DESeq2ConditionPerCluster <-  function(se.integrated, species){
           target <- group.pairs[[j]]
           print(target[1])
           print(target[2])
-          de_markers <- FindMarkers(cluster.bulk, ident.1 = target[1], ident.2 = target[2], slot = "counts", test.use = "DESeq2",
-                                    verbose = T, min.cells.feature = 0, min.cells.group = 0)
-          # start GSEA analysis here too since will be doing all the comparisons here
-          de_markers$gene <- rownames(de_markers)
-          GseaComparison(de_markers, cluster.name, target[1], target[2], fgsea_sets)
           
-          #print('plot')
-          p <- ggplot(de_markers, aes(avg_log2FC, -log10(p_val))) + 
-            geom_point(size = 0.5, alpha = 0.5) + 
-            theme_bw() +
-            ylab("-log10(unadjusted p-value)") + 
-            geom_text_repel(aes(label = ifelse(((p_val_adj < 0.05 & avg_log2FC >= 2)|(p_val_adj < 0.05 & avg_log2FC <= -2)), gene,
-                                                                                    "")), colour = "red", size = 3) + 
-            ggtitle(paste0("DESeq2: ", cluster.name, " ", target[1], " vs ", target[2]))
-          #dir.create(paste('deseq2', sep=''))
-          #deseq2.folder <- paste(plot.path, 'deseq2/')
-          #print('save')
-          write.table(de_markers, paste0("deseq2_cluster_", cluster.name, "_", target[1], "_vs_", target[2], '.txt'), row.names = F, quote = F)
-          PrintSave(p, paste0("deseq2_cluster_", cluster.name, "_", target[1], "_vs_", target[2], '.pdf'))
+          dup_check <- as.data.frame(cluster.bulk@active.ident)
+          colnames(dup_check)[1] <- "cond"
+          value_counts <- table(as.character(dup_check$cond))
           
+          # Extract values that occur only once
+          unique_values <- names(value_counts[value_counts == 1])
+          
+          if (length(unique_values) == 0){
+            de_markers <- FindMarkers(cluster.bulk, ident.1 = target[1], ident.2 = target[2], slot = "counts", test.use = "DESeq2",
+                                      verbose = T, min.cells.feature = 0, min.cells.group = 0)
+            # start GSEA analysis here too since will be doing all the comparisons here
+            de_markers$gene <- rownames(de_markers)
+            GseaComparison(de_markers, cluster.name, target[1], target[2], fgsea_sets)
+            
+            #print('plot')
+            p <- ggplot(de_markers, aes(avg_log2FC, -log10(p_val))) + 
+              geom_point(size = 0.5, alpha = 0.5) + 
+              theme_bw() +
+              ylab("-log10(unadjusted p-value)") + 
+              geom_text_repel(aes(label = ifelse(((p_val_adj < 0.05 & avg_log2FC >= 2)|(p_val_adj < 0.05 & avg_log2FC <= -2)), gene,
+                                                                                      "")), colour = "red", size = 3) + 
+              ggtitle(paste0("DESeq2: ", cluster.name, " ", target[1], " vs ", target[2]))
+            #dir.create(paste('deseq2', sep=''))
+            #deseq2.folder <- paste(plot.path, 'deseq2/')
+            #print('save')
+            write.table(de_markers, paste0("deseq2_cluster_", cluster.name, "_", target[1], "_vs_", target[2], '.txt'), row.names = F, quote = F)
+            PrintSave(p, paste0("deseq2_cluster_", cluster.name, "_", target[1], "_vs_", target[2], '.pdf'))
+          }
         }
       } else {
         print(paste0("No comparison analysis available for ", k, " since you only have 1 replicate, skipping this"))

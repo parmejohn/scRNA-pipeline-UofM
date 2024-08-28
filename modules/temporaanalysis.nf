@@ -21,6 +21,7 @@ process TEMPORAANALYSIS {
     input:
     path integrated
     val main_time
+    val species
 
     output:
     path "*.pdf"
@@ -30,6 +31,6 @@ process TEMPORAANALYSIS {
     
     script:
        """
-        ${projectDir}/src/TemporaMain.R --i $integrated -main_time $main_time
+        ${projectDir}/src/TemporaMain.R --i $integrated -main_time $main_time -species $species
        """
 }

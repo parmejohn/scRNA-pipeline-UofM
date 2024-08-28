@@ -141,11 +141,15 @@ PlotTrajectory_font_fix <- function (object, layout = NULL, ...)
 }
 
 
-DownloadGMT <- function(){
+DownloadGMT <- function(species){
   options(timeout=600)
   
   ##### Downloading Gene Set File #####
-  gmt_url = "http://download.baderlab.org/EM_Genesets/current_release/Human/symbol/"
+  if (species == "Homo sapiens"){
+    gmt_url = "http://download.baderlab.org/EM_Genesets/current_release/Human/symbol/"
+  } else if (species == "Mus musculus"){
+    gmt_url = "http://download.baderlab.org/EM_Genesets/current_release/Mouse/symbol/"
+  }
   
   #list all the files on the server
   filenames = getURL(gmt_url)

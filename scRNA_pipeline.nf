@@ -85,6 +85,7 @@ workflow {
     // identify cell markers
     if (params.reference_seurat != 'none'){
         IDENTIFYMARKERS(dimred_ch, new_opt_clust, params.reference_seurat)
+	identified_report = IDENTIFYMARKERS.out.report
         identified_ch = IDENTIFYMARKERS.out.se_integrated_auto_label
     } else {
         IDENTIFYMARKERS(dimred_ch, new_opt_clust, params.reference_seurat)
@@ -103,14 +104,14 @@ workflow {
   m = params.co_conditions ==~ '.*time.*'
   assert m instanceof Boolean
   if (m){
-    TEMPORAANALYSIS(identified_ch, "no")
+    TEMPORAANALYSIS(identified_ch, "no",  params.species)
     tempora_ch = TEMPORAANALYSIS.out.report
     
     PSUPERTIME(identified_ch, "no")
     psupertime_ch = PSUPERTIME.out.report
     
   } else if (params.main_time) {
-    TEMPORAANALYSIS(identified_ch, "yes")
+    TEMPORAANALYSIS(identified_ch, "yes", params.species)
     tempora_ch = TEMPORAANALYSIS.out.report
     
     PSUPERTIME(identified_ch, "yes")
@@ -121,9 +122,12 @@ workflow {
     psupertime_ch = "SKIPPING PSUPERTIME, no time condition set"
   }
   if (params.replicates){
-    comparative_ch = COMPARATIVEANALYSIS(identified_ch, params.species).out.report
-    daanalysis_ch = DAANALYSIS(identified_ch, new_opt_clust, params.reduced_dim, params.species).out.report
-    cellchat_ch = CELLCHAT(identified_ch, params.species).out.report
+    COMPARATIVEANALYSIS(identified_ch, params.species)
+	comparative_ch = COMPARATIVEANALYSIS.out.report
+    DAANALYSIS(identified_ch, new_opt_clust, params.reduced_dim, params.species)
+	daanalysis_ch = DAANALYSIS.out.report
+    CELLCHAT(identified_ch, params.species)
+	cellchat_ch = CELLCHAT.out.report
   } else {
     comparative_ch = "NO REPLICATES"
     daanalysis_ch = "NO REPLICATES"
@@ -143,7 +147,7 @@ workflow {
 
     SUMMARYREPORT(
         comparative_ch,
-        identified_ch.out.report,
+        identified_report,
         sling_ch,
         daanalysis_ch,
         escape_ch,
