@@ -90,6 +90,7 @@ workflow {
     } else {
         IDENTIFYMARKERS(dimred_ch, new_opt_clust, params.reference_seurat)
         identified_ch = dimred_ch
+	identified_report = "no reference"
     }
 
 	if (params.run_sling){

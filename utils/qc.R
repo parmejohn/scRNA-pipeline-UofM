@@ -222,5 +222,7 @@ DoubletQC <- function(seurat_obj){
   sce <- scDblFinder(sce, clusters=FALSE) # generates random doublets -> generates a new PCA -> creates a kNN network
   # training an iterative classifier on the neighborhood of real cells and artificial doublets
   se <- as.Seurat(sce, counts = "counts", data = NULL)
+  se[["ATAC"]] <- seurat_obj[["ATAC"]]
+  return(se)
   #se.singlet <- subset(se, subset = scDblFinder.class  == "singlet") # remove doublets from seurat object
 }

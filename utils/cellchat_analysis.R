@@ -6,11 +6,13 @@ CellChatAnalysis <- function(se.integrated, species){
   if(any(colnames(se.integrated[[]]) == "celltype")){
     Idents(se.integrated) <- se.integrated$celltype
   } else if (any(colnames(se.integrated[[]]) == "wsnn_res.1")) {
-    se.integrated$cluster_wsnn<- paste0("cluster_", se.integrated$wsnn_res.1)
+    se.integrated$cluster_wsnn<- as.factor(paste0("cluster_", se.integrated$wsnn_res.1))
     Idents(se.integrated) <- se.integrated$cluster_wsnn
+    se.integrated$ident <- se.integrated$cluster_wsnn
   } else {
-    se.integrated$cluster_seurat <- paste0("cluster_", se.integrated$seurat_clusters)
+    se.integrated$cluster_seurat <- as.factor(paste0("cluster_", se.integrated$seurat_clusters))
     Idents(se.integrated) <- se.integrated$cluster_seurat
+    se.integrated$ident <- se.integrated$cluster_wsnn
   }
   
   
@@ -225,20 +227,20 @@ CellChatAnalysis <- function(se.integrated, species){
       ## Sometimes the dataset cannot be filtered (NA source targets after filtering), so print the unfiltered option in these situations
       dir.create(paste0(plots.dir, "commun_prob"))
       for (i in 1:length(levels(se.integrated.group$ident))){
-        
+        print(i)
         se.integrated.check <- subset(se.integrated.group, ident == levels(se.integrated.group$ident)[i])
         min.cells <- ncol(se.integrated.check@assays[["RNA"]])
         
-        if (min.cells > 10){
+        if (min.cells > 30){
           gg1 <- netVisual_bubble(cellchat.merged, sources.use = levels(se.integrated.group$ident)[i], 
                                   comparison = c(1, 2), max.dataset = 2, title.name = "", angle.x = 45, remove.isolate = T, return.data = T)
           
-          gg1 <- filterLRPairsBubble(cellchat.merged, gg1, i, max.dataset = 2, title.name = paste0("Increased signaling in ", z[2]), ident.1 = z[1], ident.2 = z[2])
+          gg1 <- filterLRPairsBubble(cellchat.merged, gg1, levels(se.integrated.group$ident)[i], max.dataset = 2, title.name = paste0("Increased signaling in ", z[2]), ident.1 = z[1], ident.2 = z[2])
           
           gg2 <- netVisual_bubble(cellchat.merged, sources.use = levels(se.integrated.group$ident)[i],
                                   comparison = c(1, 2), max.dataset = 1, title.name = "", angle.x = 45, remove.isolate = T, return.data = T)
           
-          gg2 <- filterLRPairsBubble(cellchat.merged, gg2, i, max.dataset = 1, title.name = paste0("Decreased signaling in ", z[2]), ident.1 = z[1], ident.2 = z[2])
+          gg2 <- filterLRPairsBubble(cellchat.merged, gg2, levels(se.integrated.group$ident)[i], max.dataset = 1, title.name = paste0("Decreased signaling in ", z[2]), ident.1 = z[1], ident.2 = z[2])
           
           p9 <- gg1 + gg2
           ggsave(paste0(plots.dir, "commun_prob/cellchat_", levels(se.integrated.group$ident)[i], "_expression.pdf"), p9, width = 12, height = 8)
@@ -286,12 +288,10 @@ filterLRPairsBubble <- function(cellchat.merged, gg1, i, max.dataset, title.name
     colnames(interaction_name.filtered)[1] <- "interaction_name"
     if (length(which(is.na(as.character(gg1[["gg.obj"]][["data"]]$source.target)))) == 0 & length(gg1[["gg.obj"]][["data"]]$source.target) >= 4){
       p1 <- netVisual_bubble(cellchat.merged, sources.use = i, pairLR.use = interaction_name.filtered, comparison = c(1, 2), 
-                             max.dataset = max.dataset, title.name = title.name, angle.x = 45, remove.isolate = T)
+                               max.dataset = max.dataset, title.name = title.name, angle.x = 45, remove.isolate = T)
       return(p1)
+      
     } else {
-      #for (j in which(is.na(as.character(gg1[["gg.obj"]][["data"]]$source.target)))){
-      #levels(gg1[["gg.obj"]][["data"]]$source.target) <- factor(c(levels(gg1[["gg.obj"]][["data"]]$source.target), paste0(gg1[["gg.obj"]][["data"]][i,14], " ", "(", gg1[["gg.obj"]][["data"]][j,15], ")")))
-      #gg1[["gg.obj"]][["data"]][j, 12] <- paste0(gg1[["gg.obj"]][["data"]][j,14], " ", "(", gg1[["gg.obj"]][["data"]][j,15], ")")
       p1 <- netVisual_bubble(cellchat.merged, sources.use = i, comparison = c(1, 2), max.dataset = max.dataset, title.name = paste0(title.name, ": Unfiltered"), angle.x = 45, remove.isolate = T)
       return(p1)
     }

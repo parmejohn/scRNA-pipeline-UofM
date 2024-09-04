@@ -40,10 +40,6 @@ IntegrateSamples <- function(seurat_obj_list, reduction){
     
     if ("ATAC" %in% SeuratObject::Assays(se.merged.preprocessed)) {
       se.merged.preprocessed.atac <- IntegrateAtac(se.merged.preprocessed)
-      # se.merged.preprocessed[["integrated_lsi"]] <- 
-      #   CreateDimReducObject(embeddings = se.merged.preprocessed.atac@reductions[["integrated_lsi"]], 
-      #                        key = "integrated_lsi", 
-      #                        assay = "ATAC")
       se.merged.preprocessed[['ATAC']] <- se.merged.preprocessed.atac[['ATAC']]
       se.merged.preprocessed[['integrated.lsi']] <- se.merged.preprocessed.atac[['integrated.lsi']]
     }
@@ -83,7 +79,7 @@ SeuratDimReduction <- function(se.integrated, dims, group, res = 1, reduction){
   
   
   if ("ATAC" %in% SeuratObject::Assays(se.integrated)) {
-    se.integrated[["ATAC"]] <- JoinLayers(se.integrated[["ATAC"]])
+    #se.integrated[["ATAC"]] <- JoinLayers(se.integrated[["ATAC"]])
     se.integrated <- FindMultiModalNeighbors(se.integrated, reduction.list = list(reduction, "integrated.lsi"), dims.list = list(1:dims, 2:50))
     #se.integrated <- FindNeighbors(se.integrated, reduction = reduction, dims = 1:dims) # returns KNN graph using the PC or CCA
     se.integrated <- FindClusters(se.integrated, resolution = res, graph.name = "wsnn")
@@ -119,20 +115,18 @@ SeuratDimReduction <- function(se.integrated, dims, group, res = 1, reduction){
 
 IntegrateAtac <- function(se.merged.preprocessed){
   
-  se.merged.preprocessed[['ATAC']]<- CreateAssay5Object(counts = se.merged.preprocessed@assays[["ATAC"]]@counts,
-                                                        se.merged.preprocessed@assays[["ATAC"]]@data)
-  
-  seurat_obj_list <- SplitObject(se.merged.preprocessed, split.by = "sample")
-  
-  seurat_obj_list <- lapply(seurat_obj_list, function(x) {
+  # se.merged.preprocessed[['ATAC']]<- CreateAssay5Object(counts = se.merged.preprocessed@assays[["ATAC"]]@counts,
+  #                                                       se.merged.preprocessed@assays[["ATAC"]]@data)
+
+  seurat_obj_list_atac <- SplitObject(se.merged.preprocessed, split.by = "sample")
+
+  seurat_obj_list_atac <- lapply(seurat_obj_list_atac, function(x) {
     DefaultAssay(x) <- "ATAC" # or "RNA" or any other assay name you want to set as default
     return(x)
   })
   
- #features <- SelectIntegrationFeatures(object.list = seurat_obj_list)
-  
   integration.anchors <- FindIntegrationAnchors(
-    object.list = seurat_obj_list,
+    object.list = seurat_obj_list_atac,
     reduction = "rlsi",
     dims = 2:50
   )
@@ -141,7 +135,6 @@ IntegrateAtac <- function(se.merged.preprocessed){
 
   # integrate LSI embeddings
   DefaultAssay(se.merged.preprocessed) <- "ATAC"
-  
   
   se.merged.preprocessed.atac <- IntegrateEmbeddings(
     anchorset = integration.anchors,
@@ -153,9 +146,3 @@ IntegrateAtac <- function(se.merged.preprocessed){
   
   return(se.merged.preprocessed.atac)
 }
-# lapply(seurat_obj_list, function(x) {
-#   print(DefaultAssay(x))
-#   #print(names(x[["ATAC"]]))
-#   print(slotNames(x[["ATAC"]]))
-#   print(is.null(x[["ATAC"]]@counts))
-# })
