@@ -1,17 +1,5 @@
 set.seed(333)
 
-# se.integrated <- readRDS("/research/2024_scrnaseq_pipeline/organoid_work/organoid_3k_ti_changes/pipeline/analysis/data/se_integrated_auto_label.rds")
-k = 16
-d = 50
-sample = "sample"
-condition = "group"
-reduced.dims = "INTEGRATED.CCA"
-prop = 0.05
-species = "Mus musculus"
-fdr.cutoff = 0.05
-# 
-# sc.integrated.milo.traj <- readRDS("/home/projects/sc_pipelines/scrna_deanne_harmony_low_res/pipeline/analysis/data/sc_integrated_milo_traj.rds")
-
 DifferentialAbundanceMilo <-
   function(se.integrated,
            sample,
