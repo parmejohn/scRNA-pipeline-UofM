@@ -47,8 +47,7 @@ CellChatAnalysis <- function(se.integrated, species){
       # create pairs for each possible combination
       group.pairs <- as.data.frame(combn(unique(se.integrated@meta.data[[grouping]]), 2))
       group.pairs <- sapply(group.pairs, function(x) as.character(x), simplify = FALSE)
-      #print(group.pairs)
-      #if (sub("^[^_]*_", "", k) == "time"){
+
       if (k >= 2){
         group.pairs.filt <- list()
         for (z in group.pairs){
@@ -101,6 +100,11 @@ CellChatAnalysis <- function(se.integrated, species){
         object.list <- c(object.list, cellchat)
       }
       
+      group.new = unique(union(levels(object.list[[1]]@idents), levels(object.list[[2]]@idents)))
+      z1 <- liftCellChat(object.list[[1]], group.new)
+      z2 <- liftCellChat(object.list[[2]], group.new)
+      object.list = list(z1, z2)
+      
       names(object.list) <-  unique(z)
       saveRDS(object.list, paste0(data.dir, "cellchat_object_list.rds"))
       
@@ -116,7 +120,7 @@ CellChatAnalysis <- function(se.integrated, species){
       ggsave(paste0(plots.dir, "cellchat_interaction_summary_bar.pdf"), p1, width = 8, height = 6)
       
       # red = increased signaling in the second dataset compared to the first
-      pdf(paste0(plots.dir, "cellchat_differential_interaction_circle.pdf"), width = 10, height = 6)
+      pdf(paste0(plots.dir, "cellchat_differential_interaction_circle.pdf"), width = 12, height = 8)
       par(mfrow = c(1,2), xpd=TRUE)
       tmp1 <- netVisual_diffInteraction(cellchat.merged, weight.scale = T, margin = 0.3)
       tmp2 <- netVisual_diffInteraction(cellchat.merged, weight.scale = T, measure = "weight", margin = 0.3)
@@ -171,6 +175,7 @@ CellChatAnalysis <- function(se.integrated, species){
       
       ##### get the top signalling pathways and plot out cirle plots #####
       top.paths <- subset(gg1[["data"]], pvalues <= 0.05)
+      top.paths <- filter(top.paths, contribution > 0)
       top.paths <- unique(top.paths$name)
       
       cellchat.merged@meta$datasets = factor(cellchat.merged@meta$datasets, levels = c(z[1], z[2])) # set factor level
@@ -193,9 +198,13 @@ CellChatAnalysis <- function(se.integrated, species){
           }
           graphics.off()
         }
-        p5 <- plotGeneExpression(cellchat.merged, signaling = i, split.by = "datasets", colors.ggplot = T, type = "violin") +
-          plot_annotation(paste0(i, " pathway gene expression"),theme=theme(plot.title=element_text(hjust=0.5)))
-        ggsave(paste0(tar.dir, "/cellchat_", i, "_expression.pdf"), p5, width = 8, height = 8)
+        
+        #extractEnrichedLR(cellchat.merged,  signaling = i)
+        if (any(grepl(i, rownames(cellchat.merged@data.signaling), ignore.case = T))){ # check if signalling pathway was calculated for in the cellchat obj
+          p5 <- plotGeneExpression(cellchat.merged, signaling = i, split.by = "datasets", colors.ggplot = T, type = "violin") +
+            plot_annotation(paste0(i, " pathway gene expression"),theme=theme(plot.title=element_text(hjust=0.5)))
+          ggsave(paste0(tar.dir, "/cellchat_", i, "_expression.pdf"), p5, width = 8, height = 8)
+        }
       }
       
       ##### Outgoing/incoming signalling patterns for each cell pop #####
@@ -228,22 +237,35 @@ CellChatAnalysis <- function(se.integrated, species){
       dir.create(paste0(plots.dir, "commun_prob"))
       for (i in 1:length(levels(se.integrated.group$ident))){
         print(i)
-        se.integrated.check <- subset(se.integrated.group, ident == levels(se.integrated.group$ident)[i])
-        min.cells <- ncol(se.integrated.check@assays[["RNA"]])
-        
-        if (min.cells > 30){
-          gg1 <- netVisual_bubble(cellchat.merged, sources.use = levels(se.integrated.group$ident)[i], 
-                                  comparison = c(1, 2), max.dataset = 2, title.name = "", angle.x = 45, remove.isolate = T, return.data = T)
+        if(any(grepl(levels(se.integrated.group$ident)[i], cellchat.merged@idents[[1]])) & 
+           any(grepl(levels(se.integrated.group$ident)[i], cellchat.merged@idents[[2]]))){
+          se.integrated.check <- subset(se.integrated.group, ident == levels(se.integrated.group$ident)[i])
+          min.cells <- ncol(se.integrated.check@assays[["RNA"]])
           
-          gg1 <- filterLRPairsBubble(cellchat.merged, gg1, levels(se.integrated.group$ident)[i], max.dataset = 2, title.name = paste0("Increased signaling in ", z[2]), ident.1 = z[1], ident.2 = z[2])
-          
-          gg2 <- netVisual_bubble(cellchat.merged, sources.use = levels(se.integrated.group$ident)[i],
-                                  comparison = c(1, 2), max.dataset = 1, title.name = "", angle.x = 45, remove.isolate = T, return.data = T)
-          
-          gg2 <- filterLRPairsBubble(cellchat.merged, gg2, levels(se.integrated.group$ident)[i], max.dataset = 1, title.name = paste0("Decreased signaling in ", z[2]), ident.1 = z[1], ident.2 = z[2])
-          
-          p9 <- gg1 + gg2
-          ggsave(paste0(plots.dir, "commun_prob/cellchat_", levels(se.integrated.group$ident)[i], "_expression.pdf"), p9, width = 12, height = 8)
+          if (min.cells > 30){
+            #subsetCommunication(object = cellchat.merged@net, cellchat.merged@LR, levels(cellchat.merged@idents[["joint"]])[14])
+            
+            check.interactions <- subsetCommunication(cellchat.merged, sources.use = levels(se.integrated.group$ident)[i])
+            if (all(nrow(check.interactions[[1]]) > 0 & nrow(check.interactions[[2]]) > 0)){
+              
+              gg1 <- netVisual_bubble(cellchat.merged, sources.use = levels(se.integrated.group$ident)[i], 
+                                      comparison = c(1, 2), max.dataset = 2, title.name = "", angle.x = 45, remove.isolate = T, return.data = T)
+              
+              gg1 <- filterLRPairsBubble(cellchat.merged, gg1, levels(se.integrated.group$ident)[i], 
+                                         max.dataset = 2, 
+                                         title.name = paste0("Increased signaling in ", z[2]), 
+                                         ident.1 = z[1], 
+                                         ident.2 = z[2])
+              
+              gg2 <- netVisual_bubble(cellchat.merged, sources.use = levels(se.integrated.group$ident)[i],
+                                      comparison = c(1, 2), max.dataset = 1, title.name = "", angle.x = 45, remove.isolate = T, return.data = T)
+              
+              gg2 <- filterLRPairsBubble(cellchat.merged, gg2, levels(se.integrated.group$ident)[i], max.dataset = 1, title.name = paste0("Decreased signaling in ", z[2]), ident.1 = z[1], ident.2 = z[2])
+              
+              p9 <- gg1 + gg2
+              ggsave(paste0(plots.dir, "commun_prob/cellchat_", levels(se.integrated.group$ident)[i], "_expression.pdf"), p9, width = 12, height = 8)
+            }
+          }
         }
       }
     }
