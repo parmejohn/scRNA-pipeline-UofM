@@ -308,11 +308,13 @@ filterLRPairsBubble <- function(cellchat.merged, gg1, i, max.dataset, title.name
   if (length(unique(gg1[["gg.obj"]][["data"]]$interaction_name)) != 0){
     interaction_name.filtered <- as.data.frame(unique(gg1[["gg.obj"]][["data"]]$interaction_name))
     colnames(interaction_name.filtered)[1] <- "interaction_name"
-    if (length(which(is.na(as.character(gg1[["gg.obj"]][["data"]]$source.target)))) == 0 & length(gg1[["gg.obj"]][["data"]]$source.target) >= 4){
+    check.interactions <- subsetCommunication(cellchat.merged, sources.use = i, pairLR.use = interaction_name.filtered)
+    if (length(which(is.na(as.character(gg1[["gg.obj"]][["data"]]$source.target)))) == 0 & 
+        length(gg1[["gg.obj"]][["data"]]$source.target) >= 4 &
+        all(nrow(check.interactions[[1]]) > 0 & nrow(check.interactions[[2]]) > 0)){
       p1 <- netVisual_bubble(cellchat.merged, sources.use = i, pairLR.use = interaction_name.filtered, comparison = c(1, 2), 
                                max.dataset = max.dataset, title.name = title.name, angle.x = 45, remove.isolate = T)
       return(p1)
-      
     } else {
       p1 <- netVisual_bubble(cellchat.merged, sources.use = i, comparison = c(1, 2), max.dataset = max.dataset, title.name = paste0(title.name, ": Unfiltered"), angle.x = 45, remove.isolate = T)
       return(p1)
