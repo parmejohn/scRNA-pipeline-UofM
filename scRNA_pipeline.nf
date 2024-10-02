@@ -32,6 +32,7 @@ include {DAANALYSIS} from './modules/daanalysis.nf'
 include {TEMPORAANALYSIS} from './modules/temporaanalysis.nf'
 include {PSUPERTIME} from './modules/psupertime.nf'
 include {CELLCHAT} from './modules/cellchat.nf'
+include {ATACANALYSES} from './modules/atacanalyses.nf'
 include {SUMMARYREPORT} from './modules/summaryreport.nf'
 
 process INITIALIZEFOLDERS {
@@ -145,6 +146,13 @@ workflow {
 	}
 	println escape_ch
 
+	if (params.sc_atac){
+		ATACANALYSES(identified_ch, params.species)
+		atac_ch = ATACANALYSES.out.report
+	} else {
+		atac_ch = "no atac-seq info provided"
+	}
+	println atac_ch
 
     SUMMARYREPORT(
         comparative_ch,
