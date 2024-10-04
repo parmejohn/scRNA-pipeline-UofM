@@ -115,6 +115,8 @@ DifferentialAbundanceMilo <-
           dge_smp <- NULL
         } else if (!(i %in% da.results$da.clusters)){
           dge_smp <- NULL
+        } else if (sum(i == da.results$da.clusters) < 2){
+          dge_smp <- NULL
         } else {
           dge_smp <- groupNhoods(
             sc.integrated.milo.traj,
