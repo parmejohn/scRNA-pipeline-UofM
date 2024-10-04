@@ -33,16 +33,18 @@ nextflow run scRNA_pipeline.nf \
 	--species <species name> \
 	--bind <bind file path locations> \
 	--reference_seurat [path(s) to labelled reference seurat object] \
+	--sc_atac [true/false] \
+	--replicates [true/false] \
+	--run_sling [true/false] \
+	--main_time [true/false] \
 	--beginning_cluster [inferred earliest celltype] \
 	--clusters_optimal [optimal number of clusters] \
 	--resolution [0-9*] \
 	--run_escape [true/false] \
 	--pathways [PATHWAY1,PATHWAY2,...] \
-	--run_sling [true/false] \
 	--co_conditions [X1,X2,...] \
 	--reduced_dim [integrated.cca | integrated.mnn | harmony] \
 	--test_data [0-9*] \
-	-with-apptainer path_to_image/scrnaseq_singularity_latest.sif
 ```
 
 ### Arguments
@@ -56,26 +58,30 @@ nextflow run scRNA_pipeline.nf \
 	- DEFAULT: ''
 - reference_seurat: Path (or paths seperated by ',') to a labelled reference seurat object. The object(s) will be used to automatically label your own dataset. Note, you should still manually check your clusters to see if the identification was what was expected
 	- DEFAULT: 'none'
-- beginning_cluster: If you know what celltype is would be the earliest in a differentiation pathway.
+- sc_atac: Will perform joint integration of scRNA-seq and scATAC-seq data. Also will perform a series of scATAC analyses. Must have multiome 10X data available in the indir.
+	- DEFAULT: false
+- replicates: Signifies if analyses has replicates available per main condition. If false, will do the bare minimum analyses.
+	- DEFAULT: true
+- main_time: If the main condition being tested for is time, this parameter will specify it for the downstream analyses.
+	- DEFAULT: false
+- run_escape: Performs escape analysis to provide single-cell GSEA results. IMPORTANT: This analysis takes a substantial amount of time and memory, so ensure that you provide enough of both before setting to 'true'. With Nextflow capabilities as well, it is fine to run the pipeline once without escape and then with  '-resume', since the pipeline will cache the rest of the data.
+	- DEFAULT: false
+- pathways: List of desired pathways/phrases separated by ',' to search on the Gene onotology: biological processes for MsigDB for the escape analysis. Setting this option will make it so the top 5 pathways will not be printed during escape. Used if '--run_escape true'
+	- DEFAULT: 'none'
+- run_sling: Performs slingshot trajectory inference analysis
+	- DEFAULT: false
+- beginning_cluster: If you know what celltype is would be the earliest in a differentiation pathway. Used if '--run_slingshot true'
 	- DEFAULT: ''
 - clusters_optimal: Number of optimal clusters/dimensionality for machine learning methods. If set to 0, will be calculated automatically through NbClust() Calinski-Harabasz (ch) index.
 	- DEFAULT: 0
 - resolution: Desired resolution, increasing this will increase the number of clusters and vice versa.
 	- DEFAULT: 1
-- run_escape: Performs escape analysis to provide single-cell GSEA results. IMPORTANT: This analysis takes a substantial amount of time and memory, so ensure that you provide enough of both before setting to 'True'. With Nextflow capabilities as well, it is fine to run the pipeline once without escape and then with  '-resume', since the pipeline will cache the rest of the data.
-	- DEFAULT: false
-- pathways: List of desired pathways/phrases separated by ',' to search on the Gene onotology: biological processes for MsigDB for the escape analysis. Setting this option will make it so the top 5 pathways will not be printed during escape.
-	- DEFAULT: 'none'
-- run_sling: Performs slingshot trajectory inference analysis
-	- DEFAULT: false
-- co_conditions: List of co-conditions for each sample separated by ','. Your sample name should contain an underscore for each condition, including the main one being tested for. For instance, SAMPLE1_MUT_DAY50_treated, could have the arguement of '-co_condition time,treatment'
+- co_conditions: List of co-conditions for each sample separated by ','. Your sample name should contain an underscore for each condition, including the main one being tested for. For instance, SAMPLE1_MUT_DAY50_treated, could have the arguement of '--co_condition time,treatment'
 	- DEFAULT: 'none'
 - reduced_dim: Batch correction method to carry out while integrating samples. Possible arguements are "integrated.cca (CCA), integrated.mnn (FastMNN), or harmony"
 	- DEFAULT: 'integrated.cca'
-- test_data: Number of cells to downsample for, if 0 take all cells into account
+- test_data: Number of cells to downsample for, if 0 the pipeline will take all cells into account
 	- DEFAULT: 0
-- with-apptainer: path to downloaded image (REQUIRED)
-	- When this option is not set, you will use your native environment, which may be missing packages, dependencies, or have version mismatches.
 
 ### Outputs
 Analysis folder:
