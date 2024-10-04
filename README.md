@@ -6,22 +6,11 @@
 - NextFlow >= 23.10.1
 - Apptainer(singularity); tested with version 1.2.5-1.el7
 
-### Script and container download
-#### Script
-Request has to be asked beforehand, or can be run on the server under FOLDERNAME
+### Script
 
 ```
 git clone https://github.com/parmejohn/scRNA-pipeline-UofM.git
 ```
-
-#### Apptainer (Singularity)
-Image can be downloaded from [Sylabs](https://cloud.sylabs.io/library/parmejohn/uofm/scrnaseq_singularity) or pulled using 
-
-```
-apptainer pull --arch amd64 library://parmejohn/uofm/scrnaseq_singularity:latest
-```
-Apptainer and singularity is the same tool, but apptainer is the new naming scheme. Also to note, when using apptainer, library may not be set up which could lead to pull errors if using the command above.
-
 
 ## Usage
 Run the script from the downloaded directory
@@ -84,70 +73,168 @@ nextflow run scRNA_pipeline.nf \
 	- DEFAULT: 0
 
 ### Outputs
-Analysis folder:
+##### QC
+<details>
+<summary>Click to expand</summary>
+<br>
 
-```
-analysis/
-├── data
-│   ├── optimal_clusters.txt
-│   ├── qc
-│   │   ├── CONDITION1
-│   │   │   ├── [sample_1]_soupx
-│   │   │   │   ├── barcodes.tsv
-│   │   │   │   ├── genes.tsv
-│   │   │   │   └── matrix.mtx
-│   │   │   └── ...
-│   │   └── ...
-│   ├── sce_slingshot.rds
-│   ├── sc_integrated_milo_traj.rds
-│   ├── se_filtered_list.rds
-│   ├── se_filtered_singlets_list.rds
-│   ├── se_integrated_auto_label.rds
-│   ├── se_integrated_dimred.rds
-│   ├── se_integrated_escape_norm.rds
-│   ├── se_integrated_escape.rds
-│   ├── se_integrated.rds
-│   ├── se_list_raw.rds
-│   ├── se_markers_presto_integrated.txt
-│   └── ti
-│       ├── ti_gene_clusters_slingPseudotime_\*.txt
-│       ├── ...
-└── plots
-    ├── conserved_marker_unlabelled.pdf
-    ├── da
-    │   ├── milo_DA_DE_heatmap_\*.pdf
-    │   ├── milo_DA_fc_distribution.pdf
-    │   ├── milo_DA_umap.pdf
-    │   ├── milo_pval_distribution.pdf
-    │   └── milo_volcano_plot.pdf
-    ├── deseq2
-    │   ├── deseq2_cluster_[CLUSTER]_[CONDITION1]_vs_[CONDITION2].pdf
-    │   ├── ...
-    ├── gsea
-    │   ├── comparative
-    │   │   ├── gsea_cluster_[CLUSTER]_[CONDITION1]_vs_[CONDITION2].pdf
-    │   │   ├── ...
-    │	└── escape
-    │       ├── escape_heatmap_top5.pdf
-    │       ├── [CLUSTER]
-    │       │   ├── GEYSER_PLOT_[1_path].pdf
-    │	    │   ├──...
-    │       ├── ...
-    ├── integrated_elbow_plot.pdf
-    ├── integrated_umap_grouped.pdf
-    ├── integrated_umap_labelled.pdf
-    ├── integrated_umap_split.pdf
-    ├── integrated_umap_unlabelled.pdf
-    ├── qc
-    │   ├── [sample1]_soupx_nGenes_nUMI.pdf
-    │   ├── [sample1]_soupx_percent_mt.pdf
-    │   ├── ...
-    ├── reference_marker_mapping_heatmap.pdf
-    ├── ti
-    │   ├── ti_de_slingPseudotime_*.pdf
-    │   └── ti_start_smooth.pdf OR ti_no_start_not_smooth.pdf
-    └── top3_markers_expr_heatmap.pdf
-```
+- Ambient RNA removal with soupX
+- Removing low quality cells using MAD thresholds based off ...
+	- Percentage of mitochondrial reads
+	- Number of UMIs
+ 	- Number of genes
+- Doublet removal with scDblFinder
+- Files
+	- Data
+		- *_soupx
+		- se_list_raw.rds
+		- se_filtered_list.rds
+	 	- se_filtered_singlets_list.rds
+		- se_filtered_doublets_list.rds
+	 - Plots
+		- *_nGenes_nUMI.pdf
+	 	- *_percent_mt.pdf
+		- *_nucleosome_signal
+	 	- *_tss.pdf
+	  	- *_ncount_atac.pdf
+</details>
+
+#### Seurat processing and dimensional reduction
+<details>
+<summary>Click to expand</summary>
+<br>
+
+- Normalize, find variable genes, and scale the data
+- Perform integration with desired batch correction tool
+	-  Joint integration of scRNA-seq and scATAC-seq data if present
+- Perform dimensional reduction and clustering
+- Files
+	- Data
+		- se_integrated.rds
+		- se_integrated_dimred.rds
+		- optimal_clusters.txt
+	- Plots
+ 		- integrated_umap_grouped.pdf
+		- integrated_umap_split.pdf
+		- integrated_umap_unlabelled.pdf
+		- percent_cells_group_unlabelled.pdf
+</details>
+
+##### Cell marker identification
+<details>
+<summary>Click to expand</summary>
+<br>
+
+- Find differentially expressed cell markers per cluster
+- Performs reference marker mapping if reference seurat was provided
+- Files
+	- Data
+		- se_markers_presto_integrated.txt
+		- se_integrated_auto_label.rds
+	- Plots
+ 		- top3_markers_expr_heatmap.pdf
+		- conserved_marker_unlabelled.pdf
+		- integrated_umap_labelled.pdf
+		- percent_cells_group_labelled.pdf
+</details>
+
+#### Pseudo-bulk analysis
+<details>
+<summary>Click to expand</summary>
+<br>
+
+- Averages gene expression for each cluster and performs differential gene expression with DESeq2
+- Using the log2FC values as rank, performs GSEA using the fgsea package
+- Will perform pairwise comparisons, but matching the like co-condition with like
+	- For example, given sample1_CTRL_1hr, sample2_CTRL_2hr, sample1_TREAT_1hr, sample2_TREAT_2hr the pairs will be sample1_CTRL_1hr vs sample1_TREAT_1hr and sample2_CTRL_2hr vs sample2_TREAT_2hr
+- Files
+	- Data
+		- deseq2_cluster_CONDITION1_vs_CONDITION2.txt
+	- Plots
+ 		- deseq2_cluster_CONDITION1_vs_CONDITION2.pdf
+		- gsea_cluster_CONDITION1_vs_CONDITION2.pdf
+</details>
+
+#### Trajectory inference
+##### Slingshot
+<details>
+<summary>Click to expand</summary>
+<br>
+	
+- Files
+	- Data
+		- ti_de_between_group.txt
+		- ti_DEGs_qval_full_lineage_[0-9].txt
+		- sce_slingshot.rds
+ 	- Plots
+  		- ti_no_start_not_smooth.pdf
+    		- ti_start_smooth.pdf
+      		- ti_deg_between_group.pdf
+		- ti_de_lineage[0-9].pdf
+</details>
+
+##### Tempora
+<details>
+<summary>Click to expand</summary>
+<br>
+
+- Files
+	- Data
+  		- se_integrated_tempora_seurat_v3.rds
+	- Plots
+ 		- tempora_screeplot_CONDITION.pdf
+		- tempora_inferred_lineages_CONDITION.pdf
+</details>
+
+##### Psupertime
+<details>
+<summary>Click to expand</summary>
+<br>
+
+- Files
+	- Data
+	- Plots
+</details>
+
+#### Escape
+<details>
+<summary>Click to expand</summary>
+<br>
+
+- Files
+	- Data
+	- Plots
+</details>
+
+#### CellChat
+<details>
+<summary>Click to expand</summary>
+<br>
+
+- Files
+	- Data
+	- Plots
+</details>
+
+#### miloR
+<details>
+<summary>Click to expand</summary>
+<br>
+
+- Files
+	- Data
+	- Plots
+</details>
+
+#### scATAC
+<details>
+<summary>Click to expand</summary>
+<br>
+
+- Files
+	- Data
+	- Plots
+</details>
 
 #### Data descriptions:
 - optimal_clusters.txt: Contains the number of optimal clusters used for machine learning algorithms throughout the pipline
@@ -216,8 +303,8 @@ nextflow run scRNA_pipeline.nf \
 	--species musmusculus \
 	--bind /home/projects/,/home/projects/CIO/yard/run_cellranger_count \
 	--reference_seurat /home/projects/sc_pipelines/analysis/data/se_michalski.rds \
-	--beginning_cluster Osteoblasts \ 
-	-with-apptainer /home/phamj7@med.umanitoba.ca/bin/scrnaseq_singularity.sif
+	--run_sling true \
+	--beginning_cluster Osteoblasts
 ```
 
 ## References
