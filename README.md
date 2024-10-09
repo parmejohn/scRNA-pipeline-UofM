@@ -149,10 +149,10 @@ nextflow run scRNA_pipeline.nf \
 	- For example, given sample1_CTRL_1hr, sample2_CTRL_2hr, sample1_TREAT_1hr, sample2_TREAT_2hr the pairs will be sample1_CTRL_1hr vs sample1_TREAT_1hr and sample2_CTRL_2hr vs sample2_TREAT_2hr
 - Files
 	- Data
-		- deseq2_cluster_CONDITION1_vs_CONDITION2.txt
+		- deseq2_cluster_CONDITION-X_vs_CONDITION-Y.txt
 	- Plots
- 		- deseq2_cluster_CONDITION1_vs_CONDITION2.pdf
-		- gsea_cluster_CONDITION1_vs_CONDITION2.pdf
+ 		- deseq2_cluster_CONDITION-X_vs_CONDITION-Y.pdf
+		- gsea_cluster_CONDITION-X_vs_CONDITION-Y.pdf
 </details>
 
 #### Trajectory inference
@@ -193,7 +193,15 @@ nextflow run scRNA_pipeline.nf \
 
 - Files
 	- Data
+ 		- psuper_top_20_genes_CONDITION-X_CONDITION.txt
 	- Plots
+		- psuper_boxplot_compare_dist_CLUSTER.pdf
+		- psuper_density_pseudotime_CONDITION-X_CLUSTER.pdf
+  		- psuper_gene_coefficients_CONDITION-X_CLUSTER.pdf
+    		- psuper_gene_coefficients_CONDITION-X_CLUSTER_CONDITION-Y_genes.pdf
+      		- psuper_top_20_genes_over_pseudotime_CONDITION-X_CLUSTER.pdf
+        	- psuper_top_20_genes_over_pseudotime_CONDITION-X_CLUSTER_CONDITION-Y_genes.pdf
+         	- psuper_train_results_CONDITION-X_CLUSTER.pdf
 </details>
 
 #### Escape
@@ -202,18 +210,9 @@ nextflow run scRNA_pipeline.nf \
 <br>
 
 - Files
-	- Data
 	- Plots
-</details>
-
-#### CellChat
-<details>
-<summary>Click to expand</summary>
-<br>
-
-- Files
-	- Data
-	- Plots
+ 		- escape_heatmap_PATHWAY-PATTERN.pdf
+   		- PATHWAY_geyser.pdf
 </details>
 
 #### miloR
@@ -223,7 +222,45 @@ nextflow run scRNA_pipeline.nf \
 
 - Files
 	- Data
+		- da_CFuPNs_markers_avg_logfc_fusion.txt
+		- da_CFuPNs_markers_by_neighborhood_fusion_expr_matrix.txt
+		- da_CFuPNs_markers_by_neighborhood_fusion.txt
+		- da_diff_test_fusion.txt
+		- milo_gsea_cluster_CFuPNs_fusion.txt
 	- Plots
+ 		- milo_DA_DE_heatmap_CFuPNs_fusion.pdf
+   		- milo_DA_fc_distribution_fusion.pdf
+     		- milo_DA_umap_fusion.pdf
+       		- milo_gsea_cluster_CFuPNs_fusion.pdf
+         	- milo_pval_distribution_fusion.pdf
+          	- milo_volcano_plot_fusion.pdf
+</details>
+
+#### CellChat
+<details>
+<summary>Click to expand</summary>
+<br>
+
+- Files
+	- Data
+		 - cellchat_merged.rds
+		 - cellchat_object_list.rds
+	- Plots
+		 - cellchat_compare_all_signal_heatmap.pdf
+		 - cellchat_compare_incoming_signal_heatmap.pdf
+		 - cellchat_compare_outgoing_signal_heatmap.pdf
+		 - cellchat_differential_interaction_circle.pdf
+		 - cellchat_differential_interaction_heatmap.pdf
+		 - cellchat_information_flow_compare.pdf
+		 - cellchat_interaction_summary_bar.pdf
+		 - cellchat_num_interactions_circle.pdf
+		 - cellchat_population_send_receive.pdf
+		 - commun_prob/
+			 - cellchat_CFuPNs_expression.pdf
+		 - signaling_pathways/
+			 - PATHWAY
+				 - cellchat_CDH_expression.pdf
+				 - cellchat_CDH_signal_path.pdf
 </details>
 
 #### scATAC
@@ -233,53 +270,20 @@ nextflow run scRNA_pipeline.nf \
 
 - Files
 	- Data
+		 - CONDITION-X_vs_CONDITION-Y
+			 - volcano_data
+				 - dap_cluster_0_CONDITION-X_vs_CONDITION-Y.txt
 	- Plots
+		 - CONDITION-X_vs_CONDITION-Y
+			 - closest_gene_plots
+				 - scatac_closest_genes_dap_coverage_cluster_0_ADGRB1_up.pdf
+				 - scatac_closest_genes_dap_gex_cluster_0_SORTED.pdf
+				 - scatac_closest_genes_dap_gsea_cluster_0.pdf
+			 - motif_plots
+				 - scatac_motif_cluster_0_SORTED.pdf
+			 - volcano_plots
+				 - scatac_volcano_cluster_0_SORTED_vs_UNSORTED.pdf
 </details>
-
-#### Data descriptions:
-- optimal_clusters.txt: Contains the number of optimal clusters used for machine learning algorithms throughout the pipline
-- qc/: Ambient corrected Cellranger counts using SoupX
-- sce_slingshot.rds: SingleCellExperiment R object containing pseudotime calculations for trajectory inference
-- sc_integrated_milo_traj.rds: Integrated Seurat object with miloR calculated neighborhoods
-- se_filtered_list.rds: Basic QC'd list of Seurat objects; removal of low quality cells from MAD cutoffs of nGenes, nUMI, and percentage of mitochondrial reads
-- se_filtered_singlets_list.rds: List of Seurat objects with removed doublets from ScDblFinder
-- se_integrated_auto_label.rds: Integrated Seurat object from automatic labelling from reference Seurat object(s)
-- se_integrated_dimred.rds: Integrated Seurat object with Seurat dimensional reduction techniques saved (FindClusters, RunPCA, RunUMAP)
-- se_integrated_escape_norm.rds: Integrated Seurat object with UCell enrichment scores calculated for each cell, with normalized in respect to the number of genes and unormalized values
-- se_integrated.rds: Seurat object that has all samples over all conditions integrated in order to be comparable downstream
-- se_list_raw.rds: Seurat object list of corrected for ambient RNA
-- se_markers_presto_integrated.txt: Results from FindAllMarkers (presto implementation), where differential expression (1 cluster against the rest) is calculated for each gene.
-- ti/:
-	- ti_gene_clusters_slingPseudotime_*.txt: Gene names for each cluster in the differential expressed genes according to pseudotime
-
-#### Plot descriptions:
-- conserved_marker_unlabelled.pdf: Conserved markers between conditions; aids in identifying cluseters manually
-- da/: Differential abundance analysis through the miloR package. This will test which condition is more prevelant in the different clusters
-	- milo_DA_DE_heatmap_\*.pdf: Differentially expressed genes that meet a differential abundance cutoff between conditions
-	- milo_DA_fc_distribution.pdf: Beeswarm plot showing fold-change distribution
-	- milo_DA_umap.pdf: Single-cell clustered UMAP from Seurat, which is now labelled with the differential abundance across conditions. Each vertice is the amount of cells in a given neighborhood, and each edge is the number of cells shared between the neighbourhoods.
-	- milo_pval_distribution.pdf: Uncorrected P-value distribution, should have a right skew (anti-conservative) distribution
-	- milo_volcano_plot.pdf: Visualizes the the SpatialFDR values to see if any neighbourhoods make the cutoff
-- deseq2/: Finds differentially expressed genes between conditions for each cluster; calculated with pseudobulk
-- gsea/: Gene-set enrichment analyses
-	- comparative/: DESeq2 (pseudobulk) GSEA results between conditions for each cluster
-	- escape/: UCell GSEA results calculated on clusters of cells one by one
-		- escape_heatmap_top5.pdf: Aggregated enrichment scores for each cluster, for the top five GO pathways
-		- GEYSER_PLOT_[path].pdf: Shows individual GO paths with individual cells for each cluster. Central dot = median. Thick/thin lines = 66/95% interval summaries
-- integrated_elbow_plot.pdf: Rank PCs based on variance percentage, view the elbow for choosing an optimal clustering number
-- integrated_umap_grouped.pdf: UMAP of integrated samples separated by conditions. Check if integrated properly and for batch effects
-- integrated_umap_labelled.pdf: UMAP of integrated samples with automatic labelling from reference Seurat object(s)
-- integrated_umap_split.pdf: UMAP of integrated samples separated by samples
-- integrated_umap_unlabelled.pdf: UMAP of integrated samples
-- qc/: Preliminary QC graphs to remove low quality cells through MAD values
-	- [sample1]_soupx_nGenes_nUMI.pdf: Filtered by number of genes and number of UMIs. High amount = potential multiplets; Low amount = Lysed or ambient RNA cells
-	- [sample1]_soupx_percent_mt.pdf: Filtered by the percentage of mitochodrial reads in the cell. High amount = Lysed cell
-- reference_marker_mapping_heatmap.pdf: If provided reference Seurat object(s), a prediction score heatmap will be made to visualize the cell labelling to the unnamed clusters
-- ti/:
-	- ti_de_slingPseudotime_*.pdf = Differentially expressed genes for across pseudotime values calculated by slingshot
-	- ti_start_smooth.pdf: Trajectory inference with smooth principal curves; produced when a starting cluster/celltype is explicitly mentioned
-	- ti_no_start_not_smooth.pdf: Trajectory inference, useful for trying to figure out if cells are differentiating from one cluster to another; direction is not known though
-- top3_markers_expr_heatmap.pdf: Top 3 genes for each cluster from FindAllMarkers call
 
 ### Example
 Cisplatin-treated and non-treated mice data.
