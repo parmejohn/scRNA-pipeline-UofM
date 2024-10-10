@@ -55,7 +55,7 @@ print(indir)
 filenames <-
   list.files(
     path = indir,
-    pattern = "matrix.h5",
+    pattern = "feature_bc_matrix.h5",
     full.names = TRUE,
     recursive = T,
     include.dirs = T
