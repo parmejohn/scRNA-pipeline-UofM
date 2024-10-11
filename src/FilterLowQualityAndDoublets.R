@@ -109,7 +109,7 @@ if (args$atac == "yes"){
   bedfiles <-
     list.files(
       path = args$original_files,
-      pattern = ".bed",
+      pattern = "atac_peaks.bed",
       full.names = TRUE,
       recursive = T,
       include.dirs = T
