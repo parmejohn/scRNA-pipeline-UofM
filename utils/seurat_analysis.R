@@ -140,7 +140,8 @@ IntegrateAtac <- function(se.merged.preprocessed){
     anchorset = integration.anchors,
     reductions = se.merged.preprocessed[["lsi"]],
     new.reduction.name = "integrated.lsi",
-    dims.to.integrate = 1:50
+    dims.to.integrate = 1:50,
+    k.weight = FALSE
   )
   print("completed integrated embeddings")
   

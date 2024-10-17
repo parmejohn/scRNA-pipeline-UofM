@@ -328,8 +328,8 @@ if (file.exists(paste0(res.loc,"plots/cellchat_plots"))){
   ReadImageAndTrim(paste0(plots[1], "/cellchat_num_interactions_circle.pdf"))
   ReadImageAndTrim(paste0(plots[1], "/cellchat_population_send_receive.pdf"))
   
-  ReadImageAndTrim(paste0(plots[1], "/cellchat_compare_outgoing_signal_heatmap.pdf"))
-  ReadImageAndTrim(paste0(plots[1], "/cellchat_compare_incoming_signal_heatmap.pdf"))
+  #ReadImageAndTrim(paste0(plots[1], "/cellchat_compare_outgoing_signal_heatmap.pdf"))
+  #ReadImageAndTrim(paste0(plots[1], "/cellchat_compare_incoming_signal_heatmap.pdf"))
   ReadImageAndTrim(paste0(plots[1], "/cellchat_compare_all_signal_heatmap.pdf"))
   
   

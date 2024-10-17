@@ -241,13 +241,41 @@ CoveragePlotDAP <- function(se.integrated.atac, closest.gene.dap, cluster.name, 
     genes.keep <- intersect(
       x = names(x = genes.keep[genes.keep]), y = closest.gene.dap$gene_name
     )
-    
-    if (length(genes.keep) > 0){
+
+	# checking if peaks are in distance like in the LinkPeaks function
+	peak.data <- GetAssayData(
+    		object = se.integrated.atac, assay = "ATAC", layer = "counts"
+  	)
+	peakcounts <- rowSums(x = peak.data > 0)
+	peaks.keep <- peakcounts > min.cells
+	peak.data <- peak.data[peaks.keep, ]
+
+	peaks <- granges(x = se.integrated.atac[["ATAC"]])
+  	peaks <- peaks[peaks.keep]
+    	annot <- Annotation(object = se.integrated.atac[["ATAC"]])
+   	if (is.null(x = annot)) {
+      		stop("Gene annotations not found")
+    	}
+    	gene.coords <- CollapseToLongestTranscriptInternal(
+      		ranges = annot
+    	)
+	expression.data <- expression.data[genes.keep, , drop = FALSE]
+	genes <- rownames(x = expression.data)
+	gene.coords.use <- gene.coords[gene.coords$gene_name %in% genes,]
+
+
+    peak_distance_matrix <- DistanceToTSSInternal(
+    	peaks = peaks,
+    	genes = gene.coords.use,
+    	distance = 5e+05
+   )
+
+    if (length(genes.keep) > 0 && sum(peak_distance_matrix) != 0){
       se.integrated.atac <- LinkPeaks(
         object = se.integrated.atac,
         peak.assay = "ATAC",
         expression.assay = "RNA",
-        genes.use = closest.gene.dap$gene_name,
+        genes.use = c(genes.keep, "PRDM1"),
         min.cells = min.cells
       )
     }
@@ -334,4 +362,62 @@ TopMotifFootprints <- function(se.integrated.atac, enriched.motifs, cluster.name
     p <- PlotFootprint(se.integrated.atac, features = head(rownames(enriched.motifs), 6))
     ggsave(paste0(plots.dir, "scatac_motif_fp_", "cluster_", cluster.name, "_", group, ".pdf"), plot = p, width = 8, height = 8)
   }
+}
+
+DistanceToTSSInternal <- function(
+  peaks,
+  genes,
+  distance = 200000,
+  sep = c("-", "-")
+  ) {
+  tss <- resize(x = genes, width = 1, fix = 'start')
+  genes.extended <- suppressWarnings(
+    expr = Extend(
+      x = tss, upstream = distance, downstream = distance
+    )
+  )
+  overlaps <- findOverlaps(
+    query = peaks,
+    subject = genes.extended,
+    type = 'any',
+    select = 'all'
+  )
+  hit_matrix <- sparseMatrix(
+    i = queryHits(x = overlaps),
+    j = subjectHits(x = overlaps),
+    x = 1,
+    dims = c(length(x = peaks), length(x = genes.extended))
+  )
+  rownames(x = hit_matrix) <- GRangesToString(grange = peaks, sep = sep)
+  colnames(x = hit_matrix) <- genes.extended$gene_name
+  return(hit_matrix)
+}
+
+
+CollapseToLongestTranscriptInternal <- function(ranges) {
+  range.df <- as.data.table(x = ranges)
+  range.df$strand <- as.character(x = range.df$strand)
+  range.df$strand <- ifelse(
+    test = range.df$strand == "*",
+    yes = "+",
+    no = range.df$strand
+  )
+  collapsed <- range.df[
+    , .(unique(seqnames),
+        min(start),
+        max(end),
+        strand[[1]],
+        gene_biotype[[1]],
+        gene_name[[1]]),
+    "gene_id"
+  ]
+  colnames(x = collapsed) <- c(
+    "gene_id", "seqnames", "start", "end", "strand", "gene_biotype", "gene_name"
+  )
+  collapsed$gene_name <- make.unique(names = collapsed$gene_name)
+  gene.ranges <- makeGRangesFromDataFrame(
+    df = collapsed,
+    keep.extra.columns = TRUE
+  )
+  return(gene.ranges)
 }
