@@ -137,7 +137,7 @@ CellChatAnalysis <- function(se.integrated, species){
       # pdf(paste0(plots.dir, "cellchat_differential_interaction_heatmap.pdf"), width = 8, height = 6)
       # p2
       # graphics.off()
-      PrintSave(p2, paste0(plots.dir, "cellchat_differential_interaction_heatmap.pdf"), w = 8, h = 6)
+      PrintSave(p2, paste0(plots.dir, "cellchat_differential_interaction_heatmap.pdf"), w = 8, h = 9)
       
       # Compare num of interactions or interaction strength across cell populations
       weight.max <- getMaxWeight(object.list, attribute = c("idents","count"))
@@ -171,7 +171,7 @@ CellChatAnalysis <- function(se.integrated, species){
       gg2 <- rankNet(cellchat.merged, mode = "comparison", measure = "weight", sources.use = NULL, targets.use = NULL, stacked = F, do.stat = TRUE)
       
       p4 <- gg1 + gg2
-      ggsave(paste0(plots.dir, "cellchat_information_flow_compare.pdf"), p4, width = 8, height = 6)
+      ggsave(paste0(plots.dir, "cellchat_information_flow_compare.pdf"), p4, width = 8, height = 8)
       
       ##### get the top signalling pathways and plot out cirle plots #####
       top.paths <- subset(gg1[["data"]], pvalues <= 0.05)
