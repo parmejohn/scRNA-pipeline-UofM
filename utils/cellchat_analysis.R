@@ -183,10 +183,12 @@ CellChatAnalysis <- function(se.integrated, species){
       dir.create(paste0(plots.dir, "signaling_pathways"))
       for (i in top.paths){
         pathways.show <- c(i)
-        dir.create(paste0(plots.dir, "signaling_pathways/", i))
-        tar.dir <- paste0(plots.dir, "signaling_pathways/", i)
-        if (i %in% object.list[[z[1]]]@netP[["pathways"]] & i %in% object.list[[z[2]]]@netP[["pathways"]]) {
-          weight.max <- getMaxWeight(object.list, slot.name = c("netP"), attribute = pathways.show) # control the edge weights across different datasets
+        if (i %in% object.list[[z[1]]]@netP[["pathways"]] && 
+	    i %in% object.list[[z[2]]]@netP[["pathways"]] && 
+	    any(grepl(i, rownames(cellchat.merged@data.signaling), ignore.case = T))) {
+          dir.create(paste0(plots.dir, "signaling_pathways/", i))
+	  tar.dir <- paste0(plots.dir, "signaling_pathways/", i)
+	  weight.max <- getMaxWeight(object.list, slot.name = c("netP"), attribute = pathways.show) # control the edge weights across different datasets
           # par(mfrow = c(1,2), xpd=TRUE)
           # for (j in 1:length(object.list)) {
           #   netVisual_aggregate(object.list[[j]], signaling = pathways.show, layout = "circle", edge.weight.max = weight.max[1], edge.width.max = 10, signaling.name = paste(pathways.show, names(object.list)[j]))
@@ -197,29 +199,33 @@ CellChatAnalysis <- function(se.integrated, species){
             netVisual_aggregate(object.list[[j]], signaling = pathways.show, layout = "chord", signaling.name = paste(pathways.show, names(object.list)[j]))
           }
           graphics.off()
+	  p5 <- plotGeneExpression(cellchat.merged, signaling = i, split.by = "datasets", colors.ggplot = T, type = "violin") + 
+		  plot_annotation(paste0(i, " pathway gene expression"),theme=theme(plot.title=element_text(hjust=0.5)))
+	  ggsave(paste0(tar.dir, "/cellchat_", i, "_expression.pdf"), p5, width = 8, height = 8)
+
         }
         
         #extractEnrichedLR(cellchat.merged,  signaling = i)
-        if (any(grepl(i, rownames(cellchat.merged@data.signaling), ignore.case = T))){ # check if signalling pathway was calculated for in the cellchat obj
-          p5 <- plotGeneExpression(cellchat.merged, signaling = i, split.by = "datasets", colors.ggplot = T, type = "violin") +
-            plot_annotation(paste0(i, " pathway gene expression"),theme=theme(plot.title=element_text(hjust=0.5)))
-          ggsave(paste0(tar.dir, "/cellchat_", i, "_expression.pdf"), p5, width = 8, height = 8)
-        }
+        #if (any(grepl(i, rownames(cellchat.merged@data.signaling), ignore.case = T))){ # check if signalling pathway was calculated for in the cellchat obj
+         # p5 <- plotGeneExpression(cellchat.merged, signaling = i, split.by = "datasets", colors.ggplot = T, type = "violin") +
+          #  plot_annotation(paste0(i, " pathway gene expression"),theme=theme(plot.title=element_text(hjust=0.5)))
+         # ggsave(paste0(tar.dir, "/cellchat_", i, "_expression.pdf"), p5, width = 8, height = 8)
+        #}
       }
       
       ##### Outgoing/incoming signalling patterns for each cell pop #####
       i = 1
       # combining all the identified signaling pathways from different datasets 
       pathway.union <- union(object.list[[i]]@netP$pathways, object.list[[i+1]]@netP$pathways)
-      ht1 = netAnalysis_signalingRole_heatmap(object.list[[i]], pattern = "outgoing", signaling = pathway.union, title = names(object.list)[i], width = 5, height = 6)
-      ht2 = netAnalysis_signalingRole_heatmap(object.list[[i+1]], pattern = "outgoing", signaling = pathway.union, title = names(object.list)[i+1], width = 5, height = 6)
-      p6 <- draw(ht1 + ht2, ht_gap = unit(0.5, "cm"))
-      PrintSave(p6, "cellchat_compare_outgoing_signal_heatmap.pdf", plots.dir, w = 8, h = 8)
+      #ht1 = netAnalysis_signalingRole_heatmap(object.list[[i]], pattern = "outgoing", signaling = pathway.union, title = names(object.list)[i], width = 5, height = 6)
+      #ht2 = netAnalysis_signalingRole_heatmap(object.list[[i+1]], pattern = "outgoing", signaling = pathway.union, title = names(object.list)[i+1], width = 5, height = 6)
+      #p6 <- draw(ht1 + ht2, ht_gap = unit(0.5, "cm"))
+      #PrintSave(p6, "cellchat_compare_outgoing_signal_heatmap.pdf", plots.dir, w = 8, h = 8)
       
-      ht1 = netAnalysis_signalingRole_heatmap(object.list[[i]], pattern = "incoming", signaling = pathway.union, title = names(object.list)[i], width = 5, height = 6)
-      ht2 = netAnalysis_signalingRole_heatmap(object.list[[i+1]], pattern = "incoming", signaling = pathway.union, title = names(object.list)[i+1], width = 5, height = 6)
-      p7 <- draw(ht1 + ht2, ht_gap = unit(0.5, "cm"))
-      PrintSave(p7, "cellchat_compare_incoming_signal_heatmap.pdf", plots.dir, w = 8, h = 8)
+      #ht1 = netAnalysis_signalingRole_heatmap(object.list[[i]], pattern = "incoming", signaling = pathway.union, title = names(object.list)[i], width = 5, height = 6)
+      #ht2 = netAnalysis_signalingRole_heatmap(object.list[[i+1]], pattern = "incoming", signaling = pathway.union, title = names(object.list)[i+1], width = 5, height = 6)
+      #p7 <- draw(ht1 + ht2, ht_gap = unit(0.5, "cm"))
+      #PrintSave(p7, "cellchat_compare_incoming_signal_heatmap.pdf", plots.dir, w = 8, h = 8)
       
       ht1 = netAnalysis_signalingRole_heatmap(object.list[[i]], pattern = "all", signaling = pathway.union, title = names(object.list)[i], width = 5, height = 6)
       ht2 = netAnalysis_signalingRole_heatmap(object.list[[i+1]], pattern = "all", signaling = pathway.union, title = names(object.list)[i+1], width = 5, height = 6)

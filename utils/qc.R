@@ -104,7 +104,7 @@ BasicQC <- function(seurat_obj, species, atac){
     ylab("Percent of Mitochondrial reads")
   ggsave(paste0(seurat_obj@misc[[1]], "_percent_mt.pdf"), plot=p1)
   
-  Cell.QC.Stat.mt <- filter(Cell.QC.Stat, percent.mt < max.mito.thr)
+  Cell.QC.Stat.mt <- filter(Cell.QC.Stat, percent.mt <= max.mito.thr)
   if(nrow(Cell.QC.Stat.mt)/nrow(Cell.QC.Stat) > .5){
     Cell.QC.Stat <- Cell.QC.Stat.mt
   } else {
@@ -185,23 +185,23 @@ BasicQC <- function(seurat_obj, species, atac){
     ggsave(paste0(seurat_obj@misc[[1]], "_ncount_atac.pdf"), plot=p5) 
     
     Cell.QC.Stat.nfeature.numi <- Cell.QC.Stat %>% # removing the low quality cells from scATAC standards
-      filter(log10(nCount_ATAC) > min.peaks.thr) %>%
-      filter(log10(nCount_ATAC) < max.peaks.thr) %>%
-      filter((nucleosome_signal) < max.nuc.thr) %>%
-      filter((TSS.enrichment) > min.TSS.thr) %>%
-      filter(log10(nFeature_RNA) > min.Genes.thr) %>%
-      filter(log10(nFeature_RNA) < max.Genes.thr) %>%
-      filter(log10(nCount_RNA) > min.nUMI.thr) %>%
-      filter(log10(nCount_RNA) < max.nUMI.thr)
+      filter(log10(nCount_ATAC) >= min.peaks.thr) %>%
+      filter(log10(nCount_ATAC) <= max.peaks.thr) %>%
+      filter((nucleosome_signal) <= max.nuc.thr) %>%
+      filter((TSS.enrichment) >= min.TSS.thr) %>%
+      filter(log10(nFeature_RNA) >= min.Genes.thr) %>%
+      filter(log10(nFeature_RNA) <= max.Genes.thr) %>%
+      filter(log10(nCount_RNA) >= min.nUMI.thr) %>%
+      filter(log10(nCount_RNA) <= max.nUMI.thr)
     
     DefaultAssay(seurat_obj) <- "RNA"
   } else {
     
     Cell.QC.Stat.nfeature.numi <- Cell.QC.Stat %>% # removing the low quality cells
-      filter(log10(nFeature_RNA) > min.Genes.thr) %>%
-      filter(log10(nFeature_RNA) < max.Genes.thr) %>%
-      filter(log10(nCount_RNA) > min.nUMI.thr) %>%
-      filter(log10(nCount_RNA) < max.nUMI.thr)
+      filter(log10(nFeature_RNA) >= min.Genes.thr) %>%
+      filter(log10(nFeature_RNA) <= max.Genes.thr) %>%
+      filter(log10(nCount_RNA) >= min.nUMI.thr) %>%
+      filter(log10(nCount_RNA) <= max.nUMI.thr)
   }
   
   if(nrow(Cell.QC.Stat.nfeature.numi)/nrow(Cell.QC.Stat) > .5){

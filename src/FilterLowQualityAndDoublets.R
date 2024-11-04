@@ -97,13 +97,17 @@ if (args$atac == "yes"){
     
     annotation <- GetGRangesFromEnsDb(ensdb = EnsDb.Mmusculus.v79)
     seqlevels(annotation) <- paste0('chr', seqlevels(annotation))
-    
+    seqlevelsStyle(annotation) <- "UCSC"
+    genome(annotation) <- "mm10"
+
   } else if (species == "homosapiens"){
     
     
     annotation <- GetGRangesFromEnsDb(ensdb = EnsDb.Hsapiens.v86)
     seqlevels(annotation) <- paste0('chr', seqlevels(annotation))
-    
+    seqlevelsStyle(annotation) <- "UCSC"
+    genome(annotation) <- "hg38"
+
   }
   # find common peak set
   bedfiles <-
@@ -167,7 +171,7 @@ if (args$atac == "yes"){
     ## need to reload the chromatin assay after
     chrom_assay <- CreateChromatinAssay(
       counts = filtered.feature.counts,
-      sep = c(":", "-"),
+      sep = c("-", "-"),
       fragments = frags.obj,
       annotation = annotation
     )

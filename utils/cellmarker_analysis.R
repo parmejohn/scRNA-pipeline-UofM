@@ -64,12 +64,13 @@ ReferenceMarkerMapping <- function(reference, query, dims){
   se.predictions <- TransferData(anchorset = se.anchors, refdata = reference$reference.cell.meta, dims = 1:dims)
   query <- AddMetaData(query, metadata = se.predictions)
   
-  prediction.scores <- query@meta.data[, grepl("^prediction|RNA_snn_res.1", names(query@meta.data))]
+  prediction.scores <- query@meta.data[, grepl("^prediction|snn_res", names(query@meta.data))]
+  meta.data.snn <- names(se.integrated@meta.data)[grepl("^prediction|snn_res", names(se.integrated@meta.data))]
   prediction.scores <- prediction.scores[,-which(names(prediction.scores) == "prediction.score.max")]
   colnames(prediction.scores) <- gsub("prediction.score.", "", colnames(prediction.scores))
-  prediction.scores <- melt(prediction.scores, id.vars = "RNA_snn_res.1", variable.name = "source", value.name = "score")
+  prediction.scores <- melt(prediction.scores, id.vars = meta.data.snn, variable.name = "source", value.name = "score")
   
-  prediction.matrix <- tapply(prediction.scores$score, list(prediction.scores$RNA_snn_res.1, prediction.scores$source), median)
+  prediction.matrix <- tapply(prediction.scores$score, list(prediction.scores[,meta.data.snn], prediction.scores$source), median)
   se.hm <- pheatmap(prediction.matrix, cluster_rows = FALSE, cluster_cols = FALSE, 
                     color = colorRampPalette(c("white","red"))(200), display_numbers = FALSE, 
                     main = "Reference Marker Prediction Scores", silent = TRUE)
