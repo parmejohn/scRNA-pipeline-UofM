@@ -93,6 +93,9 @@ BasicQC <- function(seurat_obj, species, atac){
   
   ###### Percent mitochondrial filtering #####
   max.mito.thr <- median(Cell.QC.Stat$percent.mt) + 3*mad(Cell.QC.Stat$percent.mt) #looking where to make the cutoff for the max
+  if (max.mito.thr < 5){
+  	max.mito.thr <- 5
+  }
   
   p1 <- ggplot(Cell.QC.Stat, aes(x=nFeature_RNA, y=percent.mt)) +
     geom_point(alpha=0.3) +

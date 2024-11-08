@@ -50,7 +50,7 @@ DESeq2ConditionPerCluster <-  function(se.integrated, species){
     for (k in 1:length(list.comparisons)){
       Idents(cluster.bulk) <- list.comparisons[[k]]
       grouping <- list.comparisons[[k]]
-      if (any(duplicated(as.data.frame(cluster.bulk@meta.data[[grouping]])))){ # check if you have at least more than 1 sample for the comparison
+      if (any(duplicated(as.data.frame(cluster.bulk@meta.data[[grouping]]))) & length(unique(cluster.bulk@meta.data[[grouping]])) >= 2){ # check if you have at least more than 1 sample for the comparison
         
         # create pairs for each possible combination
         group.pairs <- as.data.frame(combn(unique(cluster.bulk@meta.data[[grouping]]), 2))

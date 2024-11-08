@@ -49,7 +49,7 @@ AtacAnalyses <- function(se.integrated.atac, species){
     for (k in 1:length(list.comparisons)){
       Idents(se.integrated.atac.filt) <- list.comparisons[[k]]
       grouping <- list.comparisons[[k]]
-      if (any(duplicated(as.data.frame(se.integrated.atac.filt@meta.data[[grouping]])))){ # check if you have at least more than 1 sample for the comparison
+      if (any(duplicated(as.data.frame(se.integrated.atac.filt@meta.data[[grouping]]))) & length(unique(se.integrated.atac.filt@meta.data[[grouping]])) >= 2){ # check if you have at least more than 1 sample for the comparison
         group.pairs <- MatchCovariantGroupPairs(se.integrated.atac.filt = se.integrated.atac.filt,
                                                 grouping = grouping,
                                                 not.main.group = k)
