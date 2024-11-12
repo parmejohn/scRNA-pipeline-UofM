@@ -86,7 +86,7 @@ nextflow run scRNA_pipeline.nf \
 - Doublet removal with scDblFinder
 - Files
 	- Data
-		- *_soupx
+		- *_soupx: SoupX directory output after removal of ambient RNA
 		- se_list_raw.rds: Seurat object list of corrected for ambient RNA
 		- se_filtered_list.rds: Basic QC'd list of Seurat objects; removal of low quality cells from MAD cutoffs of nGenes, nUMI, and percentage of mitochondrial reads
 	 	- se_filtered_singlets_list.rds: List of Seurat objects with removed doublets from ScDblFinder
@@ -94,9 +94,9 @@ nextflow run scRNA_pipeline.nf \
 	 - Plots
 		- *_nGenes_nUMI.pdf: Filtered by number of genes and number of UMIs. High amount = potential multiplets; Low amount = Lysed or ambient RNA cells
 	 	- *_percent_mt.pdf: Filtered by the percentage of mitochodrial reads in the cell. High amount = Lysed cell
-		- *_nucleosome_signal
-	 	- *_tss.pdf
-	  	- *_ncount_atac.pdf
+		- *_nucleosome_signal: Filters the ratio of mono-nucleosomal to nucleosome-free fragments, also known as a signal-to-noise ratio. Expect to see general decrease in peaks
+	 	- *_tss.pdf: Filtered by the transcription start site (TSS) enrichment score. The score of the framents are centered at the TSS. Expect higher enrichment of fragments around the TSS
+	  	- *_ncount_atac.pdf: Few reads should be excluded because of low sequencing depth, high levesl can represent doublets, nuclei clumps, etc.
 </details>
 
 #### Seurat processing and dimensional reduction
@@ -117,7 +117,7 @@ nextflow run scRNA_pipeline.nf \
  		- integrated_umap_grouped.pdf: UMAP of integrated samples separated by conditions. Check if integrated properly and for batch effects
 		- integrated_umap_split.pdf: UMAP of integrated samples separated by samples
 		- integrated_umap_unlabelled.pdf: UMAP of integrated samples
-		- percent_cells_group_unlabelled.pdf
+		- percent_cells_group_unlabelled.pdf: Cell cluster proportions for each main condition; Unlabelled clusters
 </details>
 
 ##### Cell marker identification
@@ -135,7 +135,7 @@ nextflow run scRNA_pipeline.nf \
  		- top3_markers_expr_heatmap.pdf: Top 3 genes for each cluster from FindAllMarkers call
 		- conserved_marker_unlabelled.pdf: Conserved markers between conditions; aids in identifying cluseters manually
 		- integrated_umap_labelled.pdf: UMAP of integrated samples with automatic labelling from reference Seurat object(s)
-		- percent_cells_group_labelled.pdf
+		- percent_cells_group_labelled.pdf: Cell cluster proportions for each main condition; Labelled clusters
   		- reference_marker_mapping_heatmap.pdf: If provided reference Seurat object(s), a prediction score heatmap will be made to visualize the cell labelling to the unnamed clusters
 </details>
 
@@ -150,7 +150,7 @@ nextflow run scRNA_pipeline.nf \
 	- For example, given sample1_CTRL_1hr, sample2_CTRL_2hr, sample1_TREAT_1hr, sample2_TREAT_2hr the pairs will be sample1_CTRL_1hr vs sample1_TREAT_1hr and sample2_CTRL_2hr vs sample2_TREAT_2hr
 - Files
 	- Data
-		- deseq2_cluster_CONDITION-X_vs_CONDITION-Y.txt
+		- deseq2_cluster_CONDITION-X_vs_CONDITION-Y.txt: Tab-delimited file with DESeq2 results, unfiltered
 	- Plots
  		- deseq2_cluster_CONDITION-X_vs_CONDITION-Y.pdf: Finds differentially expressed genes between conditions for each cluster; calculated with pseudobulk
 		- gsea_cluster_CONDITION-X_vs_CONDITION-Y.pdf: DESeq2 (pseudobulk) GSEA results between conditions for each cluster
@@ -164,13 +164,13 @@ nextflow run scRNA_pipeline.nf \
 	
 - Files
 	- Data
-		- ti_de_between_group.txt
-		- ti_DEGs_qval_full_lineage_[0-9].txt
+		- ti_de_between_GROUPING.txt: List of differentially expressed genes between the given condition. Sorted in the same order as the corresponding heatmap.
+		- ti_DEGs_qval_full_lineage_[0-9].txt: List of differentially expressed genes according to pseudotime in a predicted lineage. 
 		- sce_slingshot.rds: SingleCellExperiment R object containing pseudotime calculations for trajectory inference
  	- Plots
   		- ti_no_start_not_smooth.pdf: Trajectory inference, useful for trying to figure out if cells are differentiating from one cluster to another; direction is not known though
     		- ti_start_smooth.pdf: Trajectory inference with smooth principal curves; produced when a starting cluster/celltype is explicitly mentioned
-      		- ti_deg_between_group.pdf
+      		- ti_deg_between_GROUPING.pdf: Trajectory inference of differentially expressed genes between the given condition. Rows are genes, columns are cells, and the columns can also be split by each predicted lineage
 		- ti_de_lineage[0-9].pdf: Differentially expressed genes for across pseudotime values calculated by slingshot
 </details>
 
@@ -181,10 +181,10 @@ nextflow run scRNA_pipeline.nf \
 
 - Files
 	- Data
-  		- se_integrated_tempora_seurat_v3.rds
+  		- se_integrated_tempora_seurat_v3.rds: Tempora object; Seurat3 converted from Seurat5
 	- Plots
- 		- tempora_screeplot_CONDITION.pdf
-		- tempora_inferred_lineages_CONDITION.pdf
+ 		- tempora_screeplot_GROUPING.pdf: Used to visualize and determine the optimal number of clusters in tempora
+		- tempora_inferred_lineages_GROUPING.pdf: Displays the predicted trajectory of cell types from early to late cell types; Please use literature to confirm results
 </details>
 
 ##### Psupertime
@@ -194,15 +194,15 @@ nextflow run scRNA_pipeline.nf \
 
 - Files
 	- Data
- 		- psuper_top_20_genes_CONDITION-X_CONDITION.txt
+ 		- psuper_top_20_genes_CONDITION-X_CLUSTER.txt: List of top 20 genes with the largest absolute coefficient values
 	- Plots
-		- psuper_boxplot_compare_dist_CLUSTER.pdf
-		- psuper_density_pseudotime_CONDITION-X_CLUSTER.pdf
-  		- psuper_gene_coefficients_CONDITION-X_CLUSTER.pdf
-    		- psuper_gene_coefficients_CONDITION-X_CLUSTER_CONDITION-Y_genes.pdf
-      		- psuper_top_20_genes_over_pseudotime_CONDITION-X_CLUSTER.pdf
-        	- psuper_top_20_genes_over_pseudotime_CONDITION-X_CLUSTER_CONDITION-Y_genes.pdf
-         	- psuper_train_results_CONDITION-X_CLUSTER.pdf
+		- psuper_boxplot_compare_dist_CLUSTER.pdf: Showing distribution of psupertimes for a given cluster label for each timepoint. T-test performed for significance test 
+		- psuper_density_pseudotime_CONDITION-X_CLUSTER.pdf: Density plots which is sorted by psupertime
+  		- psuper_gene_coefficients_CONDITION-X_CLUSTER.pdf: Top gene coefficient scores in the given condition
+    		- psuper_gene_coefficients_CONDITION-X_CLUSTER_CONDITION-Y_genes.pdf: Looking at the top genes in CONDITION-X with the coefficients seen in CONDITION-Y
+      		- psuper_top_20_genes_over_pseudotime_CONDITION-X_CLUSTER.pdf = CONDITION-X gene expression of the top rated coefficients
+        	- psuper_top_20_genes_over_pseudotime_CONDITION-X_CLUSTER_CONDITION-Y_genes.pdf: CONDITION-Y gene expression of the CONDITION-X top rated coefficients genes
+         	- psuper_train_results_CONDITION-X_CLUSTER.pdf: Machine learning statistics from the psupertime functions
 </details>
 
 #### Escape
@@ -214,7 +214,7 @@ nextflow run scRNA_pipeline.nf \
 	- Data
  		- se_integrated_escape_norm.rds: Integrated Seurat object with UCell enrichment scores calculated for each cell, with normalized in respect to the number of genes and unormalized values
 	- Plots
- 		- escape_heatmap_PATHWAY-PATTERN.pdf
+ 		- escape_heatmap_PATHWAY-PATTERN.pdf: Aggregated single-cell GSEA results for pathways containing a phrase from '--pathways' if it was used in the intial command
    		- escape_heatmap_top5.pdf: Aggregated enrichment scores for each cluster, for the top five GO pathways
    		- PATHWAY_geyser.pdf: Shows individual GO paths with individual cells for each cluster. Central dot = median. Thick/thin lines = 66/95% interval summaries
 </details>
@@ -227,18 +227,18 @@ nextflow run scRNA_pipeline.nf \
 - Files
 	- Data
 		- sc_integrated_milo_traj.rds: Integrated Seurat object with miloR calculated neighborhoods
-		- da_CFuPNs_markers_avg_logfc_fusion.txt
-		- da_CFuPNs_markers_by_neighborhood_fusion_expr_matrix.txt
-		- da_CFuPNs_markers_by_neighborhood_fusion.txt
-		- da_diff_test_fusion.txt
-		- milo_gsea_cluster_CFuPNs_fusion.txt
+		- da_CLUSTER_markers_avg_logfc_GROUPING.txt: FindNhoodGroupMarkers results; 1 vs all differential gene expresssion for each neighbourhood group. Added 'avg_logFC' to use in GSEA
+		- da_CLUSTER_markers_by_neighborhood_GROUPING_expr_matrix.txt: Expression matrix of each significant neighbourhood
+		- da_CLUSTER_markers_by_neighborhood_GROUPING.txt: Gene list from DEG heatmap. Cluster[0-10] is shown for downstream filtering
+		- da_diff_test_GROUPING.txt: Differential abundance testing from testNhoods. Determins if there is a significant differential abundace between the GROUPING
+		- milo_gsea_cluster_CLUSTER_GROUPING.txt: List of GSEA results from fgsea. Unfiltered
 	- Plots
- 		- milo_DA_DE_heatmap_CFuPNs_fusion.pdf: Differentially expressed genes that meet a differential abundance cutoff between conditions
-   		- milo_DA_fc_distribution_fusion.pdf: Beeswarm plot showing fold-change distribution
-     		- milo_DA_umap_fusion.pdf: Single-cell clustered UMAP from Seurat, which is now
-       		- milo_gsea_cluster_CFuPNs_fusion.pdf
-         	- milo_pval_distribution_fusion.pdf: Uncorrected P-value distribution, should have a right skew (anti-conservative) distribution
-          	- milo_volcano_plot_fusion.pdf: Visualizes the the SpatialFDR values to see if any neighbourhoods make the cutoff
+ 		- milo_DA_DE_heatmap_CLUSTER_GROUPING.pdf: Differentially expressed genes that meet a differential abundance cutoff between conditions; logFC used to determine if a gene is differentially expressed is from using da_CLUSTER_markers_avg_logfc_GROUPING 'avg_logFC' value
+   		- milo_DA_fc_distribution_GROUPING.pdf: Beeswarm plot showing fold-change distribution
+     		- milo_DA_umap_GROUPING.pdf: Single-cell clustered UMAP from Seurat, where each point is now gathered into neighbourhoods, edges show shared cells between neighrbourhoods, and colour is the logFC value from testNhoods
+       		- milo_gsea_cluster_CLUSTER_GROUPING.pdf: GSEA results that uses the da_CLUSTER_markers_avg_logfc_GROUPING 'avg_logFC' values as a ranked list.
+         	- milo_pval_distribution_GROUPING.pdf: Uncorrected P-value distribution, should have a right skew (anti-conservative) distribution
+          	- milo_volcano_plot_GROUPING.pdf: Visualizes the the SpatialFDR values to see if any neighbourhoods make the cutoff
 </details>
 
 #### CellChat
@@ -261,7 +261,7 @@ nextflow run scRNA_pipeline.nf \
 		 - cellchat_num_interactions_circle.pdf
 		 - cellchat_population_send_receive.pdf
 		 - commun_prob/
-			 - cellchat_CFuPNs_expression.pdf
+			 - cellchat_CLUSTER_expression.pdf
 		 - signaling_pathways/
 			 - PATHWAY
 				 - cellchat_CDH_expression.pdf
