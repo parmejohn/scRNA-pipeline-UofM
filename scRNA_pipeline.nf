@@ -10,15 +10,19 @@ params.reference_seurat = 'none'
 params.clusters_optimal = 0
 params.resolution = 1
 params.beginning_cluster = 'none'
-params.run_escape = false
-params.run_sling = false
 params.test_data = 0
 params.co_conditions = 'none'
 params.reduced_dim = 'integrated.cca'
 params.pathways = 'none'
 params.main_time = false
-params.sc_atac = false
 params.replicates = true
+
+//choosing which analyses to run
+params.sc_atac = false
+params.run_trajectory_inference = false
+params.run_da = false
+params.run_escape = false
+params.run_cellchat = false
 
 include {AMBIENTRNAREMOVAL} from './modules/ambientremoval.nf'
 include {FILTERLOWQUALDOUBLETS} from './modules/filterlowqualdoublets.nf'
@@ -94,25 +98,25 @@ workflow {
 	identified_report = "no reference"
     }
 
-	if (params.run_sling){
+	if (params.run_trajectory_inference){
 		TRAJECTORYINFERENCE(identified_ch, params.beginning_cluster)
 		sling_ch = TRAJECTORYINFERENCE.out.slingshot_out_pdf
 	} else {
-		sling_ch = "SKIPPING SLINGSHOT ANALYSIS, RERUN WITH '--run_sling true' if you desired those results"
+		sling_ch = "SKIPPING SLINGSHOT ANALYSIS, RERUN WITH '--params.run_trajectory_inference true' if you desired those results"
 	}
-	println sling_ch
+	//println sling_ch
 	// TRAJECTORYINFERENCE(identified_ch, params.beginning_cluster)
 	
   m = params.co_conditions ==~ '.*time.*'
   assert m instanceof Boolean
-  if (m){
+  if (m && params.run_trajectory_inference){
     TEMPORAANALYSIS(identified_ch, "no",  params.species)
     tempora_ch = TEMPORAANALYSIS.out.report
     
     PSUPERTIME(identified_ch, "no")
     psupertime_ch = PSUPERTIME.out.report
     
-  } else if (params.main_time) {
+  } else if (params.main_time && params.run_trajectory_inference) {
     TEMPORAANALYSIS(identified_ch, "yes", params.species)
     tempora_ch = TEMPORAANALYSIS.out.report
     
@@ -120,16 +124,28 @@ workflow {
     psupertime_ch = PSUPERTIME.out.report
     
   } else {
-    tempora_ch = "SKIPPING TEMPORA, no time condition set"
-    psupertime_ch = "SKIPPING PSUPERTIME, no time condition set"
+    tempora_ch = "SKIPPING TEMPORA, no time condition set, or --params.run_trajectory_inference false"
+    psupertime_ch = "SKIPPING PSUPERTIME, no time condition set, or --params.run_trajectory_inference false"
   }
+  
   if (params.replicates){
     COMPARATIVEANALYSIS(identified_ch, params.species)
-	comparative_ch = COMPARATIVEANALYSIS.out.report
-    DAANALYSIS(identified_ch, new_opt_clust, params.reduced_dim, params.species)
-	daanalysis_ch = DAANALYSIS.out.report
-    CELLCHAT(identified_ch, params.species)
-	cellchat_ch = CELLCHAT.out.report
+	  comparative_ch = COMPARATIVEANALYSIS.out.report
+	  
+	  if (params.run_da) {
+      DAANALYSIS(identified_ch, new_opt_clust, params.reduced_dim, params.species)
+  	  daanalysis_ch = DAANALYSIS.out.report
+	  } else {
+	    daanalysis_ch = "--run_da false"
+	  }
+	  
+	  if (params.run_cellchat) {
+      CELLCHAT(identified_ch, params.species)
+  	  cellchat_ch = CELLCHAT.out.report
+	  } else {
+	    cellchat_ch = "--run_cellchat false"
+	  }
+	  
   } else {
     comparative_ch = "NO REPLICATES"
     daanalysis_ch = "NO REPLICATES"
@@ -144,7 +160,7 @@ workflow {
 	} else {
 		escape_ch = "SKIPPING ESCAPE ANALYSIS, RERUN WITH '--run_escape true' if you desired those results"
 	}
-	println escape_ch
+	//println escape_ch
 
 	if (params.sc_atac){
 		ATACANALYSES(identified_ch, params.species)
@@ -152,7 +168,7 @@ workflow {
 	} else {
 		atac_ch = "no atac-seq info provided"
 	}
-	println atac_ch
+	//println atac_ch
 
     SUMMARYREPORT(
         comparative_ch,

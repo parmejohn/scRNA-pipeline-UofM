@@ -38,38 +38,17 @@ DESeq2ConditionPerCluster <-  function(se.integrated, species){
     }
     
     group.pairs <- NA
-    list.comparisons <- list("group")
-    if (length(se.integrated@misc) != 0 ){
-      for (j in se.integrated@misc$co.conditions){
-        group.co <- paste0("group_", j)
-        cluster.bulk <- AddMetaData(cluster.bulk, paste(cluster.bulk$group, cluster.bulk@meta.data[[j]], sep = "_"), group.co)
-        list.comparisons <- append(list.comparisons, group.co)
-      }
-    }
+    list.comparisons <- ListAllPossibleComparisons(se.integrated = se.integrated,
+                                                   seurat.subset = cluster.bulk)
     
     for (k in 1:length(list.comparisons)){
       Idents(cluster.bulk) <- list.comparisons[[k]]
       grouping <- list.comparisons[[k]]
       if (any(duplicated(as.data.frame(cluster.bulk@meta.data[[grouping]]))) & length(unique(cluster.bulk@meta.data[[grouping]])) >= 2){ # check if you have at least more than 1 sample for the comparison
         
-        # create pairs for each possible combination
-        group.pairs <- as.data.frame(combn(unique(cluster.bulk@meta.data[[grouping]]), 2))
-        group.pairs <- sapply(group.pairs, function(x) as.character(x), simplify = FALSE)
-        
-        if (k >= 2){
-          group.pairs.filt <- list()
-          for (z in group.pairs){
-            time.match <- sub("^[^_]*_", "", z)
-            if (time.match[1] == time.match[2]) {
-              cond.mismatch <- sub("_.*", "", z)
-              if (cond.mismatch[1] != cond.mismatch[2]){
-                group.pairs.filt <- append(group.pairs.filt, list(z))
-              }
-            }
-          }
-          group.pairs <- group.pairs.filt
-          print(group.pairs)
-        }
+        group.pairs <- MatchCovariantGroupPairs(seurat.subset = cluster.bulk,
+                                                grouping = grouping,
+                                                not.main.group = k)
         
         for (j in 1:length(group.pairs)){ # perform each pairwise comparison
           target <- group.pairs[[j]]
@@ -88,21 +67,19 @@ DESeq2ConditionPerCluster <-  function(se.integrated, species){
                                       verbose = T, min.cells.feature = 0, min.cells.group = 0)
             # start GSEA analysis here too since will be doing all the comparisons here
             de_markers$gene <- rownames(de_markers)
-            GseaComparison(de_markers, cluster.name, target[1], target[2], fgsea_sets)
-            
-            #print('plot')
-            p <- ggplot(de_markers, aes(avg_log2FC, -log10(p_val))) + 
-              geom_point(size = 0.5, alpha = 0.5) + 
-              theme_bw() +
-              ylab("-log10(unadjusted p-value)") + 
-              geom_text_repel(aes(label = ifelse(((p_val_adj < 0.05 & avg_log2FC >= 2)|(p_val_adj < 0.05 & avg_log2FC <= -2)), gene,
-                                                                                      "")), colour = "red", size = 3) + 
-              ggtitle(paste0("DESeq2: ", cluster.name, " ", target[1], " vs ", target[2]))
-            #dir.create(paste('deseq2', sep=''))
-            #deseq2.folder <- paste(plot.path, 'deseq2/')
-            #print('save')
             write.table(de_markers, paste0("deseq2_cluster_", cluster.name, "_", target[1], "_vs_", target[2], '.txt'), row.names = F, quote = F)
+            
+            p <- pseudo_bulk_volcano_plot(cluster.bulk, 
+                                          de_markers, 
+                                          avg_log2FC_cutoff = 2, 
+                                          p_val_adj_cutoff = 0.05, 
+                                          cluster.name, 
+                                          target[1], 
+                                          target[2]
+                                          )
             PrintSave(p, paste0("deseq2_cluster_", cluster.name, "_", target[1], "_vs_", target[2], '.pdf'))
+            
+            GseaComparison(de_markers, cluster.name, target[1], target[2], fgsea_sets)
           }
         }
       } else {
@@ -111,6 +88,38 @@ DESeq2ConditionPerCluster <-  function(se.integrated, species){
     }
   }
   se.integrated$de.clusters <- NULL
+}
+
+pseudo_bulk_volcano_plot <- function(cluster.bulk, de_markers, avg_log2FC_cutoff, p_val_adj_cutoff, cluster.name, ident.1, ident.2) {
+  # determining volcano plot y-axis cutoff
+  unadjusted.pval.cutoff <- (p_val_adj_cutoff * (1:nrow(cluster.bulk))) / nrow(cluster.bulk)
+  unadjusted.pval.cutoff <- -log(max(unadjusted.pval.cutoff))
+  
+  de_markers$significance <- "Not Significant"
+  de_markers$significance[de_markers[["avg_log2FC"]] >= avg_log2FC_cutoff & 
+                            de_markers[["p_val_adj"]] < p_val_adj_cutoff] <- paste0("Upregulated in ", ident.1)
+  de_markers$significance[de_markers[["avg_log2FC"]] < -(avg_log2FC_cutoff) & 
+                            de_markers[["p_val_adj"]] <= p_val_adj_cutoff] <- paste0("Upregulated in ", ident.2)
+  de_markers$significance <- factor(de_markers$sig, levels = c(paste0("Upregulated in ", ident.2), "Not Significant", paste0("Upregulated in ", ident.1)))
+  
+  colors <- setNames(
+    c("red", "grey", "blue"),
+    c(paste0("Upregulated in ", ident.1), "Not Significant", paste0("Upregulated in ", ident.2))
+  )
+  
+  p <- ggplot(de_markers, aes(avg_log2FC, -log10(p_val), color = significance, fill = significance)) + 
+    geom_point(size = 1, alpha = 0.3) + 
+    scale_color_manual(values = c("blue", "gray", "red")) +
+    theme_bw() +
+    ylab("-log10(unadjusted p-value)") + 
+    geom_text_repel(aes(label = ifelse(((p_val_adj < p_val_adj_cutoff & avg_log2FC >= avg_log2FC_cutoff) | 
+                                          (p_val_adj < p_val_adj_cutoff & avg_log2FC <= -avg_log2FC_cutoff)), gene, "")), 
+                    colour = "black", size = 3) + 
+    geom_hline(yintercept=unadjusted.pval.cutoff, linetype="dashed", color = "black") +
+    geom_vline(xintercept=c(-2, 2), linetype="dashed", color = "black") +
+    ggtitle(paste0("DESeq2: ", cluster.name, " ", target[1], " vs ", target[2]))
+  
+  return(p)
 }
 
 GseaComparison <- function(de.markers, cluster.name, ident.1, ident.2, fgsea.sets){

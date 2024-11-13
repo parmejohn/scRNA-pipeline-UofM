@@ -239,7 +239,9 @@ if(file.exists(paste0(res.loc, "data/se_integrated_tempora_seurat_v3.rds"))){
   # ReadImageAndTrim(paste0(res.loc, "plots/ti/tempora_screeplot.pdf"))
   # ReadImageAndTrim(paste0(res.loc, "plots/ti/tempora_inferred_lineages.pdf"))
 } else {
-  print("no time was specified under co-conditions or as the main condition, please rerun with '--co_conditions ...,time,...' or '--main_time true' and ensure your sample names contain it")
+  print("no time was specified under co-conditions or as the main condition, 
+        please rerun with '--co_conditions ...,time,...' or '--main_time true' 
+        and ensure your sample names contain it; AND/OR '--run_trajectory_inference false'")
 }
 
 #' ### psupertime
@@ -264,7 +266,9 @@ if(dir.exists(paste0(res.loc, "plots/ti/psupertime_plots/"))){
     }
   }
 } else {
-  print("no time was specified under co-conditions or as the main condition, please rerun with '--co_conditions ...,time,...' or '--main_time true' and ensure your sample names contain it")
+  print("no time was specified under co-conditions or as the main condition, 
+        please rerun with '--co_conditions ...,time,...' or '--main_time true' 
+        and ensure your sample names contain it; ; AND/OR '--run_trajectory_inference false'")
 }
 
 #' ## Differential Abundance analysis with miloR
@@ -306,7 +310,7 @@ if (file.exists(paste0(res.loc,"plots/da"))){
   	  ReadImageAndTrim(i)
   }
 } else {
-  print("not enough replicates")
+  print("not enough replicates; AND/OR --run_da false")
 }
 
 #' ## Ligand-receptor analysis with CellChat
@@ -364,5 +368,5 @@ if (file.exists(paste0(res.loc,"plots/cellchat_plots"))){
       }
     }
 } else {
-  print("NO REPLICATES")
+  print("not enough replicates; AND/OR run_cellchat false")
 }

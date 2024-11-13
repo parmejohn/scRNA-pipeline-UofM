@@ -44,13 +44,13 @@ AtacAnalyses <- function(se.integrated.atac, species){
     
     print(paste0("on cluster ", cluster.name))
     
-    list.comparisons <- ListAllPossibleComparisons(se.integrated.atac = se.integrated.atac,
-                                                   se.integrated.atac.filt = se.integrated.atac.filt)
+    list.comparisons <- ListAllPossibleComparisons(se.integrated = se.integrated.atac,
+                                                   seurat.subset = se.integrated.atac.filt)
     for (k in 1:length(list.comparisons)){
       Idents(se.integrated.atac.filt) <- list.comparisons[[k]]
       grouping <- list.comparisons[[k]]
       if (any(duplicated(as.data.frame(se.integrated.atac.filt@meta.data[[grouping]]))) & length(unique(se.integrated.atac.filt@meta.data[[grouping]])) >= 2){ # check if you have at least more than 1 sample for the comparison
-        group.pairs <- MatchCovariantGroupPairs(se.integrated.atac.filt = se.integrated.atac.filt,
+        group.pairs <- MatchCovariantGroupPairs(seurat.subset = se.integrated.atac.filt,
                                                 grouping = grouping,
                                                 not.main.group = k)
         
@@ -126,7 +126,17 @@ AtacAnalyses <- function(se.integrated.atac, species){
   }
 }
 
-dap_volcano_plot <- function(se.object, ident.1, ident.2, test.use = "wilcox", min.pct = 0.05, cluster.name, p_val_adj_cutoff = 0.05, avg_log2FC_cutoff = 1.5, plots.dir, data.dir){
+dap_volcano_plot <- function(se.object, 
+                             ident.1, 
+                             ident.2, 
+                             test.use = "wilcox", 
+                             min.pct = 0.05, 
+                             cluster.name, 
+                             p_val_adj_cutoff = 0.05, 
+                             avg_log2FC_cutoff = 2, 
+                             plots.dir, 
+                             data.dir){
+  
   da.peaks <- RunPresto(
     object = se.object,
     ident.1 = ident.1,
@@ -134,18 +144,24 @@ dap_volcano_plot <- function(se.object, ident.1, ident.2, test.use = "wilcox", m
     min.pct = min.pct,
     logfc.threshold = 0.1
   )
+  
   da.peaks$gene <- rownames(da.peaks)
   write.table(da.peaks, paste0(data.dir ,"dap_", "cluster_", cluster.name, ident.1, "_vs_", ident.2, ".txt"), 
               quote = FALSE, row.names = T, sep = "\t", col.names = T)
   
-  da.peaks$sig <- "Not Significant"
-  da.peaks$sig[da.peaks[["avg_log2FC"]] >= avg_log2FC_cutoff & 
-                 da.peaks[["p_val_adj"]] < p_val_adj_cutoff] <- "Upregulated"
-  da.peaks$sig[da.peaks[["avg_log2FC"]] < -(avg_log2FC_cutoff) & 
-                 da.peaks[["p_val_adj"]] <= p_val_adj_cutoff] <- "Downregulated"
-  da.peaks$sig <- factor(da.peaks$sig, levels = c("Downregulated", "Not Significant", "Upregulated"))
+  da.peaks$significance <- "Not Significant"
+  da.peaks$significance[da.peaks[["avg_log2FC"]] >= avg_log2FC_cutoff & 
+                 da.peaks[["p_val_adj"]] < p_val_adj_cutoff] <- paste0("Upregulated in ", ident.1)
+  da.peaks$significance[da.peaks[["avg_log2FC"]] < -(avg_log2FC_cutoff) & 
+                 da.peaks[["p_val_adj"]] <= p_val_adj_cutoff] <- paste0("Upregulated in ", ident.2)
+  da.peaks$significance <- factor(da.peaks$sig, levels = c(paste0("Upregulated in ", ident.2), "Not Significant", paste0("Upregulated in ", ident.1)))
   
-  p <- ggplot(da.peaks, aes(avg_log2FC, -log10(p_val), color = sig)) + 
+  colors <- setNames(
+    c("red", "grey", "blue"),
+    c(paste0("Upregulated in ", ident.1), "Not Significant", paste0("Upregulated in ", ident.2))
+  )
+  
+  p <- ggplot(da.peaks, aes(avg_log2FC, -log10(p_val), color = significance, fill = significance)) + 
     geom_point(size = 0.5, alpha = 0.5) + 
     scale_color_manual(values = c("blue", "gray", "red")) +
     theme_bw() +

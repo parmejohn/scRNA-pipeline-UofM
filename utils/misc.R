@@ -11,7 +11,11 @@ ListAllPossibleComparisons <- function(se.integrated.atac, se.integrated.atac.fi
   if (length(se.integrated.atac@misc) != 0){
     for (j in se.integrated.atac@misc$co.conditions){
       group.co <- paste0("group_", j)
-      se.integrated.atac.filt <- AddMetaData(se.integrated.atac.filt, paste(se.integrated.atac.filt$group, se.integrated.atac.filt@meta.data[[j]], sep = "_"), group.co)
+      se.integrated.atac.filt <- AddMetaData(se.integrated.atac.filt, 
+                                             paste(se.integrated.atac.filt$group, 
+                                                   se.integrated.atac.filt@meta.data[[j]], sep = "_"), 
+                                             group.co
+                                             )
       list.comparisons <- append(list.comparisons, group.co)
     }
   }
