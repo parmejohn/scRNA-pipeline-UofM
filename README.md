@@ -24,7 +24,6 @@ nextflow run scRNA_pipeline.nf \
 	--reference_seurat [path(s) to labelled reference seurat object] \
 	--sc_atac [true/false] \
 	--replicates [true/false] \
-	--run_sling [true/false] \
 	--main_time [true/false] \
 	--beginning_cluster [inferred earliest celltype] \
 	--clusters_optimal [optimal number of clusters] \
@@ -34,6 +33,9 @@ nextflow run scRNA_pipeline.nf \
 	--co_conditions [X1,X2,...] \
 	--reduced_dim [integrated.cca | integrated.mnn | harmony] \
 	--test_data [0-9*] \
+	--run_da [true/false] \
+	--run_trajectory_inference [true/false] \
+	--run_cellchat [true/false]
 ```
 
 ### Arguments
@@ -57,8 +59,6 @@ nextflow run scRNA_pipeline.nf \
 	- DEFAULT: false
 - pathways: List of desired pathways/phrases separated by ',' to search on the Gene onotology: biological processes for MsigDB for the escape analysis. Setting this option will make it so the top 5 pathways will not be printed during escape. Used if '--run_escape true'
 	- DEFAULT: 'none'
-- run_sling: Performs slingshot trajectory inference analysis
-	- DEFAULT: false
 - beginning_cluster: If you know what celltype is would be the earliest in a differentiation pathway. Used if '--run_slingshot true'
 	- DEFAULT: ''
 - clusters_optimal: Number of optimal clusters/dimensionality for machine learning methods. If set to 0, will be calculated automatically through NbClust() Calinski-Harabasz (ch) index.
@@ -71,6 +71,12 @@ nextflow run scRNA_pipeline.nf \
 	- DEFAULT: 'integrated.cca'
 - test_data: Number of cells to downsample for, if 0 the pipeline will take all cells into account
 	- DEFAULT: 0
+- run_trajectory_inference: Performs trajectory inference analyses
+	- DEFAULT: false
+- run_da: Performs miloR differential abundance analysis
+	- DEFAULT: false
+- run_cellchat: Performs CellChat cell-cell communication analysis
+	- DEFAULT: false
 
 ### Outputs
 ##### QC
@@ -246,26 +252,27 @@ nextflow run scRNA_pipeline.nf \
 <summary>Click to expand</summary>
 <br>
 
+- For cellchat_compare_*heatmap.pdf, the top bar plot shows total signal strength of a cell group (summarizes all signalling pathways for that cell group). The right bar plot will show the total signaling strength for a pathway (summarizes all cell groups for that signaling pathway)
 - Files
 	- Data
-		 - cellchat_merged.rds
-		 - cellchat_object_list.rds
+		 - cellchat_merged.rds: Merged CellChat object; used in all downstream analyses
+		 - cellchat_object_list.rds: List of CellChat objects; length = # of samples
 	- Plots
-		 - cellchat_compare_all_signal_heatmap.pdf
-		 - cellchat_compare_incoming_signal_heatmap.pdf
-		 - cellchat_compare_outgoing_signal_heatmap.pdf
-		 - cellchat_differential_interaction_circle.pdf
-		 - cellchat_differential_interaction_heatmap.pdf
-		 - cellchat_information_flow_compare.pdf
-		 - cellchat_interaction_summary_bar.pdf
-		 - cellchat_num_interactions_circle.pdf
-		 - cellchat_population_send_receive.pdf
+		 - cellchat_compare_all_signal_heatmap.pdf: Aggregated heatmap of outgoing and incoming signals;
+		 - cellchat_compare_incoming_signal_heatmap.pdf: Heatmap of incoming signals
+		 - cellchat_compare_outgoing_signal_heatmap.pdf: Heatmap of outgoing signals
+		 - cellchat_differential_interaction_circle.pdf: Red colored edges show increased signaling in the second dataset (Sorted it lexicographical order). Size of the edge represents the differential number of interactions/strength
+		 - cellchat_differential_interaction_heatmap.pdf: Red show increased signaling in the second dataset (Sorted it lexicographical order). Top bar plot = Incoming signal for the given cell group; Right bar plot = Outgoing signal for the given cell group
+		 - cellchat_information_flow_compare.pdf: Information flow = sum of the communication probability amoung all pairs of cell groups in the pathway, or known as total weight of the network. Highlighted pathways display the significant pathways according to a paired Wilcoxon test.
+		 - cellchat_interaction_summary_bar.pdf: Compares total number of interactions and strength of the cell-cell communication networks
+		 - cellchat_num_interactions_circle.pdf: Shows the number of interactions between the different cell groups
+		 - cellchat_population_send_receive.pdf: Identifying cell populations with significant changes in sending/receiving signals
 		 - commun_prob/
-			 - cellchat_CLUSTER_expression.pdf
+			 - cellchat_CLUSTER_expression.pdf: Comparing communication probabilities from different ligand-receptor pairs. Each column is cell-cell specific, and the different colors represent the condition. If the title of the plot does not show "Unfiltered" that means the communication probability difference between two cell-cell for the two different conditions is ~50%
 		 - signaling_pathways/
 			 - PATHWAY
-				 - cellchat_CDH_expression.pdf
-				 - cellchat_CDH_signal_path.pdf
+				 - cellchat_PATHWAY_expression.pdf: Shows the different expression of genes involved in the given pathway, if found in the dataset
+				 - cellchat_PATHWAY_signal_path.pdf: Shows which cells are involved in the given PATHWAY. The inner thinner bars reprsent the target cell that receive the signal, and the size is proportional to the signal strength received
 </details>
 
 #### scATAC
@@ -277,17 +284,17 @@ nextflow run scRNA_pipeline.nf \
 	- Data
 		 - CONDITION-X_vs_CONDITION-Y
 			 - volcano_data
-				 - dap_cluster_0_CONDITION-X_vs_CONDITION-Y.txt
+				 - dap_CELLTYPE_CONDITION-X_vs_CONDITION-Y.txt
 	- Plots
 		 - CONDITION-X_vs_CONDITION-Y
 			 - closest_gene_plots
-				 - scatac_closest_genes_dap_coverage_cluster_0_ADGRB1_up.pdf
-				 - scatac_closest_genes_dap_gex_cluster_0_SORTED.pdf
-				 - scatac_closest_genes_dap_gsea_cluster_0.pdf
+				 - scatac_closest_genes_dap_coverage_CELLTYPE_GENE_up.pdf
+				 - scatac_closest_genes_dap_gex_CELLTYPE_GROUPING.pdf
+				 - scatac_closest_genes_dap_gsea_CELLTYPE.pdf
 			 - motif_plots
-				 - scatac_motif_cluster_0_SORTED.pdf
+				 - scatac_motif_CELLTYPE_SORTED.pdf
 			 - volcano_plots
-				 - scatac_volcano_cluster_0_SORTED_vs_UNSORTED.pdf
+				 - scatac_volcano_CELLTYPE_CONDITION-X_vs_CONDITION-Y.pdf
 </details>
 
 ### Example
