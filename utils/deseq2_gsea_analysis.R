@@ -34,7 +34,6 @@ DESeq2ConditionPerCluster <-  function(se.integrated, species){
     		cluster.name <- sub("_", "-", cluster.name)
     	}
       cluster.bulk <- subset(bulk, de.clusters == cluster.name)
-
     }
     
     group.pairs <- NA

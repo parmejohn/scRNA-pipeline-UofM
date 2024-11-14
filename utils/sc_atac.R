@@ -1,4 +1,5 @@
 AtacAnalyses <- function(se.integrated.atac, species){
+  
   m_df<- msigdbr(species = species, category = "C5", subcategory = "BP") # dont need to reload the dataset every time for GSEA
   fgsea.sets <- m_df %>% split(x = .$gene_symbol, f = .$gs_name)
   
@@ -28,21 +29,48 @@ AtacAnalyses <- function(se.integrated.atac, species){
   
   se.integrated.atac <- RegionStats(se.integrated.atac, genome = BSgenome.Hsapiens.UCSC.hg38)
   
+  # creating pseudobulk dataset
+  Idents(se.integrated.atac) <- se.integrated.atac$dap_clusters
+  if (length(se.integrated.atac@misc) != 0 ){
+    bulk <- AggregateExpression(se.integrated.atac, return.seurat = T, 
+                                assays = "ATAC", 
+                                group.by = c("dap_clusters", "sample", "group", se.integrated.atac@misc[["co.conditions"]]))
+  } else {
+    bulk <- AggregateExpression(se.integrated.atac, return.seurat = T, 
+                                assays = "ATAC", 
+                                group.by = c("dap_clusters", "sample", "group"))
+  }
+  Idents(bulk) <-   bulk$de.clusters
+  
   dir.create("dap_plots")
   dir.create("dap_data")
   
   for (i in 1:nlevels(se.integrated.atac@meta.data[["dap_clusters"]])){
-    
+    cluster.bulk <- NA
+    cluster.name <- NA
     if (all(as.character(se.integrated.atac$dap_clusters) == as.character(se.integrated.atac$seurat_clusters))){
-      cluster.name <- i - 1
-      se.integrated.atac.filt <- subset(se.integrated.atac, dap_clusters == cluster.name) # seurat subset doesnt seem to like string args
-      
+    #   cluster.name <- i - 1
+    #   se.integrated.atac.filt <- subset(se.integrated.atac, dap_clusters == cluster.name) # seurat subset doesnt seem to like string args
+    #   
+    # } else {
+    #   cluster.name <- levels(droplevels(se.integrated.atac@meta.data[["dap_clusters"]]))[i]
+    #   se.integrated.atac.filt <- subset(se.integrated.atac, dap_clusters == cluster.name)
+    # }
+    cluster.name <- paste0("g", i-1)
+    print(cluster.name)
+    cluster.bulk <- subset(bulk, dap_clusters == cluster.name) # seurat subset doesnt seem to like string args
+    
     } else {
-      cluster.name <- levels(droplevels(se.integrated.atac@meta.data[["dap_clusters"]]))[i]
-      se.integrated.atac.filt <- subset(se.integrated.atac, dap_clusters == cluster.name)
+      cluster.name <- levels(droplevels(se.integrated@meta.data[["dap_clusters"]]))[i]
+      print(cluster.name)
+      if(grepl("_", cluster.name, fixed=TRUE)){
+        cluster.name <- sub("_", "-", cluster.name)
+      }
+      cluster.bulk <- subset(bulk, dap_clusters == cluster.name)
     }
     
     print(paste0("on cluster ", cluster.name))
+    se.integrated.atac.filt <- cluster.bulk
     
     list.comparisons <- ListAllPossibleComparisons(se.integrated = se.integrated.atac,
                                                    seurat.subset = se.integrated.atac.filt)
@@ -58,6 +86,13 @@ AtacAnalyses <- function(se.integrated.atac, species){
           target <- group.pairs[[j]]
           print(target[1])
           print(target[2])
+          
+          dup_check <- as.data.frame(se.integrated.atac.filt@active.ident)
+          colnames(dup_check)[1] <- "cond"
+          value_counts <- table(as.character(dup_check$cond))
+          
+          # Extract values that occur only once
+          unique_values <- names(value_counts[value_counts == 1])
           
           data.dir <- paste0("dap_data/", target[1], "_vs_", target[2], "/")
           dir.create(data.dir)
@@ -77,47 +112,51 @@ AtacAnalyses <- function(se.integrated.atac, species){
           motif_plots <- paste0(plots.dir, "motif_plots/")
           dir.create(motif_plots)
           
-          da.peaks.all <- dap_volcano_plot(se.integrated.atac.filt, target[1], target[2], cluster.name = cluster.name, plots.dir = volcano_plots, data.dir = volcano_data)
-          print("volcano")
-          
-          ### DAP specific analyses
-          # pulling top and bot 5 of DAPs, also making sure that the are up or dn regulated
-          # plot out gene expression
-          closest.gene.dap.up <- FindTopDAPGenes(da.peaks.all = da.peaks.all, se.integrated.atac = se.integrated.atac.filt,
-                                                 cluster.name = cluster.name, group = target[1], top = 5, plots.dir = closest_gene_plots)
-          closest.gene.dap.dn <- FindTopDAPGenes(da.peaks.all = da.peaks.all, se.integrated.atac = se.integrated.atac.filt,
-                                                 cluster.name = cluster.name, group = target[2], top = -5, plots.dir = closest_gene_plots)
-          print("expression")
-          
-          
-          # perform GSEA, ranked by log2fc 
-          all.closest <- ClosestFeature(se.integrated.atac.filt, regions = da.peaks.all$gene)
-          colnames(all.closest)[7] <- "gene"
-          all.closest <- merge(all.closest, da.peaks.all, by = "gene")
-          
-          GseaAtac(all.closest, fgsea.sets, cluster.name = cluster.name, ident.1 = target[1], ident.2 = target[2], plots.dir = closest_gene_plots) 
-          print("gsea")
-          
-          ## coverage plot of the DAPs
-          CoveragePlotDAP(se.integrated.atac = se.integrated.atac.filt, closest.gene.dap = closest.gene.dap.up, cluster.name = cluster.name, plots.dir = closest_gene_plots)
-          CoveragePlotDAP(se.integrated.atac = se.integrated.atac.filt, closest.gene.dap = closest.gene.dap.dn, cluster.name = cluster.name, plots.dir = closest_gene_plots)
-          print("covearage")
-          
-          
-          ### DNA motifs that are overrepresented in a set of peaks that are differentially accessible between cell types
-          enriched.motifs.up <- find_enriched_motifs(se.integrated.atac.filt = se.integrated.atac.filt, 
-                                                     da.peaks.all = da.peaks.all, cutoff = 0.2, pos = T, group = target[1], 
-                                                     cluster.name = cluster.name, plots.dir = motif_plots)
-          enriched.motifs.down <- find_enriched_motifs(se.integrated.atac.filt = se.integrated.atac.filt, 
-                                                       da.peaks.all = da.peaks.all, cutoff = 0.2, pos = F, group = target[2], 
+          if (length(unique_values) == 0){
+            da.peaks.all <- dap_volcano_plot(se.integrated.atac.filt, target[1], target[2], cluster.name = cluster.name, plots.dir = volcano_plots, data.dir = volcano_data)
+            print("volcano")
+            
+            ### DAP specific analyses
+            # pulling top and bot 5 of DAPs, also making sure that the are up or dn regulated
+            # plot out gene expression
+            closest.gene.dap.up <- FindTopDAPGenes(da.peaks.all = da.peaks.all, se.integrated.atac = se.integrated.atac.filt,
+                                                   cluster.name = cluster.name, group = target[1], top = 5, plots.dir = closest_gene_plots)
+            closest.gene.dap.dn <- FindTopDAPGenes(da.peaks.all = da.peaks.all, se.integrated.atac = se.integrated.atac.filt,
+                                                   cluster.name = cluster.name, group = target[2], top = -5, plots.dir = closest_gene_plots)
+            print("expression")
+            
+            
+            # perform GSEA, ranked by log2fc 
+            all.closest <- ClosestFeature(se.integrated.atac.filt, regions = da.peaks.all$gene)
+            colnames(all.closest)[7] <- "gene"
+            all.closest <- merge(all.closest, da.peaks.all, by = "gene")
+            
+            GseaAtac(all.closest, fgsea.sets, cluster.name = cluster.name, ident.1 = target[1], ident.2 = target[2], plots.dir = closest_gene_plots) 
+            print("gsea")
+            
+            ## coverage plot of the DAPs
+            CoveragePlotDAP(se.integrated.atac = se.integrated.atac.filt, closest.gene.dap = closest.gene.dap.up, cluster.name = cluster.name, plots.dir = closest_gene_plots)
+            CoveragePlotDAP(se.integrated.atac = se.integrated.atac.filt, closest.gene.dap = closest.gene.dap.dn, cluster.name = cluster.name, plots.dir = closest_gene_plots)
+            print("covearage")
+            
+            
+            ### DNA motifs that are overrepresented in a set of peaks that are differentially accessible between cell types
+            enriched.motifs.up <- find_enriched_motifs(se.integrated.atac.filt = se.integrated.atac.filt, 
+                                                       da.peaks.all = da.peaks.all, cutoff = 0.2, pos = T, group = target[1], 
                                                        cluster.name = cluster.name, plots.dir = motif_plots)
-          print("motifs")
-          
-          
-          # gather the footprinting information for sets of motifs; leaving out for now because of computational constraints
-          # TopMotifFootprints(se.integrated.atac = se.integrated.atac.filt, enriched.motifs = enriched.motifs.up, cluster.name = i, group = target[1], plots.dir = motif_plots)
-          # TopMotifFootprints(se.integrated.atac = se.integrated.atac.filt, enriched.motifs = enriched.motifs.down, cluster.name = i, group = target[2], plots.dir = motif_plots)
-          print("fp")
+            enriched.motifs.down <- find_enriched_motifs(se.integrated.atac.filt = se.integrated.atac.filt, 
+                                                         da.peaks.all = da.peaks.all, cutoff = 0.2, pos = F, group = target[2], 
+                                                         cluster.name = cluster.name, plots.dir = motif_plots)
+            print("motifs")
+            
+            
+            # gather the footprinting information for sets of motifs; leaving out for now because of computational constraints
+            # TopMotifFootprints(se.integrated.atac = se.integrated.atac.filt, enriched.motifs = enriched.motifs.up, cluster.name = i, group = target[1], plots.dir = motif_plots)
+            # TopMotifFootprints(se.integrated.atac = se.integrated.atac.filt, enriched.motifs = enriched.motifs.down, cluster.name = i, group = target[2], plots.dir = motif_plots)
+            print("fp")
+          } else {
+            print("subclustering went wrong somewhere")
+          }
         }
       } else {
         print(paste0("No comparison analysis available for ", k, " since you only have 1 replicate, skipping this"))

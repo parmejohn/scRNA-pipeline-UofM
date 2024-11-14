@@ -6,14 +6,14 @@ PrintSave <- function(plot, title, path="",  w=8, h=6){
   graphics.off()
 }
 
-ListAllPossibleComparisons <- function(se.integrated.atac, se.integrated.atac.filt) {
+ListAllPossibleComparisons <- function(se.integrated, seurat.subset) {
   list.comparisons <- list("group")
-  if (length(se.integrated.atac@misc) != 0){
-    for (j in se.integrated.atac@misc$co.conditions){
+  if (length(se.integrated@misc) != 0){
+    for (j in se.integrated@misc$co.conditions){
       group.co <- paste0("group_", j)
-      se.integrated.atac.filt <- AddMetaData(se.integrated.atac.filt, 
-                                             paste(se.integrated.atac.filt$group, 
-                                                   se.integrated.atac.filt@meta.data[[j]], sep = "_"), 
+      seurat.subset <- AddMetaData(seurat.subset, 
+                                             paste(seurat.subset$group, 
+                                                   seurat.subset@meta.data[[j]], sep = "_"), 
                                              group.co
                                              )
       list.comparisons <- append(list.comparisons, group.co)
@@ -22,9 +22,9 @@ ListAllPossibleComparisons <- function(se.integrated.atac, se.integrated.atac.fi
   return(list.comparisons)
 }
 
-MatchCovariantGroupPairs <- function(se.integrated.atac.filt, grouping, not.main.group) {
+MatchCovariantGroupPairs <- function(seurat.subset, grouping, not.main.group) {
   # create pairs for each possible combination
-  group.pairs <- as.data.frame(combn(unique(se.integrated.atac.filt@meta.data[[grouping]]), 2))
+  group.pairs <- as.data.frame(combn(unique(seurat.subset@meta.data[[grouping]]), 2))
   group.pairs <- sapply(group.pairs, function(x) as.character(x), simplify = FALSE)
   
   if (not.main.group >= 2){
