@@ -25,9 +25,9 @@ AtacAnalyses <- function(se.integrated.atac, species){
   )
   
   se.integrated.atac$dap_clusters <- Idents(se.integrated.atac)
-  Idents(se.integrated.atac) <- "group"
+  #Idents(se.integrated.atac) <- "group"
   
-  se.integrated.atac <- RegionStats(se.integrated.atac, genome = BSgenome.Hsapiens.UCSC.hg38)
+  se.integrated.atac <- RegionStats(se.integrated.atac, genome = genome)
   
   # creating pseudobulk dataset
   Idents(se.integrated.atac) <- se.integrated.atac$dap_clusters
@@ -40,7 +40,7 @@ AtacAnalyses <- function(se.integrated.atac, species){
                                 assays = "ATAC", 
                                 group.by = c("dap_clusters", "sample", "group"))
   }
-  Idents(bulk) <-   bulk$de.clusters
+  Idents(bulk) <-   bulk$dap_clusters
   
   dir.create("dap_plots")
   dir.create("dap_data")
@@ -49,19 +49,17 @@ AtacAnalyses <- function(se.integrated.atac, species){
     cluster.bulk <- NA
     cluster.name <- NA
     if (all(as.character(se.integrated.atac$dap_clusters) == as.character(se.integrated.atac$seurat_clusters))){
-    #   cluster.name <- i - 1
-    #   se.integrated.atac.filt <- subset(se.integrated.atac, dap_clusters == cluster.name) # seurat subset doesnt seem to like string args
-    #   
-    # } else {
-    #   cluster.name <- levels(droplevels(se.integrated.atac@meta.data[["dap_clusters"]]))[i]
-    #   se.integrated.atac.filt <- subset(se.integrated.atac, dap_clusters == cluster.name)
-    # }
-    cluster.name <- paste0("g", i-1)
-    print(cluster.name)
-    cluster.bulk <- subset(bulk, dap_clusters == cluster.name) # seurat subset doesnt seem to like string args
-    
+      cluster.name <- i - 1
+      se.integrated.atac.filt <- subset(se.integrated.atac, dap_clusters == cluster.name) # seurat subset doesnt seem to like string args
+      
+      cluster.name <- paste0("g", i-1)
+      print(cluster.name)
+      cluster.bulk <- subset(bulk, dap_clusters == cluster.name) # seurat subset doesnt seem to like string args
+
     } else {
-      cluster.name <- levels(droplevels(se.integrated@meta.data[["dap_clusters"]]))[i]
+      cluster.name <- levels(droplevels(se.integrated.atac@meta.data[["dap_clusters"]]))[i]
+      se.integrated.atac.filt <- subset(se.integrated.atac, dap_clusters == cluster.name)
+      
       print(cluster.name)
       if(grepl("_", cluster.name, fixed=TRUE)){
         cluster.name <- sub("_", "-", cluster.name)
@@ -70,14 +68,14 @@ AtacAnalyses <- function(se.integrated.atac, species){
     }
     
     print(paste0("on cluster ", cluster.name))
-    se.integrated.atac.filt <- cluster.bulk
-    
+
     list.comparisons <- ListAllPossibleComparisons(se.integrated = se.integrated.atac,
-                                                   seurat.subset = se.integrated.atac.filt)
+                                                   seurat.subset = cluster.bulk)
     for (k in 1:length(list.comparisons)){
       Idents(se.integrated.atac.filt) <- list.comparisons[[k]]
       grouping <- list.comparisons[[k]]
-      if (any(duplicated(as.data.frame(se.integrated.atac.filt@meta.data[[grouping]]))) & length(unique(se.integrated.atac.filt@meta.data[[grouping]])) >= 2){ # check if you have at least more than 1 sample for the comparison
+      if (any(duplicated(as.data.frame(se.integrated.atac.filt@meta.data[[grouping]]))) & 
+          length(unique(se.integrated.atac.filt@meta.data[[grouping]])) >= 2){ # check if you have at least more than 1 sample for the comparison
         group.pairs <- MatchCovariantGroupPairs(seurat.subset = se.integrated.atac.filt,
                                                 grouping = grouping,
                                                 not.main.group = k)
@@ -87,7 +85,7 @@ AtacAnalyses <- function(se.integrated.atac, species){
           print(target[1])
           print(target[2])
           
-          dup_check <- as.data.frame(se.integrated.atac.filt@active.ident)
+          dup_check <- as.data.frame(cluster.bulk@active.ident)
           colnames(dup_check)[1] <- "cond"
           value_counts <- table(as.character(dup_check$cond))
           
@@ -113,7 +111,13 @@ AtacAnalyses <- function(se.integrated.atac, species){
           dir.create(motif_plots)
           
           if (length(unique_values) == 0){
-            da.peaks.all <- dap_volcano_plot(se.integrated.atac.filt, target[1], target[2], cluster.name = cluster.name, plots.dir = volcano_plots, data.dir = volcano_data)
+            da.peaks.all <- dap_volcano_plot(cluster.bulk, 
+                                             target[1], 
+                                             target[2], 
+                                             cluster.name = cluster.name, 
+                                             plots.dir = volcano_plots, 
+                                             data.dir = volcano_data
+                                             )
             print("volcano")
             
             ### DAP specific analyses
@@ -131,7 +135,7 @@ AtacAnalyses <- function(se.integrated.atac, species){
             colnames(all.closest)[7] <- "gene"
             all.closest <- merge(all.closest, da.peaks.all, by = "gene")
             
-            GseaAtac(all.closest, fgsea.sets, cluster.name = cluster.name, ident.1 = target[1], ident.2 = target[2], plots.dir = closest_gene_plots) 
+            GseaAtac(all.closest, fgsea.sets, cluster.name = cluster.name, ident.1 = target[1], ident.2 = target[2], plots.dir = closest_gene_plots)
             print("gsea")
             
             ## coverage plot of the DAPs
@@ -149,11 +153,10 @@ AtacAnalyses <- function(se.integrated.atac, species){
                                                          cluster.name = cluster.name, plots.dir = motif_plots)
             print("motifs")
             
-            
             # gather the footprinting information for sets of motifs; leaving out for now because of computational constraints
             # TopMotifFootprints(se.integrated.atac = se.integrated.atac.filt, enriched.motifs = enriched.motifs.up, cluster.name = i, group = target[1], plots.dir = motif_plots)
             # TopMotifFootprints(se.integrated.atac = se.integrated.atac.filt, enriched.motifs = enriched.motifs.down, cluster.name = i, group = target[2], plots.dir = motif_plots)
-            print("fp")
+            # print("fp")
           } else {
             print("subclustering went wrong somewhere")
           }
@@ -176,17 +179,23 @@ dap_volcano_plot <- function(se.object,
                              plots.dir, 
                              data.dir){
   
-  da.peaks <- RunPresto(
-    object = se.object,
-    ident.1 = ident.1,
-    ident.2 = ident.2,
-    min.pct = min.pct,
-    logfc.threshold = 0.1
-  )
+  da.peaks <- FindMarkers(se.object, 
+                            ident.1 = ident.1, 
+                            ident.2 = ident.2, 
+                            slot = "counts", 
+                            test.use = "DESeq2",
+                            verbose = F,
+                            min.pct = min.pct,
+                            min.cells.feature = 0, 
+                            min.cells.group = 0
+                            )
   
   da.peaks$gene <- rownames(da.peaks)
-  write.table(da.peaks, paste0(data.dir ,"dap_", "cluster_", cluster.name, ident.1, "_vs_", ident.2, ".txt"), 
+  write.table(da.peaks, paste0(data.dir ,"dap_", "cluster_", cluster.name, "_", ident.1, "_vs_", ident.2, ".txt"), 
               quote = FALSE, row.names = T, sep = "\t", col.names = T)
+  
+  unadjusted.pval.cutoff <- (p_val_adj_cutoff * (1:nrow(cluster.bulk))) / nrow(cluster.bulk)
+  unadjusted.pval.cutoff <- -log(max(unadjusted.pval.cutoff))
   
   da.peaks$significance <- "Not Significant"
   da.peaks$significance[da.peaks[["avg_log2FC"]] >= avg_log2FC_cutoff & 
@@ -202,9 +211,11 @@ dap_volcano_plot <- function(se.object,
   
   p <- ggplot(da.peaks, aes(avg_log2FC, -log10(p_val), color = significance, fill = significance)) + 
     geom_point(size = 0.5, alpha = 0.5) + 
-    scale_color_manual(values = c("blue", "gray", "red")) +
+    scale_color_manual(values = colors) +
     theme_bw() +
     ylab("-log10(unadjusted p-value)") + 
+    geom_hline(yintercept=unadjusted.pval.cutoff, linetype="dashed", color = "black") +
+    geom_vline(xintercept=c(-avg_log2FC_cutoff, avg_log2FC_cutoff), linetype="dashed", color = "black") +
     ggtitle(paste0("DAPs: ", "cluster ", cluster.name, " ", ident.1, " vs ", ident.2))
   ggsave(paste0(plots.dir, "scatac_volcano_", "cluster_", cluster.name, "_", ident.1, "_vs_", ident.2, ".pdf"), plot = p, width = 8, height = 8)
   
@@ -243,9 +254,17 @@ GseaAtac <- function(all.closest, fgsea.sets, padj.cutoff = 0.05, cluster.name, 
   ggsave(paste0(plots.dir, "scatac_closest_genes_dap_gsea_", "cluster_", cluster.name, ".pdf"), plot = p, width = 8, height = 8)
 }
 
-FindTopDAPGenes <- function(da.peaks.all, p_val_adj.cutoff = 0.05, avg_log2FC.cutoff = 1, se.integrated.atac, cluster.name, group, top, plots.dir) {
+FindTopDAPGenes <- function(da.peaks.all, 
+                            p_val_adj.cutoff = 0.05, 
+                            avg_log2FC.cutoff = 1, 
+                            se.integrated.atac, 
+                            cluster.name, 
+                            group, 
+                            top, 
+                            plots.dir) {
   da.peaks.top  <- as.data.frame(da.peaks.all %>%
-                                   subset(p_val_adj < p_val_adj.cutoff & abs(avg_log2FC) >= avg_log2FC.cutoff) %>%
+                                   subset(p_val_adj < p_val_adj.cutoff & 
+                                            abs(avg_log2FC) >= avg_log2FC.cutoff) %>%
                                    top_n(top, avg_log2FC))
   if (top > 0){
     da.peaks.top <- filter(da.peaks.top, avg_log2FC > 0)

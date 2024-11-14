@@ -115,7 +115,7 @@ pseudo_bulk_volcano_plot <- function(cluster.bulk, de_markers, avg_log2FC_cutoff
                                           (p_val_adj < p_val_adj_cutoff & avg_log2FC <= -avg_log2FC_cutoff)), gene, "")), 
                     colour = "black", size = 3) + 
     geom_hline(yintercept=unadjusted.pval.cutoff, linetype="dashed", color = "black") +
-    geom_vline(xintercept=c(-2, 2), linetype="dashed", color = "black") +
+    geom_vline(xintercept=c(-avg_log2FC_cutoff, avg_log2FC_cutoff), linetype="dashed", color = "black") +
     ggtitle(paste0("DESeq2: ", cluster.name, " ", target[1], " vs ", target[2]))
   
   return(p)
