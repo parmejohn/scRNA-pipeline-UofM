@@ -233,7 +233,8 @@ GseaAtac <- function(all.closest, fgsea.sets, padj.cutoff = 0.05, cluster.name, 
   fgseaRes$leadingEdge <- as.character(fgseaRes$leadingEdge)
   
   fgseaRes <- fgsea(fgsea.sets, stats = ranks)
-  fgseaRes$leadingEdge <- as.character(fgseaRes$leadingEdge)
+  fgseaRes$leadingEdge <- sapply(fgseaRes$leadingEdge, function(x) paste(x, collapse = ", "))
+  write.table(fgseaRes, paste0("dap_gsea_cluster_", cluster.name, "_", ident.1, "_vs_", ident.2, ".txt"), quote = FALSE, row.names = F, sep = "\t", col.names = T)
   
   fgseaRes <- filter(fgseaRes, padj < padj.cutoff & size >= 3) %>% arrange(desc(NES))
   fgseaRes$Enrichment = ifelse(fgseaRes$NES > 0, "blue", "red") 

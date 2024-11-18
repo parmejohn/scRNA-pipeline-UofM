@@ -128,8 +128,8 @@ GseaComparison <- function(de.markers, cluster.name, ident.1, ident.2, fgsea.set
   ranks <- deframe(cluster.genes)
   
   fgseaRes <- fgsea(fgsea.sets, stats = ranks)
-  fgseaRes$leadingEdge <- as.character(fgseaRes$leadingEdge)
-  write.table(fgseaRes, paste0("gsea_cluster_", cluster.name, "_", ident.1, "_vs_", ident.2,".txt"), quote = FALSE,row.names = T, sep = "\t", col.names = T)
+  fgseaRes$leadingEdge <- sapply(fgseaRes$leadingEdge, function(x) paste(x, collapse = ", "))
+  write.table(fgseaRes, paste0("gsea_cluster_", cluster.name, "_", ident.1, "_vs_", ident.2,".txt"), quote = FALSE, row.names = F, sep = "\t", col.names = T)
   fgseaRes <- filter(fgseaRes, padj <= 0.05 & size >= 3) %>% arrange(desc(NES))
   fgseaRes$Enrichment = ifelse(fgseaRes$NES > 0, "red", "blue") 
   
