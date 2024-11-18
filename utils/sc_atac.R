@@ -194,8 +194,8 @@ dap_volcano_plot <- function(se.object,
   write.table(da.peaks, paste0(data.dir ,"dap_", "cluster_", cluster.name, "_", ident.1, "_vs_", ident.2, ".txt"), 
               quote = FALSE, row.names = T, sep = "\t", col.names = T)
   
-  unadjusted.pval.cutoff <- (p_val_adj_cutoff * (1:nrow(cluster.bulk))) / nrow(cluster.bulk)
-  unadjusted.pval.cutoff <- -log(max(unadjusted.pval.cutoff))
+  unadjusted.pval.cutoff <- -log10(max(de_markers$p_val[!is.na(de_markers$p_val_adj) & 
+                                                          de_markers$p_val_adj <= p_val_adj_cutoff]))
   
   da.peaks$significance <- "Not Significant"
   da.peaks$significance[da.peaks[["avg_log2FC"]] >= avg_log2FC_cutoff & 

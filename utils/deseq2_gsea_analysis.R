@@ -68,8 +68,7 @@ DESeq2ConditionPerCluster <-  function(se.integrated, species){
             de_markers$gene <- rownames(de_markers)
             write.table(de_markers, paste0("deseq2_cluster_", cluster.name, "_", target[1], "_vs_", target[2], '.txt'), row.names = F, quote = F)
             
-            p <- pseudo_bulk_volcano_plot(cluster.bulk, 
-                                          de_markers, 
+            p <- pseudo_bulk_volcano_plot(de_markers, 
                                           avg_log2FC_cutoff = 2, 
                                           p_val_adj_cutoff = 0.05, 
                                           cluster.name, 
@@ -89,10 +88,10 @@ DESeq2ConditionPerCluster <-  function(se.integrated, species){
   se.integrated$de.clusters <- NULL
 }
 
-pseudo_bulk_volcano_plot <- function(cluster.bulk, de_markers, avg_log2FC_cutoff, p_val_adj_cutoff, cluster.name, ident.1, ident.2) {
+pseudo_bulk_volcano_plot <- function(de_markers, avg_log2FC_cutoff, p_val_adj_cutoff, cluster.name, ident.1, ident.2) {
   # determining volcano plot y-axis cutoff
-  unadjusted.pval.cutoff <- (p_val_adj_cutoff * (1:nrow(cluster.bulk))) / nrow(cluster.bulk)
-  unadjusted.pval.cutoff <- -log(max(unadjusted.pval.cutoff))
+  unadjusted.pval.cutoff <- -log10(max(de_markers$p_val[!is.na(de_markers$p_val_adj) & 
+                                                           de_markers$p_val_adj <= p_val_adj_cutoff]))
   
   de_markers$significance <- "Not Significant"
   de_markers$significance[de_markers[["avg_log2FC"]] >= avg_log2FC_cutoff & 
@@ -108,7 +107,7 @@ pseudo_bulk_volcano_plot <- function(cluster.bulk, de_markers, avg_log2FC_cutoff
   
   p <- ggplot(de_markers, aes(avg_log2FC, -log10(p_val), color = significance, fill = significance)) + 
     geom_point(size = 1, alpha = 0.3) + 
-    scale_color_manual(values = c("blue", "gray", "red")) +
+    scale_color_manual(values = colors) +
     theme_bw() +
     ylab("-log10(unadjusted p-value)") + 
     geom_text_repel(aes(label = ifelse(((p_val_adj < p_val_adj_cutoff & avg_log2FC >= avg_log2FC_cutoff) | 
