@@ -7,10 +7,7 @@ params.bind = ''
 
 //Optional inputs
 params.reference_seurat = 'none'
-params.clusters_optimal = 0
-params.resolution = 1
 params.beginning_cluster = 'none'
-params.test_data = 0
 params.co_conditions = 'none'
 params.reduced_dim = 'integrated.cca'
 params.pathways = 'none'
@@ -23,6 +20,12 @@ params.run_trajectory_inference = false
 params.run_da = false
 params.run_escape = false
 params.run_cellchat = false
+
+//customizing parameters for different analyses
+params.clusters_optimal = 0
+params.resolution = 1
+params.test_data = 0
+params.mitochondrial_percent_cutoff = 0
 
 include {AMBIENTRNAREMOVAL} from './modules/ambientremoval.nf'
 include {FILTERLOWQUALDOUBLETS} from './modules/filterlowqualdoublets.nf'
@@ -68,12 +71,12 @@ workflow {
     
     if (params.sc_atac){
   
-      FILTERLOWQUALDOUBLETS(ambient_ch, params.species, processed_co_condition, "yes", params.indir)
+      FILTERLOWQUALDOUBLETS(ambient_ch, params.species, processed_co_condition, "yes", params.indir, params.mitochondrial_percent_cutoff)
       filtered_ch = FILTERLOWQUALDOUBLETS.out.se_filtered_singlets_list
       
     } else {
 
-      FILTERLOWQUALDOUBLETS(ambient_ch, params.species, processed_co_condition, "no", params.indir)
+      FILTERLOWQUALDOUBLETS(ambient_ch, params.species, processed_co_condition, "no", params.indir, params.mitochondrial_percent_cutoff)
       filtered_ch = FILTERLOWQUALDOUBLETS.out.se_filtered_singlets_list
     }
     

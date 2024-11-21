@@ -52,10 +52,9 @@ AmbientRNARemoval <- function(pair_list, test){
   DropletUtils:::write10xCounts(paste('./qc/', group.name, '/', sample.name, "_soupx",sep=''), adj.matrix, overwrite = TRUE) # name will be the fo;der before the /outs/ folder
 }
 
-BasicQC <- function(seurat_obj, species, atac){
+BasicQC <- function(seurat_obj, species, atac, mito.cutoff){
   
   print("Removing low quality cells based on MAD thresholds")
-  
   
   if(all(grepl("^ENS", rownames(seurat_obj)))){ #checks if geneIDs are ensembl IDs; need to convert it into gene symbols to filter for mitochondrial genes
     ens.to.symbols <- NULL
@@ -92,9 +91,13 @@ BasicQC <- function(seurat_obj, species, atac){
   Cell.QC.Stat <- seurat_obj@meta.data
   
   ###### Percent mitochondrial filtering #####
-  max.mito.thr <- median(Cell.QC.Stat$percent.mt) + 3*mad(Cell.QC.Stat$percent.mt) #looking where to make the cutoff for the max
-  if (max.mito.thr < 5){
-  	max.mito.thr <- 5
+  if (mito.cutoff == 0){
+    max.mito.thr <- median(Cell.QC.Stat$percent.mt) + 3*mad(Cell.QC.Stat$percent.mt) #looking where to make the cutoff for the max
+    if (max.mito.thr < 5){
+    	max.mito.thr <- 5
+    }
+  } else {
+    max.mito.thr <- mito.cutoff
   }
   
   p1 <- ggplot(Cell.QC.Stat, aes(x=nFeature_RNA, y=percent.mt)) +

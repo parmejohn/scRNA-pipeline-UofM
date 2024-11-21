@@ -52,6 +52,13 @@ parser$add_argument(
   nargs = 1,
   help = 'Contains CellRanger count outputs folder seperated by condition'
 )
+parser$add_argument(
+  '-mito_cutoff',
+  type = "double",
+  required = TRUE,
+  nargs = 1,
+  help = 'Mitochondrial percent cutoff'
+)
 args <- parser$parse_args()
 
 indir <- args$i
@@ -211,7 +218,7 @@ saveRDS(se.list, "se_list_raw.rds")
 ##### Basic QC #####
 print("Basic QC")
 se.filtered.list <-
-  lapply(se.list, BasicQC, species = species, atac = args$atac) # removal of low quality cells by percentage of mitochondrial reads, number of genes, and number of UMIs
+  lapply(se.list, BasicQC, species = species, atac = args$atac, mito.cutoff = args$mito_cutoff) # removal of low quality cells by percentage of mitochondrial reads, number of genes, and number of UMIs
 saveRDS(se.filtered.list, "se_filtered_list.rds")
 
 ##### Doublet Removal #####

@@ -22,6 +22,7 @@ process FILTERLOWQUALDOUBLETS {
     val conditions
     val atac
     val og
+    val mitochondrial_percent_cutoff
 
     output:
     path "*.pdf"
@@ -32,6 +33,6 @@ process FILTERLOWQUALDOUBLETS {
     
     script:
        """
-        ${projectDir}/src/FilterLowQualityAndDoublets.R --i $ambient_rmv -species $species -coconditions $conditions -atac $atac -original_files $og
+        ${projectDir}/src/FilterLowQualityAndDoublets.R --i $ambient_rmv -species $species -coconditions $conditions -atac $atac -original_files $og -mito_cutoff $mitochondrial_percent_cutoff
        """
 }
