@@ -69,7 +69,9 @@ BasicQC <- function(seurat_obj, species, atac, mito.cutoff){
     }
     names(ens.to.symbols)[1] <- "SYMBOL"
     seurat_obj@assays$RNA@meta.features <- merge(seurat_obj@assays$RNA@meta.features, ens.to.symbols, by=0, all.x=TRUE) %>% select(1,3) #save under meta.features, allows mapping for later on if needed
-    mt.to.calc <- subset(seurat_obj@assays$RNA@meta.features, SYMBOL %in% grep("^mt-", seurat_obj@assays$RNA@meta.features$SYMBOL, value = T))[,1]
+    mt.to.calc <- subset(seurat_obj@assays$RNA@meta.features, 
+                         SYMBOL %in% grep("^mt-", seurat_obj@assays$RNA@meta.features$SYMBOL, 
+                                          value = TRUE, ignore.case = TRUE))[,1]
     
     seurat_obj[["percent.mt"]] <- PercentageFeatureSet(seurat_obj, features = mt.to.calc)
   } else {
@@ -143,8 +145,8 @@ BasicQC <- function(seurat_obj, species, atac, mito.cutoff){
                                                               log10(Cell.QC.Stat$nCount_RNA) > max.nUMI.thr | 
                                                               log10(Cell.QC.Stat$nCount_RNA) < min.nUMI.thr)[1])," cells remain"), x = 3, y = 3) +
     ggtitle(paste0(seurat_obj@misc[[1]], " QC: \nNumber of Genes vs Number of UMIs")) +
-    xlab("Number of UMIs") +
-    ylab("Number of Genes")
+    xlab("Log10 Transformed Number of UMIs") +
+    ylab("Log10 Transformed Number of Genes")
   ggsave(paste0(seurat_obj@misc[[1]], "_nGenes_nUMI.pdf"), plot=p2)
   
   if(atac == "yes"){
