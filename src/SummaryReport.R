@@ -104,7 +104,7 @@ if (file.exists(paste0(res.loc,"plots/conserved_marker_unlabelled.pdf"))){
   ReadImageAndTrim(paste0(res.loc,"plots/conserved_marker_unlabelled.pdf"))
 }
 
-kable(head(read.table(paste0(res.loc,"data/se_markers_presto_integrated.txt"))), caption="Top cell markers for each cluster (showing just 10)")
+kable(head(read.table(paste0(res.loc,"data/se_markers_presto_integrated.txt"))), caption="Cell marker table example")
 
 #' ### Automatic Clustering Labelling
 #' Remember to double check how accurate the automatic labelling was!
