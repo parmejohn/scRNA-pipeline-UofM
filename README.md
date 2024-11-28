@@ -170,28 +170,32 @@ nextflow run scRNA_pipeline.nf \
 <details>
 <summary>Click to expand</summary>
 <br>
+	
 - Uses a minimum spanning tree (MST) on a given UMAP to form the initial cluster connections
 - Depending on whether there is a starting celltype specified (--beginning_cluster NAME), it will run in 2 different ways
 	- No start: No pseudotimes are calculated, since the direction is unknown
-	- Start:
-		- The MST will become curved
+	- Start: The MST will be smoothed using principal curves and then each cell will have a pseudotime calculated based on their orthogonal distance from the curve
 - Files
 	- Data
-		- ti_de_between_GROUPING.txt: List of differentially expressed genes between the given condition. Sorted in the same order as the corresponding heatmap.
+		- ti_de_between_GROUPING.txt: List of differentially expressed genes between the given condition. Sorted in the same order as the corresponding heatmap. [Tutorial](https://kstreet13.github.io/bioc2020trajectories/articles/workshopTrajectories.html)
 		- ti_DEGs_qval_full_lineage_[0-9].txt: List of differentially expressed genes according to pseudotime in a predicted lineage. 
 		- sce_slingshot.rds: SingleCellExperiment R object containing pseudotime calculations for trajectory inference
  	- Plots
   		- ti_no_start_not_smooth.pdf: Trajectory inference, useful for trying to figure out if cells are differentiating from one cluster to another; direction is not known though
     		- ti_start_smooth.pdf: Trajectory inference with smooth principal curves; produced when a starting cluster/celltype is explicitly mentioned
-      		- ti_deg_between_GROUPING.pdf: Trajectory inference of differentially expressed genes between the given condition. Rows are genes, columns are cells, and the columns can also be split by each predicted lineage
-		- ti_de_lineage[0-9].pdf: Differentially expressed genes for across pseudotime values calculated by slingshot
+      		- ti_deg_between_GROUPING.pdf: Trajectory inference of differentially expressed genes between the given condition. Rows are genes, columns are cells, and the columns can also be split by each predicted lineage. |Log2FC| >= 2 and padj < 0.05
+		- ti_de_lineage[0-9].pdf: Differentially expressed genes for across pseudotime values calculated by slingshot. Only the 50 genes are listed max in the heatmap. |Log2FC| >= 2 and padj < 0.05
 </details>
 
-##### Tempora
+##### Tempora (Deprecated for now)
 <details>
 <summary>Click to expand</summary>
 <br>
-
+	
+- Uses time-series scRNA-seq
+- Uses pathway analyses and time variable to order cells
+	- Uses mutual information rank and ARACNE to calculate the ranks in all cluster pairs and assigns the order of edges made
+	- ARACNE in this case infers direct regulatory relationships between transcriptional regulator proteins and target genes
 - Files
 	- Data
   		- se_integrated_tempora_seurat_v3.rds: Tempora object; Seurat3 converted from Seurat5
@@ -205,6 +209,9 @@ nextflow run scRNA_pipeline.nf \
 <summary>Click to expand</summary>
 <br>
 
+- Uses time-series scRNA-seq
+- Identifies ordering coefficients for each genes, where the value is equal to the contribution the gene has to cell ordering (based on their sequential expression)
+	- This coefficient is multipled with the gene expression matrix to get the pseudotime values for each cell
 - Files
 	- Data
  		- psuper_top_20_genes_CONDITION-X_CLUSTER.txt: List of top 20 genes with the largest absolute coefficient values
@@ -223,6 +230,7 @@ nextflow run scRNA_pipeline.nf \
 <summary>Click to expand</summary>
 <br>
 
+- 
 - Files
 	- Data
  		- se_integrated_escape_norm.rds: Integrated Seurat object with UCell enrichment scores calculated for each cell, with normalized in respect to the number of genes and unormalized values
