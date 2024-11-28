@@ -85,7 +85,7 @@ nextflow run scRNA_pipeline.nf \
 <br>
 
 - Ambient RNA removal with soupX
-- Removing low quality cells using MAD thresholds based off ...
+- Removing low quality cells using median average deviation (MAD) thresholds based off ...
 	- Percentage of mitochondrial reads
 	- Number of UMIs
  	- Number of genes
@@ -114,6 +114,8 @@ nextflow run scRNA_pipeline.nf \
 - Perform integration with desired batch correction tool
 	-  Joint integration of scRNA-seq and scATAC-seq data if present
 - Perform dimensional reduction and clustering
+	- Automatically determines the optimal number of k to use for clustering by NBClust with the euclidean distance option
+- Does not perform SCTransform at the moment
 - Files
 	- Data
 		- se_integrated.rds: Seurat object that has all samples over all conditions integrated in order to be comparable downstream
@@ -152,6 +154,7 @@ nextflow run scRNA_pipeline.nf \
 
 - Averages gene expression for each cluster and performs differential gene expression with DESeq2
 - Using the log2FC values as rank, performs GSEA using the fgsea package
+	- This method uses ALL genes, not an over-representation analyses method; DEGs would affect the pathways, but will have to filter the GSEA for them
 - Will perform pairwise comparisons, but matching the like co-condition with like
 	- For example, given sample1_CTRL_1hr, sample2_CTRL_2hr, sample1_TREAT_1hr, sample2_TREAT_2hr the pairs will be sample1_CTRL_1hr vs sample1_TREAT_1hr and sample2_CTRL_2hr vs sample2_TREAT_2hr
 - Files
@@ -167,7 +170,11 @@ nextflow run scRNA_pipeline.nf \
 <details>
 <summary>Click to expand</summary>
 <br>
-	
+- Uses a minimum spanning tree (MST) on a given UMAP to form the initial cluster connections
+- Depending on whether there is a starting celltype specified (--beginning_cluster NAME), it will run in 2 different ways
+	- No start: No pseudotimes are calculated, since the direction is unknown
+	- Start:
+		- The MST will become curved
 - Files
 	- Data
 		- ti_de_between_GROUPING.txt: List of differentially expressed genes between the given condition. Sorted in the same order as the corresponding heatmap.
