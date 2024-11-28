@@ -320,21 +320,30 @@ nextflow run scRNA_pipeline.nf \
 <summary>Click to expand</summary>
 <br>
 
+- If the data contains corresponding scATAC-seq data for the same set of scRNA-seq cells, the data will be jointly analyzed
+- QC: Added in filtering low-quality cells based on the total number of fragments in peaks, TSS enrichment score, and nucleosome signal
+- Changed steps to dimensional reduction and clustering
+	- Dimensional reduction
+		- Term frequency-inverse document frequency (TF-IDF) normalization = Normalizes cell sequencing depth across the peaks
+	 	- Feature selection = Chooses top percentage of peaks or remove peaks that are in less than n cells
+		- Similar to PCA in scRNA-seq, perform singular value decomposition (SVD) on the normalized gene matrix
+		- When performed in this order, it is called the latent semantic indexing (LSI)
+	- Calculate the weighted nearest neighbours graph to combine the RNA and ATAC-seq information to be used in downstream clustering
 - Files
 	- Data
 		 - CONDITION-X_vs_CONDITION-Y
 			 - volcano_data
-				 - dap_CELLTYPE_CONDITION-X_vs_CONDITION-Y.txt
+				 - dap_CELLTYPE_CONDITION-X_vs_CONDITION-Y.txt: Tab-delimited file with DESeq2 results, unfiltered
 	- Plots
 		 - CONDITION-X_vs_CONDITION-Y
-			 - closest_gene_plots
-				 - scatac_closest_genes_dap_coverage_CELLTYPE_GENE_up.pdf
-				 - scatac_closest_genes_dap_gex_CELLTYPE_GROUPING.pdf
-				 - scatac_closest_genes_dap_gsea_CELLTYPE.pdf
+			 - closest_gene_plots: Closest gene to one of the top differentially expressed peaks found from the DESeq2 results. Default is the top and bot 5 peaks. adj_pval < 0.05 and |avg_log2FC| >= 1
+				 - scatac_closest_genes_dap_coverage_CELLTYPE_GENE_up.pdf: Displays the genome track with the corresponding RNA-seq, ATAC-seq, and possible ATAC-seq peak links
+				 - scatac_closest_genes_dap_gex_CELLTYPE_GROUPING.pdf: Violin plots of the top 5 associated genes
+				 - scatac_closest_genes_dap_gsea_CELLTYPE.pdf: After linking each peak to their closest gene, perform GSEA. Ranked list by log2FC
 			 - motif_plots
-				 - scatac_motif_CELLTYPE_SORTED.pdf
+				 - scatac_motif_CELLTYPE_GROUPING.pdf: Top (default: 6) over-represented motifs in the peak set
 			 - volcano_plots
-				 - scatac_volcano_CELLTYPE_CONDITION-X_vs_CONDITION-Y.pdf
+				 - scatac_volcano_CELLTYPE_CONDITION-X_vs_CONDITION-Y.pdf: Differentiall accessible peaks. adj_pval < 0.05 and |avg_log2FC| >= 1
 </details>
 
 ### Example
