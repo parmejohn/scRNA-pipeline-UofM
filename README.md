@@ -230,7 +230,12 @@ nextflow run scRNA_pipeline.nf \
 <summary>Click to expand</summary>
 <br>
 
-- 
+- Utilizes the heterogeneity of scRNA-seq data to perform GSEA
+- Multiple methods of calculating enrichment scores, but UCell is used here for a heuristic
+	- UCell = Based on Mann Whitney U Statistic
+ 		- Score calculated relatively to gene expression in individual cells
+		- Creates a ranked list of genes for EACH cell, so the process will take a while
+- As of the moment there are only visualizations, but [differential enrichment](https://www.borch.dev/uploads/screpertoire/articles/running_escape) can be calculated 
 - Files
 	- Data
  		- se_integrated_escape_norm.rds: Integrated Seurat object with UCell enrichment scores calculated for each cell, with normalized in respect to the number of genes and unormalized values
@@ -245,6 +250,21 @@ nextflow run scRNA_pipeline.nf \
 <summary>Click to expand</summary>
 <br>
 
+- Detects changes in compositions between multicondition scRNA-seq datasets. [Tutorial](https://www.bioconductor.org/packages/devel/bioc/vignettes/miloR/inst/doc/milo_gastrulation.html) with more in-depth info for the analyses
+	- https://marionilab.github.io/miloR/articles/milo_gastrulation.html
+- Simplified Steps:
+	1. k-nearest neighbours (KNN) graph is built from the batch correction integration method that was chosen (default: integrated_cca from Seurat)
+	2. Define what the a neighbourhood will be for each cell (index)
+ 		- This will form edges connecting the index to surrounding cells
+   		- Want average neighbourhood size over 5 x N_samples (This needs manual checks)
+     		- Refined by calculating the median profile for a given neighbourhood by selecting the vertex (cell) with the highest number of triangle in the neighbourhood
+       			- This may reduce multiple neighbourshoods to prevent oversampling
+     	3. Count the amount of cells from each sample are in each neighbourhood
+      	4. Define the experimental design (this will be between the main condition and then co-conditions as well)
+       	5. Testing for DA using a negative binomial generalized linear model implementation in edgeR between neighbourhoods
+    		- Contains Fold-change and FDR for each neightbourhood to determine significant differential abundance
+       		- SpatialFDR = Corrected pvals for multiple testing from the overlap between neighbourhoods
+       	 		- Weighted version of BH method in the KNN graph
 - Files
 	- Data
 		- sc_integrated_milo_traj.rds: Integrated Seurat object with miloR calculated neighborhoods
