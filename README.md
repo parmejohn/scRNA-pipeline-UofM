@@ -287,6 +287,11 @@ nextflow run scRNA_pipeline.nf \
 <summary>Click to expand</summary>
 <br>
 
+- Finding over-expressed ligand-receptor pairs and pathways using a communication probability
+	- https://htmlpreview.github.io/?https://github.com/jinworks/CellChat/blob/master/tutorial/CellChat-vignette.html
+	- Communication probability is built off gene expression, the ligand-receptor interactions from the curated CellChat database, and law of mass action
+		- Genes are chosen if they are overexpressed ligands and/or receptors
+- Significant cell-cell communication is calculated by performing a permutation test on the communication probability
 - For cellchat_compare_*heatmap.pdf, the top bar plot shows total signal strength of a cell group (summarizes all signalling pathways for that cell group). The right bar plot will show the total signaling strength for a pathway (summarizes all cell groups for that signaling pathway)
 - Files
 	- Data
