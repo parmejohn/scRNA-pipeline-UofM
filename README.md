@@ -255,16 +255,16 @@ nextflow run scRNA_pipeline.nf \
 - Simplified Steps:
 	1. k-nearest neighbours (KNN) graph is built from the batch correction integration method that was chosen (default: integrated_cca from Seurat)
 	2. Define what the a neighbourhood will be for each cell (index)
- 		- This will form edges connecting the index to surrounding cells
-   		- Want average neighbourhood size over 5 x N_samples (This needs manual checks)
-     		- Refined by calculating the median profile for a given neighbourhood by selecting the vertex (cell) with the highest number of triangle in the neighbourhood
-       			- This may reduce multiple neighbourshoods to prevent oversampling
-     	3. Count the amount of cells from each sample are in each neighbourhood
-      	4. Define the experimental design (this will be between the main condition and then co-conditions as well)
-       	5. Testing for DA using a negative binomial generalized linear model implementation in edgeR between neighbourhoods
+		- This will form edges connecting the index to surrounding cells
+  		- Want average neighbourhood size over 5 x N_samples (This needs manual checks)
+		- Refined by calculating the median profile for a given neighbourhood by selecting the vertex (cell) with the highest number of triangle in the neighbourhood
+			- This may reduce multiple neighbourshoods to prevent oversampling
+	3. Count the amount of cells from each sample are in each neighbourhood
+	4. Define the experimental design (this will be between the main condition and then co-conditions as well)
+	5. Testing for DA using a negative binomial generalized linear model implementation in edgeR between neighbourhoods
     		- Contains Fold-change and FDR for each neightbourhood to determine significant differential abundance
        		- SpatialFDR = Corrected pvals for multiple testing from the overlap between neighbourhoods
-       	 		- Weighted version of BH method in the KNN graph
+       	 	- Weighted version of BH method in the KNN graph
 - Files
 	- Data
 		- sc_integrated_milo_traj.rds: Integrated Seurat object with miloR calculated neighborhoods
