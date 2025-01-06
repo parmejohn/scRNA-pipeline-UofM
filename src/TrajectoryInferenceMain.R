@@ -13,12 +13,19 @@ library(tradeSeq)
 library(ComplexHeatmap)
 library(magrittr)
 library(gridExtra)
+library(svglite)
 
 set.seed(333)
 
 parser <- ArgumentParser(description='Process scRNA-seq data, while performing comparitive analyses')
 parser$add_argument('-inputr', '--i',  type="character", required=TRUE, nargs=1, help='Contains CellRanger count outputs folder seperated by condition')
 parser$add_argument('-beginning_cluster', type="character", nargs=1, help='Beginning cluster for trajectory inference with slingshot')
+parser$add_argument(
+  '-plots_format',
+  type = "character",
+  required = TRUE,
+  nargs = 1
+)
 args <- parser$parse_args()
 
 indir <- args$i
@@ -43,7 +50,7 @@ se.integrated <- readRDS(indir)
 print("Trajectory Inference")
 # https://nbisweden.github.io/workshop-archive/workshop-scRNAseq/2020-01-27/labs/compiled/slingshot/slingshot.html#basic_processing_with_seurat_pipeline
 if (args$beginning_cluster == 'none') {
-  TrajectoryInferenceSlingshot(se.integrated)
+  TrajectoryInferenceSlingshot(se.integrated, plots.format = args$plots_format)
 } else {
-  TrajectoryInferenceSlingshot(se.integrated, start.clus=args$beginning_cluster)
+  TrajectoryInferenceSlingshot(se.integrated, start.clus=args$beginning_cluster, plots.format = args$plots_format)
 }

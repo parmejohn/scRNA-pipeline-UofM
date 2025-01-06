@@ -15,6 +15,12 @@ process TEMPORAANALYSIS {
         overwrite: true,
         pattern: "*.pdf"
     )
+    publishDir (
+        path: "$params.outdir/analysis/plots/ti",
+        mode: 'copy',
+        overwrite: true,
+        pattern: "*.svg"
+    )
 
     containerOptions "--bind $params.bind"
 
@@ -22,15 +28,16 @@ process TEMPORAANALYSIS {
     path integrated
     val main_time
     val species
+    val plots_format
 
     output:
     path "*.pdf"
     path "*.rds"
     val true, emit: report
-    // val true, emit: report
-    
+    path "*.svg"
+
     script:
        """
-        ${projectDir}/src/TemporaMain.R --i $integrated -main_time $main_time -species $species
+        ${projectDir}/src/TemporaMain.R --i $integrated -main_time $main_time -species $species -plots_format $plots_format
        """
 }

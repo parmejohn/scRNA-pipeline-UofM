@@ -4,6 +4,7 @@ params.indir = ''
 params.outdir = ''
 params.species= ''
 params.bind = ''
+params.plot_format = 'pdf'
 
 //Optional inputs
 params.reference_seurat = 'none'
@@ -71,12 +72,12 @@ workflow {
     
     if (params.sc_atac){
   
-      FILTERLOWQUALDOUBLETS(ambient_ch, params.species, processed_co_condition, "yes", params.indir, params.mitochondrial_percent_cutoff)
+      FILTERLOWQUALDOUBLETS(ambient_ch, params.species, processed_co_condition, "yes", params.indir, params.mitochondrial_percent_cutoff, params.plot_format)
       filtered_ch = FILTERLOWQUALDOUBLETS.out.se_filtered_singlets_list
       
     } else {
 
-      FILTERLOWQUALDOUBLETS(ambient_ch, params.species, processed_co_condition, "no", params.indir, params.mitochondrial_percent_cutoff)
+      FILTERLOWQUALDOUBLETS(ambient_ch, params.species, processed_co_condition, "no", params.indir, params.mitochondrial_percent_cutoff, params.plot_format)
       filtered_ch = FILTERLOWQUALDOUBLETS.out.se_filtered_singlets_list
     }
     
@@ -84,46 +85,44 @@ workflow {
     integrated_ch = INTEGRATEDATA(filtered_ch, params.reduced_dim, processed_co_condition)
 
     // seurat dim red
-    DIMENSIONALREDUCTION(integrated_ch, params.clusters_optimal, params.resolution, params.reduced_dim)
+    DIMENSIONALREDUCTION(integrated_ch, params.clusters_optimal, params.resolution, params.reduced_dim, params.plot_format)
     dimred_ch = DIMENSIONALREDUCTION.out.se_integrated_dimred
 
-	new_opt_clust = DIMENSIONALREDUCTION.out.clusters_optimal_n.splitText().map{it -> it.trim()}
-	println new_opt_clust
+  	new_opt_clust = DIMENSIONALREDUCTION.out.clusters_optimal_n.splitText().map{it -> it.trim()}
+  	println new_opt_clust
 
     // identify cell markers
     if (params.reference_seurat != 'none'){
-        IDENTIFYMARKERS(dimred_ch, new_opt_clust, params.reference_seurat)
-	identified_report = IDENTIFYMARKERS.out.report
+        IDENTIFYMARKERS(dimred_ch, new_opt_clust, params.reference_seurat, params.plot_format)
+	      identified_report = IDENTIFYMARKERS.out.report
         identified_ch = IDENTIFYMARKERS.out.se_integrated_auto_label
     } else {
-        IDENTIFYMARKERS(dimred_ch, new_opt_clust, params.reference_seurat)
+        IDENTIFYMARKERS(dimred_ch, new_opt_clust, params.reference_seurat, params.plot_format)
         identified_ch = dimred_ch
-	identified_report = "no reference"
+	      identified_report = "no reference"
     }
 
 	if (params.run_trajectory_inference){
-		TRAJECTORYINFERENCE(identified_ch, params.beginning_cluster)
+		TRAJECTORYINFERENCE(identified_ch, params.beginning_cluster, params.plot_format)
 		sling_ch = TRAJECTORYINFERENCE.out.slingshot_out_pdf
 	} else {
 		sling_ch = "SKIPPING SLINGSHOT ANALYSIS, RERUN WITH '--params.run_trajectory_inference true' if you desired those results"
 	}
-	//println sling_ch
-	// TRAJECTORYINFERENCE(identified_ch, params.beginning_cluster)
 	
   m = params.co_conditions ==~ '.*time.*'
   assert m instanceof Boolean
   if (m && params.run_trajectory_inference){
-    TEMPORAANALYSIS(identified_ch, "no",  params.species)
-    tempora_ch = TEMPORAANALYSIS.out.report
+    //TEMPORAANALYSIS(identified_ch, "no",  params.species, params.plot_format)
+    //tempora_ch = TEMPORAANALYSIS.out.report
     
-    PSUPERTIME(identified_ch, "no")
+    PSUPERTIME(identified_ch, "no", params.plot_format)
     psupertime_ch = PSUPERTIME.out.report
     
   } else if (params.main_time && params.run_trajectory_inference) {
-    TEMPORAANALYSIS(identified_ch, "yes", params.species)
-    tempora_ch = TEMPORAANALYSIS.out.report
+    //TEMPORAANALYSIS(identified_ch, "yes", params.species, params.plot_format)
+    //tempora_ch = TEMPORAANALYSIS.out.report
     
-    PSUPERTIME(identified_ch, "yes")
+    PSUPERTIME(identified_ch, "yes", params.plot_format)
     psupertime_ch = PSUPERTIME.out.report
     
   } else {
@@ -132,18 +131,18 @@ workflow {
   }
   
   if (params.replicates){
-    COMPARATIVEANALYSIS(identified_ch, params.species)
+    COMPARATIVEANALYSIS(identified_ch, params.species, params.plot_format)
 	  comparative_ch = COMPARATIVEANALYSIS.out.report
 	  
 	  if (params.run_da) {
-      DAANALYSIS(identified_ch, new_opt_clust, params.reduced_dim, params.species)
+      DAANALYSIS(identified_ch, new_opt_clust, params.reduced_dim, params.species, params.plot_format)
   	  daanalysis_ch = DAANALYSIS.out.report
 	  } else {
 	    daanalysis_ch = "--run_da false"
 	  }
 	  
 	  if (params.run_cellchat) {
-      CELLCHAT(identified_ch, params.species)
+      CELLCHAT(identified_ch, params.species, params.plot_format)
   	  cellchat_ch = CELLCHAT.out.report
 	  } else {
 	    cellchat_ch = "--run_cellchat false"
@@ -158,7 +157,7 @@ workflow {
 	if (params.run_escape){
 	  processed_pathways = params.pathways.replaceAll(',', ' ')
 		println "WARNING: This may take a while"
-		ESCAPEANALYSIS(identified_ch, params.species, processed_pathways)
+		ESCAPEANALYSIS(identified_ch, params.species, processed_pathways, params.plot_format)
 		escape_ch = ESCAPEANALYSIS.out.se_integrated_escape
 	} else {
 		escape_ch = "SKIPPING ESCAPE ANALYSIS, RERUN WITH '--run_escape true' if you desired those results"
@@ -166,14 +165,14 @@ workflow {
 	//println escape_ch
 
 	if (params.sc_atac){
-		ATACANALYSES(identified_ch, params.species)
+		ATACANALYSES(identified_ch, params.species, params.plot_format)
 		atac_ch = ATACANALYSES.out.report
 	} else {
 		atac_ch = "no atac-seq info provided"
 	}
 	//println atac_ch
 
-    SUMMARYREPORT(
+/*    SUMMARYREPORT(
         comparative_ch,
         identified_report,
         sling_ch,
@@ -184,5 +183,5 @@ workflow {
         cellchat_ch,
         "${params.outdir}/analysis/",
         new_opt_clust
-        )
+        )*/
 }

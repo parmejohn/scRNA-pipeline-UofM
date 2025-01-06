@@ -439,7 +439,7 @@ dynamic_filter_function <- function(data, logfc_pattern = "^logFC_", pval_patter
     filter(!!filter_expr)
 }
 
-DAGseaComparison <- function(de.markers, cluster.name, group, fgsea.sets){
+DAGseaComparison <- function(de.markers, cluster.name, group, fgsea.sets, plots.format){
   
   cluster.genes <- de.markers %>%
     arrange(desc(avg_logFC)) %>% 
@@ -467,8 +467,8 @@ DAGseaComparison <- function(de.markers, cluster.name, group, fgsea.sets){
       scale_fill_identity() + 
       ggtitle(paste0("GSEA: ", cluster.name, " ", group))
     
-    #dir.create(paste(plot.path, 'gsea', sep=''))
-    PrintSave(p, paste0("milo_gsea_cluster_", cluster.name, "_", group, '.pdf'), w=12)
+    PrintSaveAndSVG(p, paste0("milo_gsea_cluster_", cluster.name, "_", group), plots.format, width=12)
+    
   } else {
     print("No pathways are particularly enriched")
   }

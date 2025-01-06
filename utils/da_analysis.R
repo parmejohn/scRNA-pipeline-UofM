@@ -8,7 +8,8 @@ DifferentialAbundanceMilo <-
            reduced.dims,
            prop = 0.05,
            fdr.cutoff = 0.05,
-	   species) {
+           species,
+           plots.format) {
     DefaultAssay(se.integrated) <- "RNA"
     se.integrated$da.clusters <- Idents(se.integrated)
 
@@ -83,8 +84,8 @@ DifferentialAbundanceMilo <-
         geom_point() +
         geom_hline(yintercept = -log10(fdr.cutoff)) + ## Mark significance threshold (10% FDR)
         ggtitle(paste0("Significant Neighborhoods over ", condition))
-      PrintSave(p1, paste0("milo_pval_distribution_", condition, ".pdf"))
-      PrintSave(p2, paste0("milo_volcano_plot_", condition, ".pdf"))
+      PrintSaveAndSVG(p1, paste0("milo_pval_distribution_", condition), plots.format)
+      PrintSaveAndSVG(p2, paste0("milo_volcano_plot_", condition), plots.format)
       
       sc.integrated.milo.traj <-
         buildNhoodGraph(sc.integrated.milo.traj)
@@ -99,8 +100,8 @@ DifferentialAbundanceMilo <-
 
       p4 <- plotDAbeeswarm_fixed(da.results, group.by = "da.clusters", alpha = fdr.cutoff) # gives a distribution view instead of UMAP
       if (is.ggplot(p4)) {
-      	p4 <- p4 + ggtitle(paste0("DA FC Distribution: ", condition))
-            PrintSave(p4, paste0("milo_DA_fc_distribution_", condition, ".pdf"))
+        p4 <- p4 + ggtitle(paste0("DA FC Distribution: ", condition))
+        PrintSaveAndSVG(p4, paste0("milo_DA_fc_distribution_", condition), plots.format)
       }
       
       # print("Finding DEGs for DA neighborhoods, this may take a while") https://marionilab.github.io/miloR/articles/milo_gastrulation.html
@@ -146,7 +147,7 @@ DifferentialAbundanceMilo <-
           dge.smp.filt.avg.fc <- rownames_to_column(dge.smp.filt.avg.fc, "gene")
           write.table(dge.smp.filt.avg.fc, paste0("da_", i, "_markers_avg_logfc_", condition,".txt"), quote = FALSE,row.names = T, sep = "\t", col.names = T)
           
-          DAGseaComparison(dge.smp.filt.avg.fc, i, condition, fgsea.sets)
+          DAGseaComparison(dge.smp.filt.avg.fc, i, condition, fgsea.sets, plots.format)
           
           print("renaming genes")
           markers <- dge.smp.filt[, "GeneID"]
@@ -183,8 +184,8 @@ DifferentialAbundanceMilo <-
                     condition = condition,
                     alpha = fdr.cutoff
                   )
-		#graphics.off()
-               # PrintSave(p5, paste0("milo_DA_DE_heatmap_", i, "_", condition, ".pdf"))
+              
+               PrintSaveAndSVG(p5, paste0("milo_DA_DE_heatmap_", i, "_", condition), plots.format)
               }
             }
           } else {
@@ -210,7 +211,8 @@ DifferentialAbundanceMilo <-
         ggtitle(paste0("DA Analysis UMAP for ", condition))
       
       print("recalc da.results")
-      PrintSave(p3, paste0("milo_DA_umap_", condition,".pdf"))
+      PrintSaveAndSVG(p3, paste0("milo_DA_umap_", condition), plots.format)
+      
       saveRDS(sc.integrated.milo.traj, paste0("sc_integrated_milo_traj_", condition, ".rds"))
     }
     print("setnull")

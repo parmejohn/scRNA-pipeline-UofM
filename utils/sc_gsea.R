@@ -1,6 +1,6 @@
 set.seed(333)
 
-EscapeGSEA <- function(se.integrated, species, pathways){
+EscapeGSEA <- function(se.integrated, species, pathways, plots.format){
   se.integrated$es.clusters <- Idents(se.integrated)
   
   dir.create('escape')
@@ -55,7 +55,14 @@ EscapeGSEA <- function(se.integrated, species, pathways){
                                 scale = TRUE) +
           theme(legend.position = "right", axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
           ggtitle("Top 5 GO Pathways per Cluster")
-        ggsave(paste0("escape/", "escape_heatmap_top5.pdf"), p1, width = 20, height = 10)
+
+        ggSaveAndSVG(p1, 
+                     paste0("escape/", "escape_heatmap_top5"),
+                     plots.format = plots.format,
+                     width = 20,
+                     height = 10
+        )
+        
       } else {
         print("Only 1 significant pathway")
       }
@@ -72,7 +79,13 @@ EscapeGSEA <- function(se.integrated, species, pathways){
           theme(legend.position = "none")
         tar.dir <- paste0("escape/", levels(droplevels(ucell.markers.top5[i,6])), "/")
         dir.create(tar.dir)
-        ggsave(paste0(tar.dir, ucell.markers.top5[i,7], "_geyser.pdf"), p2, width = 12, height = 12)
+        
+        ggSaveAndSVG(p2, 
+                     paste0(tar.dir, unique(ucell.markers.specific.filtered$gene)[j], "_geyser"),
+                     plots.format = plots.format,
+                     width = 12,
+                     height = 12
+        )
       }
     } else {
       print("No significant pathways")
@@ -93,7 +106,14 @@ EscapeGSEA <- function(se.integrated, species, pathways){
                                     scale = TRUE) +
               theme(legend.position = "right", axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
               ggtitle(paste0(pathways[i], " GO related Pathways"))
-            ggsave(paste0("escape/", "escape_heatmap_", pathways[i], ".pdf"), p1, width = 20, height = 10)
+            
+            ggSaveAndSVG(p1, 
+                         paste0("escape/", "escape_heatmap_", pathways[i]),
+                         plots.format = plots.format,
+                         width = 20,
+                         height = 10
+                         )
+            
           } else {
             print("Only 1 significant pathway")
           }
@@ -110,8 +130,12 @@ EscapeGSEA <- function(se.integrated, species, pathways){
               theme(legend.position = "none")
             tar.dir <- paste0("escape/", pathways[i], "/")
             dir.create(tar.dir)
-            ggsave(paste0(tar.dir, unique(ucell.markers.specific.filtered$gene)[j], 
-                          "_geyser.pdf"), p2, width = 12, height = 12)
+            ggSaveAndSVG(p2, 
+                         paste0(tar.dir, unique(ucell.markers.specific.filtered$gene)[j], "_geyser"),
+                         plots.format = plots.format,
+                         width = 12,
+                         height = 12
+                         )
           }
         } else {
           print(paste0("No significant pathways for "), pathways[i])

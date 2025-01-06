@@ -20,21 +20,30 @@ process TRAJECTORYINFERENCE {
         overwrite: true,
         pattern: "*.pdf"
     )
+    publishDir (
+        path: "$params.outdir/analysis/plots/ti",
+        mode: 'copy',
+        overwrite: true,
+        pattern: "*.svg"
+    )
 
     containerOptions "--bind $params.bind"
 
     input:
     path integrated
     val beginning_cluster
+    val plots_format
 
     output:
     path "*.pdf", emit: slingshot_out_pdf
     path "*.txt", optional: true
     path "*.rds", optional: true
+    path "*.svg"
+
     // val true, emit: report
     
     script:
        """
-        ${projectDir}/src/TrajectoryInferenceMain.R --i $integrated -beginning_cluster $beginning_cluster
+        ${projectDir}/src/TrajectoryInferenceMain.R --i $integrated -beginning_cluster $beginning_cluster -plots_format $plots_format
        """
 }

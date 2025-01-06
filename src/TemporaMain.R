@@ -14,6 +14,7 @@ library(igraph)
 library(RColorBrewer)
 library(Matrix)
 library(BiocParallel)
+library(svglite)
 
 set.seed(333)
  
@@ -41,6 +42,12 @@ parser$add_argument(
   required = TRUE,
   nargs = 1,
   help = 'Species name (Mus musculus, Homo sapiens); CASE-SENSITIVE'
+)
+parser$add_argument(
+  '-plots_format',
+  type = "character",
+  required = TRUE,
+  nargs = 1
 )
 args <- parser$parse_args()
 

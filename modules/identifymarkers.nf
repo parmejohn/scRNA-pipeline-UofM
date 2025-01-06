@@ -20,6 +20,12 @@ process IDENTIFYMARKERS {
         overwrite: true,
         pattern: "*.pdf"
     )
+    publishDir (
+        path: "$params.outdir/analysis/plots/",
+        mode: 'copy',
+        overwrite: true,
+        pattern: "*.svg"
+    )
 
     containerOptions "--bind $params.bind"
 
@@ -27,15 +33,17 @@ process IDENTIFYMARKERS {
     path integrated
     val clusters_optimal
     val reference_seurat
+    val plots_format
 
     output:
     path "*.pdf"
+    path "*.svg"
     path "se_markers_presto_integrated.txt"
     path "se_integrated_auto_label.rds", emit: se_integrated_auto_label, optional: true
     val true, emit: report
     
     script:
        """
-        ${projectDir}/src/IdentifyCellMarkersMain.R --i $integrated -clusters_optimal $clusters_optimal -reference_seurat $reference_seurat
+        ${projectDir}/src/IdentifyCellMarkersMain.R --i $integrated -clusters_optimal $clusters_optimal -reference_seurat $reference_seurat -plots_format $plots_format
        """
 }

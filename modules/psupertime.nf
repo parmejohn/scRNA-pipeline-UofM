@@ -20,6 +20,7 @@ process PSUPERTIME {
     input:
     path integrated
     val main_time
+    val plots_format
 
     output:
     path "psupertime_plots"
@@ -29,6 +30,6 @@ process PSUPERTIME {
     
     script:
        """
-        ${projectDir}/src/PsupertimeMain.R --i $integrated -main_time $main_time
+        ${projectDir}/src/PsupertimeMain.R --i $integrated -main_time $main_time -plots_format $plots_format
        """
 }

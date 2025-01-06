@@ -10,6 +10,7 @@ library(EnsDb.Hsapiens.v86)
 library(dplyr)
 library(tidyverse)
 library(Signac)
+library(svglite)
 
 set.seed(333)
 
@@ -59,6 +60,13 @@ parser$add_argument(
   nargs = 1,
   help = 'Mitochondrial percent cutoff'
 )
+parser$add_argument(
+  '-plots_format',
+  type = "character",
+  required = TRUE,
+  nargs = 1
+)
+
 args <- parser$parse_args()
 
 indir <- args$i
@@ -218,7 +226,7 @@ saveRDS(se.list, "se_list_raw.rds")
 ##### Basic QC #####
 print("Basic QC")
 se.filtered.list <-
-  lapply(se.list, BasicQC, species = species, atac = args$atac, mito.cutoff = args$mito_cutoff) # removal of low quality cells by percentage of mitochondrial reads, number of genes, and number of UMIs
+  lapply(se.list, BasicQC, species = species, atac = args$atac, mito.cutoff = args$mito_cutoff, plots.format = args$plots_format) # removal of low quality cells by percentage of mitochondrial reads, number of genes, and number of UMIs
 saveRDS(se.filtered.list, "se_filtered_list.rds")
 
 ##### Doublet Removal #####

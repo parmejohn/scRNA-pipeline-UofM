@@ -20,6 +20,7 @@ process CELLCHAT {
     input:
     path integrated
     val species
+    val plots_format
 
     output:
     path "*plots"
@@ -28,6 +29,6 @@ process CELLCHAT {
 
     script:
        """
-        ${projectDir}/src/CellChatMain.R --i $integrated --s $species
+        ${projectDir}/src/CellChatMain.R --i $integrated --s $species -plots_format $plots_format
        """
 }

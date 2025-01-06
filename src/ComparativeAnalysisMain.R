@@ -10,6 +10,7 @@ library(fgsea)
 library(msigdbr)
 library(ggrepel)
 library(DESeq2)
+library(svglite)
 
 set.seed(333)
 
@@ -31,6 +32,13 @@ parser$add_argument(
   nargs = 1,
   help = 'Species name (Mus musculus, Homo sapiens); CASE-SENSITIVE'
 )
+parser$add_argument(
+  '-plots_format',
+  type = "character",
+  required = TRUE,
+  nargs = 1
+)
+
 args <- parser$parse_args()
 
 indir <- args$i
@@ -67,5 +75,5 @@ if (args$s == "musmusculus") {
 
 print("DESEQ2 and GSEA")
 if (length(unique(se.integrated@meta.data[["group"]])) >= 2) {
-  DESeq2ConditionPerCluster(se.integrated, species)
+  DESeq2ConditionPerCluster(se.integrated, species, args$plots_format)
 }

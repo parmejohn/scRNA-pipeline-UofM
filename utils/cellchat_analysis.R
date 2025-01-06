@@ -1,8 +1,8 @@
 set.seed(333)
 
-#setwd("/research/2024_scrnaseq_pipeline/organoid_work/cellchat_testing_mult_cond")
-
-CellChatAnalysis <- function(se.integrated, species){
+CellChatAnalysis <- function(se.integrated, species, plots.format){
+  plot_function <- get(plots.format)
+  
   if(any(colnames(se.integrated[[]]) == "celltype")){
     Idents(se.integrated) <- se.integrated$celltype
   } else if (any(colnames(se.integrated[[]]) == "wsnn_res.1")) {
@@ -117,14 +117,22 @@ CellChatAnalysis <- function(se.integrated, species){
       gg2 <- compareInteractions(cellchat.merged, show.legend = F, group = c(1,2), measure = "weight")
       
       p1 <- gg1 + gg2
-      ggsave(paste0(plots.dir, "cellchat_interaction_summary_bar.pdf"), p1, width = 8, height = 6)
+      ggsave(paste0(plots.dir, "cellchat_interaction_summary_bar.", plots.format), p1, width = 8, height = 6)
+      ggsave(paste0(plots.dir, "cellchat_interaction_summary_bar.svg"), p1, width = 8, height = 6)
+      
       
       # red = increased signaling in the second dataset compared to the first
-      pdf(paste0(plots.dir, "cellchat_differential_interaction_circle.pdf"), width = 12, height = 8)
+      plot_function(paste0(plots.dir, "cellchat_differential_interaction_circle.", plots.format), width = 12, height = 8)
       par(mfrow = c(1,2), xpd=TRUE)
       tmp1 <- netVisual_diffInteraction(cellchat.merged, weight.scale = T, margin = 0.3)
       tmp2 <- netVisual_diffInteraction(cellchat.merged, weight.scale = T, measure = "weight", margin = 0.3)
       graphics.off()
+      svg(paste0(plots.dir, "cellchat_differential_interaction_circle.svg"), width = 12, height = 8)
+      par(mfrow = c(1,2), xpd=TRUE)
+      tmp1 <- netVisual_diffInteraction(cellchat.merged, weight.scale = T, margin = 0.3)
+      tmp2 <- netVisual_diffInteraction(cellchat.merged, weight.scale = T, measure = "weight", margin = 0.3)
+      graphics.off()
+      
       
       # top colored bar plot -> sum of each column for incoming signaling
       # right colored bar plot = sum of each row -> outgoing signal
@@ -137,18 +145,28 @@ CellChatAnalysis <- function(se.integrated, species){
       # pdf(paste0(plots.dir, "cellchat_differential_interaction_heatmap.pdf"), width = 8, height = 6)
       # p2
       # graphics.off()
-      PrintSave(p2, paste0(plots.dir, "cellchat_differential_interaction_heatmap.pdf"), w = 8, h = 9)
+
+      PrintSaveAndSVG(p2, paste0(plots.dir, "cellchat_differential_interaction_heatmap"), "pdf", width = 8, height = 9)
+      
       
       # Compare num of interactions or interaction strength across cell populations
       weight.max <- getMaxWeight(object.list, attribute = c("idents","count"))
       
-      pdf(paste0(plots.dir, "cellchat_num_interactions_circle.pdf"), width = 10, height = 6)
+      plot_function(paste0(plots.dir, "cellchat_num_interactions_circle.", plots.format), width = 10, height = 6)
       par(mfrow = c(1,2), xpd=TRUE)
       for (i in 1:length(object.list)) {
         netVisual_circle(object.list[[i]]@net$count, weight.scale = T, label.edge= F, edge.weight.max = weight.max[2], 
                          edge.width.max = 12, title.name = paste0("Number of interactions - ", names(object.list)[i]))
       }
       graphics.off()
+      svg(paste0(plots.dir, "cellchat_num_interactions_circle.svg"), width = 10, height = 6)
+      par(mfrow = c(1,2), xpd=TRUE)
+      for (i in 1:length(object.list)) {
+        netVisual_circle(object.list[[i]]@net$count, weight.scale = T, label.edge= F, edge.weight.max = weight.max[2], 
+                         edge.width.max = 12, title.name = paste0("Number of interactions - ", names(object.list)[i]))
+      }
+      graphics.off()
+      
       
       
       # find cell populations with sig chgs in sending/receiving signals
@@ -161,7 +179,8 @@ CellChatAnalysis <- function(se.integrated, species){
       #> Signaling role analysis on the aggregated cell-cell communication network from all signaling pathways
       #> Signaling role analysis on the aggregated cell-cell communication network from all signaling pathways
       p3 <- patchwork::wrap_plots(plots = gg)
-      ggsave(paste0(plots.dir, "cellchat_population_send_receive.pdf"), p3, width = 8, height = 6)
+      ggsave(paste0(plots.dir, "cellchat_population_send_receive.", plots.format), p3, width = 8, height = 6)
+      ggsave(paste0(plots.dir, "cellchat_population_send_receive.svg"), p3, width = 8, height = 6)
       
       ##### Find altered signalling with distinct interaction strength (also called information flow) #####
       # information flow = sum of communication prob among all pairs of cell groups
@@ -171,7 +190,8 @@ CellChatAnalysis <- function(se.integrated, species){
       gg2 <- rankNet(cellchat.merged, mode = "comparison", measure = "weight", sources.use = NULL, targets.use = NULL, stacked = F, do.stat = TRUE)
       
       p4 <- gg1 + gg2
-      ggsave(paste0(plots.dir, "cellchat_information_flow_compare.pdf"), p4, width = 8, height = 8)
+      ggsave(paste0(plots.dir, "cellchat_information_flow_compare.", plots.format), p4, width = 8, height = 8)
+      ggsave(paste0(plots.dir, "cellchat_information_flow_compare.svg"), p4, width = 8, height = 8)
       
       ##### get the top signalling pathways and plot out cirle plots #####
       top.paths <- subset(gg1[["data"]], pvalues <= 0.05)
@@ -184,33 +204,33 @@ CellChatAnalysis <- function(se.integrated, species){
       for (i in top.paths){
         pathways.show <- c(i)
         if (i %in% object.list[[z[1]]]@netP[["pathways"]] && 
-	    i %in% object.list[[z[2]]]@netP[["pathways"]] && 
-	    any(grepl(i, rownames(cellchat.merged@data.signaling), ignore.case = T))) {
+      	    i %in% object.list[[z[2]]]@netP[["pathways"]] && 
+      	    any(grepl(i, rownames(cellchat.merged@data.signaling), ignore.case = T))) {
           dir.create(paste0(plots.dir, "signaling_pathways/", i))
-	  tar.dir <- paste0(plots.dir, "signaling_pathways/", i)
-	  weight.max <- getMaxWeight(object.list, slot.name = c("netP"), attribute = pathways.show) # control the edge weights across different datasets
+      	  tar.dir <- paste0(plots.dir, "signaling_pathways/", i)
+      	  weight.max <- getMaxWeight(object.list, slot.name = c("netP"), attribute = pathways.show) # control the edge weights across different datasets
           # par(mfrow = c(1,2), xpd=TRUE)
           # for (j in 1:length(object.list)) {
           #   netVisual_aggregate(object.list[[j]], signaling = pathways.show, layout = "circle", edge.weight.max = weight.max[1], edge.width.max = 10, signaling.name = paste(pathways.show, names(object.list)[j]))
           # }
-          pdf(file = paste0(tar.dir, "/cellchat_", i, "_signal_path.pdf"), width = 10, height = 10)
+          plot_function(file = paste0(tar.dir, "/cellchat_", i, "_signal_path.", plots.format), width = 10, height = 10)
           par(mfrow = c(1,2), xpd=TRUE)
           for (j in 1:length(object.list)) {
             netVisual_aggregate(object.list[[j]], signaling = pathways.show, layout = "chord", signaling.name = paste(pathways.show, names(object.list)[j]))
           }
           graphics.off()
-	  p5 <- plotGeneExpression(cellchat.merged, signaling = i, split.by = "datasets", colors.ggplot = T, type = "violin") + 
-		  plot_annotation(paste0(i, " pathway gene expression"),theme=theme(plot.title=element_text(hjust=0.5)))
-	  ggsave(paste0(tar.dir, "/cellchat_", i, "_expression.pdf"), p5, width = 8, height = 8)
-
+          svg(file = paste0(tar.dir, "/cellchat_", i, "_signal_path.svg"), width = 10, height = 10)
+          par(mfrow = c(1,2), xpd=TRUE)
+          for (j in 1:length(object.list)) {
+            netVisual_aggregate(object.list[[j]], signaling = pathways.show, layout = "chord", signaling.name = paste(pathways.show, names(object.list)[j]))
+          }
+          graphics.off()
+          
+      	  p5 <- plotGeneExpression(cellchat.merged, signaling = i, split.by = "datasets", colors.ggplot = T, type = "violin") + 
+      		  plot_annotation(paste0(i, " pathway gene expression"),theme=theme(plot.title=element_text(hjust=0.5)))
+      	  ggsave(paste0(tar.dir, "/cellchat_", i, "_expression.", plots.format), p5, width = 8, height = 8)
+      	  ggsave(paste0(tar.dir, "/cellchat_", i, "_expression.svg"), p5, width = 8, height = 8)
         }
-        
-        #extractEnrichedLR(cellchat.merged,  signaling = i)
-        #if (any(grepl(i, rownames(cellchat.merged@data.signaling), ignore.case = T))){ # check if signalling pathway was calculated for in the cellchat obj
-         # p5 <- plotGeneExpression(cellchat.merged, signaling = i, split.by = "datasets", colors.ggplot = T, type = "violin") +
-          #  plot_annotation(paste0(i, " pathway gene expression"),theme=theme(plot.title=element_text(hjust=0.5)))
-         # ggsave(paste0(tar.dir, "/cellchat_", i, "_expression.pdf"), p5, width = 8, height = 8)
-        #}
       }
       
       ##### Outgoing/incoming signalling patterns for each cell pop #####
@@ -230,7 +250,8 @@ CellChatAnalysis <- function(se.integrated, species){
       ht1 = netAnalysis_signalingRole_heatmap(object.list[[i]], pattern = "all", signaling = pathway.union, title = names(object.list)[i], width = 5, height = 6)
       ht2 = netAnalysis_signalingRole_heatmap(object.list[[i+1]], pattern = "all", signaling = pathway.union, title = names(object.list)[i+1], width = 5, height = 6)
       p8 <- draw(ht1 + ht2, ht_gap = unit(0.5, "cm"))
-      PrintSave(p8, "cellchat_compare_all_signal_heatmap.pdf", plots.dir, w = 8, h = 8)
+      PrintSaveAndSVG(p8, paste0(plots.dir, "/cellchat_compare_all_signal_heatmap"), plots.format, width =8, height = 8)
+      
       
       ##### identifying LR pairs #####
       # this requires specific cell types -> get the number of incoming/outgoing interaction strength and get the top 3 cell types from there -> too many for 1 graph still
@@ -269,7 +290,9 @@ CellChatAnalysis <- function(se.integrated, species){
               gg2 <- filterLRPairsBubble(cellchat.merged, gg2, levels(se.integrated.group$ident)[i], max.dataset = 1, title.name = paste0("Decreased signaling in ", z[2]), ident.1 = z[1], ident.2 = z[2])
               
               p9 <- gg1 + gg2
-              ggsave(paste0(plots.dir, "commun_prob/cellchat_", levels(se.integrated.group$ident)[i], "_expression.pdf"), p9, width = 12, height = 8)
+              ggsave(paste0(plots.dir, "commun_prob/cellchat_", levels(se.integrated.group$ident)[i], "_expression.", "pdf"), p9, width = 12, height = 8)
+              ggsave(paste0(plots.dir, "commun_prob/cellchat_", levels(se.integrated.group$ident)[i], "_expression.svg"), p9, width = 12, height = 8)
+              
             }
           }
         }

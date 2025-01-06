@@ -1,31 +1,24 @@
 set.seed(333)
 
-TrajectoryInferenceSlingshot <- function(se.integrated, start.clus=NULL){
+TrajectoryInferenceSlingshot <- function(se.integrated, start.clus=NULL, plots.format){
+  plot_function <- get(plots.format)
   se.integrated$ti.clusters <- Idents(se.integrated)
   pal <- c(RColorBrewer::brewer.pal(9, "Set1"), RColorBrewer::brewer.pal(8, "Set2"))
   
   dim.red <- se.integrated@reductions[["umap"]]@cell.embeddings
   clustering <- se.integrated$ti.clusters
-  #counts <- as.matrix(se.integrated@assays[["RNA"]]@layers[["counts"]])
-  
+
   if(is.null(start.clus)){
     
-    pdf('ti_no_start_not_smooth.pdf', width = 8, height = 6)
-    par(mfrow = c(1, 2))
-    plot(dim.red[, 1:2], col = pal[clustering], cex = 0.5, pch = 16)
-    for (i in levels(clustering)) {
-      text(mean(dim.red[clustering == i, 1]), mean(dim.red[clustering == i, 2]), labels = i, font = 1)
-    }
-    title("scRNA-seq UMAP")
-    
-    lineages <- getLineages(data = dim.red, clusterLabels = clustering)
-    plot(dim.red[, 1:2], col = pal[clustering], cex = 0.5, pch = 16)
-    lines(as.SlingshotDataSet(lineages), lwd = 3, col = "black")
-    title("Lineage Structure")
+    plot_function(paste0('ti_no_start_not_smooth.', plots.format), width = 8, height = 6)
+    UmapLineagePredictionNotSmooth(clustering, pal, dim.red)
+    graphics.off()
+    svg('ti_no_start_not_smooth.svg', width = 8, height = 6)
+    UmapLineagePredictionNotSmooth(clustering)
     graphics.off()
 
   } else {
-    TrajectoryInferenceSlingshotCurved(se.integrated, start.clus)
+    TrajectoryInferenceSlingshotCurved(se.integrated, start.clus, plots.format)
   }
   fn <- "Rplots.pdf"
   if (file.exists(fn)) {
@@ -36,11 +29,13 @@ TrajectoryInferenceSlingshot <- function(se.integrated, start.clus=NULL){
 }
 
 # https://rnabioco.github.io/cellar/previous/2019/docs/5_trajectories.html
-TrajectoryInferenceSlingshotCurved <- function(se.integrated, start.clus){
+TrajectoryInferenceSlingshotCurved <- function(se.integrated, start.clus, plots.format){
   # normalized values already found in logcounts in the seurat data
   # log_mat <- log1p(GetAssayData(se.integrated, "RNA"))
   # so <- SetAssayData(se.integrated, "data", new.data = log_mat)
   # test <- as.SingleCellExperiment(so)
+  plot_function <- get(plots.format)
+  
   se.integrated$ti.clusters <- Idents(se.integrated)
   #rcl.list <- NA
   #out <- NA
@@ -56,32 +51,13 @@ TrajectoryInferenceSlingshotCurved <- function(se.integrated, start.clus){
   dim.red <- se.integrated@reductions[["umap"]]@cell.embeddings
   clustering <- se.integrated$ti.clusters
 
-  pdf('ti_start_smooth.pdf', width = 8, height = 6)
-  par(mfrow = c(1, 2))
-  plot(dim.red[, 1:2], col = pal[clustering], cex = 0.5, pch = 16)
-  for (i in levels(clustering)) {
-    text(mean(dim.red[clustering == i, 1]), mean(dim.red[clustering == i, 2]), labels = i, font = 1)
-  }
-  title("scRNA-seq UMAP")
-  
-  # slo <- SlingshotDataSet(sce) look at the different lineages
-  plot(reducedDims(sce)$UMAP, col = brewer.pal(9,'Set1')[sce$ti.clusters], cex = 0.5, pch=16)
-  #lines(SlingshotDataSet(sce), lwd=2, col='black')
-  line.list <- apply( expand.grid( 1:6, 1:6), 1, paste0, collapse="")
-  lineages.list <- c()
-  for (i in 1:length(SlingshotDataSet(sce)@curves)){
-    lines(SlingshotDataSet(sce)@curves[[paste0("Lineage", i)]], lwd=2, col='black', lty = as.numeric(line.list[i]))
-    lineages.list <- append(lineages.list, paste0("Lineage", i))
-  }
-  legend("bottomright",
-         legend=lineages.list,
-         col="black",
-         lty= as.numeric(line.list[1:3]),
-         cex=0.7
-         )
-  title("Lineage Path Predictions")
+  plot_function(paste0('ti_start_smooth.', plots.format), width = 8, height = 6)
+  UmapLineagePredictionSmooth(dim.red, pal, clustering, sce)
   graphics.off()
   
+  svg('ti_start_smooth.svg', width = 8, height = 6)
+  UmapLineagePredictionSmooth(dim.red, pal, clustering, sce)
+  graphics.off()
   
   genes_to_test <- VariableFeatures(se.integrated)[1:1000]
   #cnts <- logcounts(sce)[genes_to_test, lineage_cells] # dont need log counts pretty sure
@@ -154,9 +130,12 @@ TrajectoryInferenceSlingshotCurved <- function(se.integrated, start.clus){
     }
     mainconditions.list.filt <- mainconditions.list[-hm.coord]
     
-    pdf(paste0('ti_deg_between_', "group", ".pdf"), width = 8, height = 6)
+    plot_function(paste0('ti_deg_between_', "group", plots.format), width = 8, height = 6)
     do.call("grid.arrange", c(mainconditions.list.filt, ncol=length(mainconditions.list.filt), top="Temporally DEGs across Main Grouping"))
-    #PrintSave(p3, paste0('ti_deg_between_', "group", ".pdf"))
+    graphics.off()
+    
+    svg(paste0('ti_deg_between_', "group", ".svg"), width = 8, height = 6)
+    do.call("grid.arrange", c(mainconditions.list.filt, ncol=length(mainconditions.list.filt), top="Temporally DEGs across Main Grouping"))
     graphics.off()
     
     write.table(as.data.frame(conditionGenes), "ti_de_between_group.txt", sep="\t", quote=F, row.names=FALSE)
@@ -237,7 +216,7 @@ TrajectoryInferenceSlingshotCurved <- function(se.integrated, start.clus){
                   row_names_gp = gpar(fontsize = 6),
                   height = 8,
                   width = 8)
-    PrintSave(p2, paste0('ti_de_', ptime.str, ".pdf"))
+    PrintSaveAndSVG(p2, paste0('ti_de_', ptime.str), plots.format, width = 8, height = 8)
     graphics.off()
     
     ## old method of seperating into clusters, but dont really need since cluster names are printed
@@ -267,4 +246,44 @@ TrajectoryInferenceSlingshotCurved <- function(se.integrated, start.clus){
 
   #write.table(top.100.gene.list, paste0("ti_DEGs_qval_full_lineage_", i,".txt"), sep="\t", quote=F, row.names=FALSE)
   se.integrated$ti.clusters <- NULL
+}
+
+UmapLineagePredictionNotSmooth <- function(clustering, pal, dim.red) {
+  par(mfrow = c(1, 2))
+  plot(dim.red[, 1:2], col = pal[clustering], cex = 0.5, pch = 16)
+  for (i in levels(clustering)) {
+    text(mean(dim.red[clustering == i, 1]), mean(dim.red[clustering == i, 2]), labels = i, font = 1)
+  }
+  title("scRNA-seq UMAP")
+  
+  lineages <- getLineages(data = dim.red, clusterLabels = clustering)
+  plot(dim.red[, 1:2], col = pal[clustering], cex = 0.5, pch = 16)
+  lines(as.SlingshotDataSet(lineages), lwd = 3, col = "black")
+  title("Lineage Structure")
+}
+
+UmapLineagePredictionSmooth <- function(dim.red, pal, clustering, sce) {
+  par(mfrow = c(1, 2))
+  plot(dim.red[, 1:2], col = pal[clustering], cex = 0.5, pch = 16)
+  for (i in levels(clustering)) {
+    text(mean(dim.red[clustering == i, 1]), mean(dim.red[clustering == i, 2]), labels = i, font = 1)
+  }
+  title("scRNA-seq UMAP")
+  
+  # slo <- SlingshotDataSet(sce) look at the different lineages
+  plot(reducedDims(sce)$UMAP, col = brewer.pal(9,'Set1')[sce$ti.clusters], cex = 0.5, pch=16)
+  #lines(SlingshotDataSet(sce), lwd=2, col='black')
+  line.list <- apply( expand.grid( 1:6, 1:6), 1, paste0, collapse="")
+  lineages.list <- c()
+  for (i in 1:length(SlingshotDataSet(sce)@curves)){
+    lines(SlingshotDataSet(sce)@curves[[paste0("Lineage", i)]], lwd=2, col='black', lty = as.numeric(line.list[i]))
+    lineages.list <- append(lineages.list, paste0("Lineage", i))
+  }
+  legend("bottomright",
+         legend=lineages.list,
+         col="black",
+         lty= as.numeric(line.list[1:3]),
+         cex=0.7
+  )
+  title("Lineage Path Predictions")
 }

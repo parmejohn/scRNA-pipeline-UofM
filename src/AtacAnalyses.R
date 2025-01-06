@@ -22,6 +22,7 @@ library(msigdbr)
 library(TFBSTools)
 library(chromVAR)
 library(Matrix)
+library(svglite)
 
 set.seed(333)
 
@@ -42,6 +43,12 @@ parser$add_argument(
   required = TRUE,
   nargs = 1,
   help = 'Species name (Mus musculus, Homo sapiens); CASE-SENSITIVE'
+)
+parser$add_argument(
+  '-plots_format',
+  type = "character",
+  required = TRUE,
+  nargs = 1
 )
 args <- parser$parse_args()
 
@@ -78,4 +85,4 @@ if (args$s == "musmusculus") {
 }
 
 print("single-cell GSEA")
-AtacAnalyses(se.integrated, species)
+AtacAnalyses(se.integrated, species, args$plots_format)

@@ -11,6 +11,7 @@ library(dplyr)
 library(tidyverse)
 library(ggpubr)
 library(rstatix)
+library(svglite)
 
 set.seed(333)
 
@@ -22,6 +23,12 @@ parser$add_argument(
   required = TRUE,
   nargs = 1,
   help = 'Is the main condition time?'
+)
+parser$add_argument(
+  '-plots_format',
+  type = "character",
+  required = TRUE,
+  nargs = 1
 )
 args <- parser$parse_args()
 
@@ -45,4 +52,4 @@ source(paste0(file.path(dirname(dirname(thisFile()))), "/utils/misc.R"))
 
 se.integrated <- readRDS(indir)
 
-RunPsuper(se.integrated, args$main_time)
+RunPsuper(se.integrated, args$main_time, args$plots_format)

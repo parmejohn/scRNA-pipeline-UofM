@@ -1,6 +1,6 @@
 set.seed(333)
 
-DESeq2ConditionPerCluster <-  function(se.integrated, species){
+DESeq2ConditionPerCluster <-  function(se.integrated, species, plots.format){
   se.integrated$de.clusters <- Idents(se.integrated)
   if (length(se.integrated@misc) != 0 ){
     bulk <- AggregateExpression(se.integrated, return.seurat = T, 
@@ -75,9 +75,9 @@ DESeq2ConditionPerCluster <-  function(se.integrated, species){
                                           target[1], 
                                           target[2]
                                           )
-            PrintSave(p, paste0("deseq2_cluster_", cluster.name, "_", target[1], "_vs_", target[2], '.pdf'))
+            PrintSaveAndSVG(p, paste0("deseq2_cluster_", cluster.name, "_", target[1], "_vs_", target[2]), plots.format)
             
-            GseaComparison(de_markers, cluster.name, target[1], target[2], fgsea_sets)
+            GseaComparison(de_markers, cluster.name, target[1], target[2], fgsea_sets, plots.format)
           }
         }
       } else {
@@ -120,7 +120,7 @@ pseudo_bulk_volcano_plot <- function(de_markers, avg_log2FC_cutoff, p_val_adj_cu
   return(p)
 }
 
-GseaComparison <- function(de.markers, cluster.name, ident.1, ident.2, fgsea.sets){
+GseaComparison <- function(de.markers, cluster.name, ident.1, ident.2, fgsea.sets, plots.format){
   cluster.genes <- de.markers %>%
     arrange(desc(avg_log2FC)) %>% 
     dplyr::select(gene, avg_log2FC) # use avg_log2FC as ranking for now; https://www.biostars.org/p/9526168/
@@ -147,6 +147,6 @@ GseaComparison <- function(de.markers, cluster.name, ident.1, ident.2, fgsea.set
     theme(legend.position = 'none') + 
     ggtitle(paste0("GSEA: ", cluster.name, " ", ident.1, " vs ", ident.2))
   
-  #dir.create(paste(plot.path, 'gsea', sep=''))
-  PrintSave(p1, paste0("gsea_cluster_", cluster.name, "_", ident.1, "_vs_", ident.2, '.pdf'), w=12)
+  ggsave(paste0("gsea_cluster_", cluster.name, "_", ident.1, "_vs_", ident.2, ".", plots.format), p1, width = 8, height = 6)
+  ggsave(paste0("gsea_cluster_", cluster.name, "_", ident.1, "_vs_", ident.2, ".svg"), p1, width = 8, height = 6)
 }

@@ -74,7 +74,7 @@ IntegrateSamples <- function(seurat_obj_list, reduction){
 
 # perform dimenstional reduction and clustering
 # results are saved 
-SeuratDimReduction <- function(se.integrated, dims, group, res = 1, reduction){
+SeuratDimReduction <- function(se.integrated, dims, group, res = 1, reduction, plots.format){
   se.integrated[["RNA"]] <- JoinLayers(se.integrated[["RNA"]])
   
   
@@ -92,23 +92,28 @@ SeuratDimReduction <- function(se.integrated, dims, group, res = 1, reduction){
   
   p1 <- DimPlot(se.integrated, reduction = "umap", group.by = group, alpha = 0.5) + 
     ggtitle("UMAP with Highlighted Conditions")
-  PrintSave(p1, "integrated_umap_grouped.pdf")
+  ggsave(paste0("integrated_umap_grouped.", plots.format), p1)
+  ggsave(paste0("integrated_umap_grouped.", "svg"), p1)
+  
   
   p2 <- DimPlot(se.integrated, reduction = "umap", split.by = group, alpha = 0.5) +
     ggtitle("UMAP Split by Condition and Highlighted by Sample")
-  PrintSave(p2, "integrated_umap_split.pdf")
-  
+  ggsave(paste0("integrated_umap_split.", plots.format), p2)
+  ggsave(paste0("integrated_umap_split.", "svg"), p2)
+
   p3 <- DimPlot(se.integrated, reduction = "umap", group.by = "seurat_clusters", label = TRUE, alpha = 0.5) +
     ggtitle("UMAP Unlabelled Seurat Clusters")
-  PrintSave(p3, "integrated_umap_unlabelled.pdf")
-  
+  ggsave(paste0("integrated_umap_unlabelled.", plots.format), p3)
+  ggsave(paste0("integrated_umap_unlabelled.", "svg"), p3)
+
   p4 <- dittoBarPlot(
     object = se.integrated,
     var = "seurat_clusters",
     group.by = "group",
     retain.factor.levels=TRUE,
     main = "Percent of cells for Unlabelled Clusters")
-  PrintSave(p4, "percent_cells_group_unlabelled.pdf")
+  ggsave(paste0("percent_cells_group_unlabelled.", plots.format), p4)
+  ggsave(paste0("percent_cells_group_unlabelled.", "svg"), p4)
 
   se.integrated <- se.integrated
 }

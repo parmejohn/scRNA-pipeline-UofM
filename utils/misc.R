@@ -1,9 +1,23 @@
 set.seed(333)
 
-PrintSave <- function(plot, title, path="",  w=8, h=6){
-  pdf(paste(path, title, sep=""), width = w, height = h)
+PrintSave <- function(plot, title, plots.format = "pdf", width=8, height=6){
+  title.with.ext <- paste0(title, ".", plots.format)
+  plot_function <- get(plots.format)
+  
+  plot_function(title.with.ext, width = width, height = width)
   print(plot)
   graphics.off()
+}
+
+PrintSaveAndSVG <- function(plot, title, plots.format, width=8, height=6){
+  PrintSave(plot, title, plots.format, width = width, height = height)
+  PrintSave(plot, title, "svg", width = width, height = height)
+}
+
+ggSaveAndSVG <- function(plot, title, plots.format, width=8, height=8){
+  ggsave(paste0(title, ".", plots.format), plot, width = width, height = height)
+  ggsave(paste0(title, ".svg"), plot, width = width, height = height)
+  
 }
 
 ListAllPossibleComparisons <- function(se.integrated, seurat.subset) {

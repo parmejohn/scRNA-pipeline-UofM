@@ -1,7 +1,7 @@
 ##### fxns for QC #####
 AmbientRNARemoval <- function(pair_list, test){
-  #save.loc <- paste(outdir, '/analysis/data/qc/', sep='')
-  print(paste("Loading ", pair_list[1], " and ", pair_list[2], sep=''))
+
+    print(paste("Loading ", pair_list[1], " and ", pair_list[2], sep=''))
   
   # check if it is a multiome experiment format
   filt.matrix <- Read10X_h5(pair_list[1],use.names = T)
@@ -52,7 +52,7 @@ AmbientRNARemoval <- function(pair_list, test){
   DropletUtils:::write10xCounts(paste('./qc/', group.name, '/', sample.name, "_soupx",sep=''), adj.matrix, overwrite = TRUE) # name will be the fo;der before the /outs/ folder
 }
 
-BasicQC <- function(seurat_obj, species, atac, mito.cutoff){
+BasicQC <- function(seurat_obj, species, atac, mito.cutoff, plots.format){
   
   print("Removing low quality cells based on MAD thresholds")
   
@@ -110,7 +110,8 @@ BasicQC <- function(seurat_obj, species, atac, mito.cutoff){
     ggtitle(paste0(seurat_obj@misc[[1]], " QC: \nPercentage of Mitochondrial reads per Cell")) +
     xlab("Number of Genes") +
     ylab("Percent of Mitochondrial reads")
-  ggsave(paste0(seurat_obj@misc[[1]], "_percent_mt.pdf"), plot=p1)
+  ggsave(paste0(seurat_obj@misc[[1]], "_percent_mt.", plots.format), plot=p1)
+  ggsave(paste0(seurat_obj@misc[[1]], "_percent_mt.svg"), plot=p1)
   
   Cell.QC.Stat.mt <- filter(Cell.QC.Stat, percent.mt <= max.mito.thr)
   if(nrow(Cell.QC.Stat.mt)/nrow(Cell.QC.Stat) > .5){
@@ -147,7 +148,8 @@ BasicQC <- function(seurat_obj, species, atac, mito.cutoff){
     ggtitle(paste0(seurat_obj@misc[[1]], " QC: \nNumber of Genes vs Number of UMIs")) +
     xlab("Log10 Transformed Number of UMIs") +
     ylab("Log10 Transformed Number of Genes")
-  ggsave(paste0(seurat_obj@misc[[1]], "_nGenes_nUMI.pdf"), plot=p2)
+  ggsave(paste0(seurat_obj@misc[[1]], "_nGenes_nUMI.", plots.format), plot=p2)
+  ggsave(paste0(seurat_obj@misc[[1]], "_nGenes_nUMI.svg"), plot=p2)
   
   if(atac == "yes"){
     DefaultAssay(seurat_obj) <- "ATAC"
@@ -166,7 +168,8 @@ BasicQC <- function(seurat_obj, species, atac, mito.cutoff){
       labs(tag = paste0(as.numeric(table(Cell.QC.Stat$TSS.enrichment < min.TSS.thr)[2])," cells removed\n",
                         as.numeric(table(Cell.QC.Stat$TSS.enrichment < min.TSS.thr)[1])," cells remain")) +
       theme(plot.tag.position = c(0, 0))
-    ggsave(paste0(seurat_obj@misc[[1]], "_tss.pdf"), plot=p3)
+    ggsave(paste0(seurat_obj@misc[[1]], "_tss.", plots.format), plot=p3)
+    ggsave(paste0(seurat_obj@misc[[1]], "_tss.svg"), plot=p3)
     
     # Nucleosome signal graph
     seurat_obj$nucleosome_group <- ifelse(seurat_obj$nucleosome_signal > max.nuc.thr, 
@@ -177,7 +180,8 @@ BasicQC <- function(seurat_obj, species, atac, mito.cutoff){
       labs(tag = paste0(as.numeric(table(Cell.QC.Stat$nucleosome_signal > max.nuc.thr)[2])," cells removed\n",
                         as.numeric(table(Cell.QC.Stat$nucleosome_signal > max.nuc.thr)[1])," cells remain")) +  
       theme(plot.tag.position = c(0, 0))
-    ggsave(paste0(seurat_obj@misc[[1]], "_nucleosome_signal.pdf"), plot=p4)
+    ggsave(paste0(seurat_obj@misc[[1]], "_nucleosome_signal.", plots.format), plot=p4)
+    ggsave(paste0(seurat_obj@misc[[1]], "_nucleosome_signal.svg"), plot=p4)
     
     seurat_obj$log10_nCount_ATAC <- log10(seurat_obj$nCount_ATAC)
     p5 <- VlnPlot(object = seurat_obj, features = "log10_nCount_ATAC", 
@@ -190,7 +194,8 @@ BasicQC <- function(seurat_obj, species, atac, mito.cutoff){
              as.numeric(table(log10(Cell.QC.Stat$nCount_ATAC) > max.peaks.thr | 
                                 log10(Cell.QC.Stat$nCount_ATAC) < min.peaks.thr)[1])," cells remain")) +  
       theme(plot.tag.position = c(0, 0))
-    ggsave(paste0(seurat_obj@misc[[1]], "_ncount_atac.pdf"), plot=p5) 
+    ggsave(paste0(seurat_obj@misc[[1]], "_ncount_atac.", plots.format), plot=p5) 
+    ggsave(paste0(seurat_obj@misc[[1]], "_ncount_atac.svg"), plot=p5)
     
     Cell.QC.Stat.nfeature.numi <- Cell.QC.Stat %>% # removing the low quality cells from scATAC standards
       filter(log10(nCount_ATAC) >= min.peaks.thr) %>%

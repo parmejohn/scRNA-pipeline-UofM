@@ -20,6 +20,7 @@ process ATACANALYSES {
     input:
     path integrated
     val species
+    val plots_format
 
     output:
     path "*plots"
@@ -28,6 +29,6 @@ process ATACANALYSES {
     
     script:
        """
-        ${projectDir}/src/AtacAnalyses.R --i $integrated --s $species
+        ${projectDir}/src/AtacAnalyses.R --i $integrated --s $species -plots_format $plots_format
        """
 }

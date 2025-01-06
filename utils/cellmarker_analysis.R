@@ -10,7 +10,7 @@ GetConserved <- function(cluster){ # replace or edit function?,
     cbind(cluster_id = cluster, .)
 }
 
-IdentifyCellMarkers <- function(se.integrated){
+IdentifyCellMarkers <- function(se.integrated, plots.format){
   se.markers.presto <- RunPrestoAll(se.integrated, only.pos = T, logfc.threshold = 0.1, min.pct = 0.01, min.cells.group = 1)
   write.table(se.markers.presto, paste("se_markers_presto_integrated.txt", sep = ''), 
               quote = FALSE,row.names = T, sep = "\t", col.names = T)
@@ -20,7 +20,8 @@ IdentifyCellMarkers <- function(se.integrated){
                             features = se.markers.presto.top3$gene, 
                             assay = "RNA", slot = "data", label = FALSE) + # will only plot a max of 300 cells per identity; ggplot has a limit of 30,000 cells total
     ggtitle("Top 3 Cell Markers per Cluster")
-  PrintSave(expr.heatmap, 'top3_markers_expr_heatmap.pdf')
+  PrintSave(expr.heatmap, 'top3_markers_expr_heatmap', plots.format)
+  PrintSave(expr.heatmap, 'top3_markers_expr_heatmap', "svg")
   
   ##### Conserved markers across the conditions #####
   #   Error in `levels<-`(`*tmp*`, value = as.character(levels)) : -> fix later
@@ -44,7 +45,8 @@ IdentifyCellMarkers <- function(se.integrated){
       ggtitle("Conserved Markers across conditions per Cluster") + 
       xlab("Genes") +
       ylab("Cluster and Condition Name")
-    PrintSave(conserved.markers.dotplot, 'conserved_marker_unlabelled.pdf', w=20, h = 16)
+    PrintSave(conserved.markers.dotplot, 'conserved_marker_unlabelled', width=20, height = 16, plots.format = plots.format)
+    PrintSave(conserved.markers.dotplot, 'conserved_marker_unlabelled', width=20, height = 16, plots.format = "svg")
   }
 }
 
@@ -74,7 +76,8 @@ ReferenceMarkerMapping <- function(reference, query, dims){
   se.hm <- pheatmap(prediction.matrix, cluster_rows = FALSE, cluster_cols = FALSE, 
                     color = colorRampPalette(c("white","red"))(200), display_numbers = FALSE, 
                     main = "Reference Marker Prediction Scores", silent = TRUE)
-  PrintSave(se.hm, "reference_marker_mapping_heatmap.pdf")
+  PrintSave(se.hm, "reference_marker_mapping_heatmap", plots.format)
+  PrintSave(se.hm, "reference_marker_mapping_heatmap", "svg")
   
   cluster.names <- colnames(prediction.matrix)[max.col(prediction.matrix,ties.method="first")]
   names(cluster.names) <- levels(query)
@@ -86,7 +89,8 @@ ReferenceMarkerMapping <- function(reference, query, dims){
   
   umap.labelled <- DimPlot(query, reduction = "umap", group.by = "celltype", label = TRUE, alpha = 0.5) +
     ggtitle("UMAP Reference Labelled Clusters")
-  PrintSave(umap.labelled, "integrated_umap_labelled.pdf")
+  PrintSave(umap.labelled, "integrated_umap_labelled", plots.format)
+  PrintSave(umap.labelled, "integrated_umap_labelled", "svg")
   
   p2 <- dittoBarPlot(
     object = query,
@@ -94,7 +98,8 @@ ReferenceMarkerMapping <- function(reference, query, dims){
     group.by = "group",
     retain.factor.levels=TRUE,
     main = "Percent of cells by Labelled Clusters")
-  PrintSave(p2, "percent_cells_group_labelled.pdf")
+  PrintSave(p2, "percent_cells_group_labelled", plots.format)
+  PrintSave(p2, "percent_cells_group_labelled", "svg")
   
   reference$reference.cell.meta <- NULL
   

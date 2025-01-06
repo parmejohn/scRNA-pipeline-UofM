@@ -6,6 +6,7 @@ library(dplyr)
 library(tidyverse)
 library(NbClust)
 library(dittoSeq)
+library(svglite)
 
 set.seed(333)
 
@@ -31,6 +32,12 @@ parser$add_argument('-reduced_dim',
                     type = "character",
                     nargs = 1,
                     help = 'Reduced dimensions used')
+parser$add_argument(
+  '-plots_format',
+  type = "character",
+  required = TRUE,
+  nargs = 1
+)
 args <- parser$parse_args()
 
 input <- args$i
@@ -73,10 +80,10 @@ if (args$clusters_optimal == 0) {
 
 if (args$resolution == 1) {
   se.integrated <-
-    SeuratDimReduction(se.integrated, opt.clusters, 'group', reduction = args$reduced_dim)
+    SeuratDimReduction(se.integrated, opt.clusters, 'group', reduction = args$reduced_dim, args$plots_format)
 } else {
   se.integrated <-
-    SeuratDimReduction(se.integrated, opt.clusters, 'group', args$resolution, reduction = args$reduced_dim)
+    SeuratDimReduction(se.integrated, opt.clusters, 'group', args$resolution, reduction = args$reduced_dim, args$plots_format)
 }
 
 # have to use visual check to find optimal # of clusters for now

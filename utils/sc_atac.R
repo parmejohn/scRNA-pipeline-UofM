@@ -1,4 +1,4 @@
-AtacAnalyses <- function(se.integrated.atac, species){
+AtacAnalyses <- function(se.integrated.atac, species, plots.format){
   
   m_df<- msigdbr(species = species, category = "C5", subcategory = "BP") # dont need to reload the dataset every time for GSEA
   fgsea.sets <- m_df %>% split(x = .$gene_symbol, f = .$gs_name)
@@ -116,17 +116,29 @@ AtacAnalyses <- function(se.integrated.atac, species){
                                              target[2], 
                                              cluster.name = cluster.name, 
                                              plots.dir = volcano_plots, 
-                                             data.dir = volcano_data
+                                             data.dir = volcano_data,
+                                             plots.format = plots.format
                                              )
             print("volcano")
             
             ### DAP specific analyses
             # pulling top and bot 5 of DAPs, also making sure that the are up or dn regulated
             # plot out gene expression
-            closest.gene.dap.up <- FindTopDAPGenes(da.peaks.all = da.peaks.all, se.integrated.atac = se.integrated.atac.filt,
-                                                   cluster.name = cluster.name, group = target[1], top = 5, plots.dir = closest_gene_plots)
-            closest.gene.dap.dn <- FindTopDAPGenes(da.peaks.all = da.peaks.all, se.integrated.atac = se.integrated.atac.filt,
-                                                   cluster.name = cluster.name, group = target[2], top = -5, plots.dir = closest_gene_plots)
+            closest.gene.dap.up <- FindTopDAPGenes(da.peaks.all = da.peaks.all, 
+                                                   se.integrated.atac = se.integrated.atac.filt,
+                                                   cluster.name = cluster.name, 
+                                                   group = target[1], 
+                                                   top = 5, 
+                                                   plots.dir = closest_gene_plots, 
+                                                   plots.format = plots.format
+                                                   )
+            closest.gene.dap.dn <- FindTopDAPGenes(da.peaks.all = da.peaks.all, 
+                                                   se.integrated.atac = se.integrated.atac.filt,
+                                                   cluster.name = cluster.name, 
+                                                   group = target[2], 
+                                                   top = -5, 
+                                                   plots.dir = closest_gene_plots, 
+                                                   plots.format = plots.format)
             print("expression")
             
             
@@ -135,22 +147,45 @@ AtacAnalyses <- function(se.integrated.atac, species){
             colnames(all.closest)[7] <- "gene"
             all.closest <- merge(all.closest, da.peaks.all, by = "gene")
             
-            GseaAtac(all.closest, fgsea.sets, cluster.name = cluster.name, ident.1 = target[1], ident.2 = target[2], plots.dir = closest_gene_plots)
+            p1 <- GseaAtac(all.closest, fgsea.sets, cluster.name = cluster.name, ident.1 = target[1], ident.2 = target[2], plots.dir = closest_gene_plots)
+            ggSaveAndSVG(p1, paste0(plots.dir, "scatac_closest_genes_dap_gsea_", "cluster_", cluster.name), plots.format, width = 8, height = 8)
             print("gsea")
             
             ## coverage plot of the DAPs
-            CoveragePlotDAP(se.integrated.atac = se.integrated.atac.filt, closest.gene.dap = closest.gene.dap.up, cluster.name = cluster.name, plots.dir = closest_gene_plots)
-            CoveragePlotDAP(se.integrated.atac = se.integrated.atac.filt, closest.gene.dap = closest.gene.dap.dn, cluster.name = cluster.name, plots.dir = closest_gene_plots)
+            CoveragePlotDAP(se.integrated.atac = se.integrated.atac.filt, 
+                            closest.gene.dap = closest.gene.dap.up, 
+                            cluster.name = cluster.name, 
+                            plots.dir = closest_gene_plots,
+                            plots.format = plots.format
+                            )
+            CoveragePlotDAP(se.integrated.atac = se.integrated.atac.filt, 
+                            closest.gene.dap = closest.gene.dap.dn, 
+                            cluster.name = cluster.name, 
+                            plots.dir = closest_gene_plots,
+                            plots.format = plots.format
+                            )
             print("covearage")
             
             
             ### DNA motifs that are overrepresented in a set of peaks that are differentially accessible between cell types
             enriched.motifs.up <- find_enriched_motifs(se.integrated.atac.filt = se.integrated.atac.filt, 
-                                                       da.peaks.all = da.peaks.all, cutoff = 0.2, pos = T, group = target[1], 
-                                                       cluster.name = cluster.name, plots.dir = motif_plots)
+                                                       da.peaks.all = da.peaks.all,
+                                                       cutoff = 0.2,
+                                                       pos = T,
+                                                       group = target[1], 
+                                                       cluster.name = cluster.name,
+                                                       plots.dir = motif_plots,
+                                                       plots.format = plots.format
+                                                       )
             enriched.motifs.down <- find_enriched_motifs(se.integrated.atac.filt = se.integrated.atac.filt, 
-                                                         da.peaks.all = da.peaks.all, cutoff = 0.2, pos = F, group = target[2], 
-                                                         cluster.name = cluster.name, plots.dir = motif_plots)
+                                                         da.peaks.all = da.peaks.all,
+                                                         cutoff = 0.2,
+                                                         pos = F,
+                                                         group = target[2], 
+                                                         cluster.name = cluster.name,
+                                                         plots.dir = motif_plots,
+                                                         plots.format = plots.format
+                                                         )
             print("motifs")
             
             # gather the footprinting information for sets of motifs; leaving out for now because of computational constraints
@@ -177,7 +212,8 @@ dap_volcano_plot <- function(se.object,
                              p_val_adj_cutoff = 0.05, 
                              avg_log2FC_cutoff = 2, 
                              plots.dir, 
-                             data.dir){
+                             data.dir,
+                             plots.format){
   
   da.peaks <- FindMarkers(se.object, 
                             ident.1 = ident.1, 
@@ -217,7 +253,8 @@ dap_volcano_plot <- function(se.object,
     geom_hline(yintercept=unadjusted.pval.cutoff, linetype="dashed", color = "black") +
     geom_vline(xintercept=c(-avg_log2FC_cutoff, avg_log2FC_cutoff), linetype="dashed", color = "black") +
     ggtitle(paste0("DAPs: ", "cluster ", cluster.name, " ", ident.1, " vs ", ident.2))
-  ggsave(paste0(plots.dir, "scatac_volcano_", "cluster_", cluster.name, "_", ident.1, "_vs_", ident.2, ".pdf"), plot = p, width = 8, height = 8)
+  ggsave(paste0(plots.dir, "scatac_volcano_", "cluster_", cluster.name, "_", ident.1, "_vs_", ident.2, ".", plots.format), plot = p, width = 8, height = 8)
+  ggsave(paste0(plots.dir, "scatac_volcano_", "cluster_", cluster.name, "_", ident.1, "_vs_", ident.2, ".svg" ), plot = p, width = 8, height = 8)
   
   return(da.peaks)
 }
@@ -252,7 +289,6 @@ GseaAtac <- function(all.closest, fgsea.sets, padj.cutoff = 0.05, cluster.name, 
     scale_fill_identity() + 
     theme(legend.position = 'none') + 
     ggtitle(paste0("GSEA: ", cluster.name, " ", ident.1, " vs ", ident.2))
-  ggsave(paste0(plots.dir, "scatac_closest_genes_dap_gsea_", "cluster_", cluster.name, ".pdf"), plot = p, width = 8, height = 8)
 }
 
 FindTopDAPGenes <- function(da.peaks.all, 
@@ -262,7 +298,8 @@ FindTopDAPGenes <- function(da.peaks.all,
                             cluster.name, 
                             group, 
                             top, 
-                            plots.dir) {
+                            plots.dir,
+                            plots.format) {
   da.peaks.top  <- as.data.frame(da.peaks.all %>%
                                    subset(p_val_adj < p_val_adj.cutoff & 
                                             abs(avg_log2FC) >= avg_log2FC.cutoff) %>%
@@ -290,7 +327,9 @@ FindTopDAPGenes <- function(da.peaks.all,
         features = closest.gene.dap$gene_name,
         pt.size = 0.1
       ) + plot_annotation(paste0("Cluster ", cluster.name, " ", group))
-      ggsave(paste0(plots.dir, "scatac_closest_genes_dap_gex_", "cluster_", cluster.name, "_", group, ".pdf"), plot = p, width = 8, height = 8)
+      ggsave(paste0(plots.dir, "scatac_closest_genes_dap_gex_", "cluster_", cluster.name, "_", group, ".", plots.format), plot = p, width = 8, height = 8)
+      ggsave(paste0(plots.dir, "scatac_closest_genes_dap_gex_", "cluster_", cluster.name, "_", group, ".svg"), plot = p, width = 8, height = 8)
+      
     }
   } else {
     closest.gene.dap <- data.frame()
@@ -298,7 +337,7 @@ FindTopDAPGenes <- function(da.peaks.all,
   return(closest.gene.dap)
 }
 
-CoveragePlotDAP <- function(se.integrated.atac, closest.gene.dap, cluster.name, plots.dir, min.cells = 10) {
+CoveragePlotDAP <- function(se.integrated.atac, closest.gene.dap, cluster.name, plots.dir, min.cells = 10, plots.format) {
   # calculate the links between gene and peaks
   print(closest.gene.dap)
   if (nrow(closest.gene.dap) > 0){
@@ -358,7 +397,6 @@ CoveragePlotDAP <- function(se.integrated.atac, closest.gene.dap, cluster.name, 
     # plot out a coverage plot for the top 5 and bottom 5 genes
     # highlight the DAP region if it is found within the gene region
     for (v in 1:nrow(closest.gene.dap)){
-      #          if (closest.gene.dap.up$distance[v] == 0){ # if the highlight is not in the region it wont show; no need for if statement
       print(closest.gene.dap$gene_name[v])
       regions_highlight <- subsetByOverlaps(StringToGRanges(closest.gene.dap$query_region[v]), 
                                             LookupGeneCoords(se.integrated.atac, closest.gene.dap$gene_name[v]))
@@ -376,17 +414,20 @@ CoveragePlotDAP <- function(se.integrated.atac, closest.gene.dap, cluster.name, 
           region.highlight = regions_highlight
         ) + plot_annotation(paste0("Cluster ", cluster.name, ", DAP: ", closest.gene.dap$query_region[v]))
         print("plot done")
-        ggsave(paste0(plots.dir, "scatac_closest_genes_dap_coverage_", "cluster_", cluster.name, "_", closest.gene.dap$gene_name[v],".pdf"), 
+        ggsave(paste0(plots.dir, "scatac_closest_genes_dap_coverage_", "cluster_", cluster.name, "_", closest.gene.dap$gene_name[v], ".", plots.format), 
                plot = p,
                width = 8, 
                height = 8)
-        #         }
+        ggsave(paste0(plots.dir, "scatac_closest_genes_dap_coverage_", "cluster_", cluster.name, "_", closest.gene.dap$gene_name[v],".svg"), 
+               plot = p,
+               width = 8, 
+               height = 8)
       }
     }
   }
 }
 
-find_enriched_motifs <- function(se.integrated.atac.filt, da.peaks.all, p_val_adj_cutoff = 0.05, cutoff = 0.2, pos, group, cluster.name, plots.dir){
+find_enriched_motifs <- function(se.integrated.atac.filt, da.peaks.all, p_val_adj_cutoff = 0.05, cutoff = 0.2, pos, group, cluster.name, plots.dir, plots.format){
   if (pos){
     da.peaks.sub <- subset(da.peaks.all, p_val_adj < p_val_adj_cutoff & 
                              pct.1 > cutoff & 
@@ -414,7 +455,8 @@ find_enriched_motifs <- function(se.integrated.atac.filt, da.peaks.all, p_val_ad
       object = se.integrated.atac.filt,
       motifs = head(rownames(enriched.motifs.sub), 6)
     )
-    ggsave(paste0(plots.dir, "scatac_motif_", "cluster_", cluster.name, "_", group, ".pdf"), plot = p, width = 8, height = 8)
+    ggsave(paste0(plots.dir, "scatac_motif_", "cluster_", cluster.name, "_", group, ".", plots.format), plot = p, width = 8, height = 8)
+    ggsave(paste0(plots.dir, "scatac_motif_", "cluster_", cluster.name, "_", group, ".svg"), plot = p, width = 8, height = 8)
   } else {
     enriched.motifs.sub <- data.frame()
   }
@@ -435,7 +477,8 @@ TopMotifFootprints <- function(se.integrated.atac, enriched.motifs, cluster.name
     
     # plot the footprint data for each group of cells
     p <- PlotFootprint(se.integrated.atac, features = head(rownames(enriched.motifs), 6))
-    ggsave(paste0(plots.dir, "scatac_motif_fp_", "cluster_", cluster.name, "_", group, ".pdf"), plot = p, width = 8, height = 8)
+    ggsave(paste0(plots.dir, "scatac_motif_fp_", "cluster_", cluster.name, "_", group, ".", plots.format), plot = p, width = 8, height = 8)
+    ggsave(paste0(plots.dir, "scatac_motif_fp_", "cluster_", cluster.name, "_", group, ".svg"), plot = p, width = 8, height = 8)
   }
 }
 
