@@ -24,7 +24,7 @@ process DIMENSIONALREDUCTION {
         path: "$params.outdir/analysis/plots/",
         mode: 'copy',
         overwrite: true,
-        pattern: "*.svg"
+        pattern: "*.jpeg"
     )
     containerOptions "--bind $params.bind"
 
@@ -40,7 +40,7 @@ process DIMENSIONALREDUCTION {
     path "se_integrated_dimred.rds", emit: se_integrated_dimred
     path "optimal_clusters.txt", emit: clusters_optimal_n
 	  val true, emit: report
-	  path "*.svg"
+	  path "*.jpeg"
     
     script:
        """

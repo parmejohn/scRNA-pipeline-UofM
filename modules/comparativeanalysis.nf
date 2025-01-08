@@ -18,13 +18,13 @@ process COMPARATIVEANALYSIS {
         path: "$params.outdir/analysis/plots/gsea/comparative",
         mode: 'copy',
         overwrite: true,
-        pattern: "gsea_cluster*.svg"
+        pattern: "gsea_cluster*.jpeg"
     )
     publishDir (
         path: "$params.outdir/analysis/plots/deseq2",
         mode: 'copy',
         overwrite: true,
-        pattern: "deseq2*.svg"
+        pattern: "deseq2*.jpeg"
     )
 	  publishDir (
         path: "$params.outdir/analysis/data/deseq2",
@@ -44,7 +44,7 @@ process COMPARATIVEANALYSIS {
     path "*.pdf"
     path "*.txt" // DEGs txt files
     val true, emit: report
-    path "*.svg"
+    path "*.jpeg"
 
     script:
        """

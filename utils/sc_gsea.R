@@ -56,7 +56,7 @@ EscapeGSEA <- function(se.integrated, species, pathways, plots.format){
           theme(legend.position = "right", axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
           ggtitle("Top 5 GO Pathways per Cluster")
 
-        ggSaveAndSVG(p1, 
+        ggSaveAndJPEG(p1, 
                      paste0("escape/", "escape_heatmap_top5"),
                      plots.format = plots.format,
                      width = 20,
@@ -80,7 +80,7 @@ EscapeGSEA <- function(se.integrated, species, pathways, plots.format){
         tar.dir <- paste0("escape/", levels(droplevels(ucell.markers.top5[i,6])), "/")
         dir.create(tar.dir)
         
-        ggSaveAndSVG(p2, 
+        ggSaveAndJPEG(p2, 
                      paste0(tar.dir, unique(ucell.markers.specific.filtered$gene)[j], "_geyser"),
                      plots.format = plots.format,
                      width = 12,
@@ -107,7 +107,7 @@ EscapeGSEA <- function(se.integrated, species, pathways, plots.format){
               theme(legend.position = "right", axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
               ggtitle(paste0(pathways[i], " GO related Pathways"))
             
-            ggSaveAndSVG(p1, 
+            ggSaveAndJPEG(p1, 
                          paste0("escape/", "escape_heatmap_", pathways[i]),
                          plots.format = plots.format,
                          width = 20,
@@ -130,7 +130,7 @@ EscapeGSEA <- function(se.integrated, species, pathways, plots.format){
               theme(legend.position = "none")
             tar.dir <- paste0("escape/", pathways[i], "/")
             dir.create(tar.dir)
-            ggSaveAndSVG(p2, 
+            ggSaveAndJPEG(p2, 
                          paste0(tar.dir, unique(ucell.markers.specific.filtered$gene)[j], "_geyser"),
                          plots.format = plots.format,
                          width = 12,

@@ -24,7 +24,7 @@ process TRAJECTORYINFERENCE {
         path: "$params.outdir/analysis/plots/ti",
         mode: 'copy',
         overwrite: true,
-        pattern: "*.svg"
+        pattern: "*.jpeg"
     )
 
     containerOptions "--bind $params.bind"
@@ -38,7 +38,7 @@ process TRAJECTORYINFERENCE {
     path "*.pdf", emit: slingshot_out_pdf
     path "*.txt", optional: true
     path "*.rds", optional: true
-    path "*.svg"
+    path "*.jpeg"
 
     // val true, emit: report
     

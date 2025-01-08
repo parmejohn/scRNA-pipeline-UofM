@@ -262,7 +262,7 @@ plotNhoodExpressionDA_fixed <-
     graphics.off()
 
     graphics.off()
-        svg(paste0("milo_DA_DE_heatmap_", group, "_", condition, ".svg"), width = 8, height = 6)
+        jpeg(paste0("milo_DA_DE_heatmap_", group, "_", condition, ".jpeg"), width = 8, height = 6)
         pl_both <- grid.arrange(pl_top, grob, nrow = 2, heights = c(1,4))
 	graphics.off()
 
@@ -472,7 +472,7 @@ DAGseaComparison <- function(de.markers, cluster.name, group, fgsea.sets, plots.
       scale_fill_identity() + 
       ggtitle(paste0("GSEA: ", cluster.name, " ", group))
     
-    PrintSaveAndSVG(p, paste0("milo_gsea_cluster_", cluster.name, "_", group), plots.format, width=12)
+    PrintSaveAndJPEG(p, paste0("milo_gsea_cluster_", cluster.name, "_", group), plots.format, width=12)
     
   } else {
     print("No pathways are particularly enriched")

@@ -21,7 +21,7 @@ IdentifyCellMarkers <- function(se.integrated, plots.format){
                             assay = "RNA", slot = "data", label = FALSE) + # will only plot a max of 300 cells per identity; ggplot has a limit of 30,000 cells total
     ggtitle("Top 3 Cell Markers per Cluster")
   PrintSave(expr.heatmap, 'top3_markers_expr_heatmap', plots.format)
-  PrintSave(expr.heatmap, 'top3_markers_expr_heatmap', "svg")
+  PrintSave(expr.heatmap, 'top3_markers_expr_heatmap', "jpeg")
   
   ##### Conserved markers across the conditions #####
   #   Error in `levels<-`(`*tmp*`, value = as.character(levels)) : -> fix later
@@ -46,7 +46,7 @@ IdentifyCellMarkers <- function(se.integrated, plots.format){
       xlab("Genes") +
       ylab("Cluster and Condition Name")
     PrintSave(conserved.markers.dotplot, 'conserved_marker_unlabelled', width=20, height = 16, plots.format = plots.format)
-    PrintSave(conserved.markers.dotplot, 'conserved_marker_unlabelled', width=20, height = 16, plots.format = "svg")
+    PrintSave(conserved.markers.dotplot, 'conserved_marker_unlabelled', width=20, height = 16, plots.format = "jpeg")
   }
 }
 
@@ -77,7 +77,7 @@ ReferenceMarkerMapping <- function(reference, query, dims, plots.format){
                     color = colorRampPalette(c("white","red"))(200), display_numbers = FALSE, 
                     main = "Reference Marker Prediction Scores", silent = TRUE)
   PrintSave(se.hm, "reference_marker_mapping_heatmap", plots.format)
-  PrintSave(se.hm, "reference_marker_mapping_heatmap", "svg")
+  PrintSave(se.hm, "reference_marker_mapping_heatmap", "jpeg")
   
   cluster.names <- colnames(prediction.matrix)[max.col(prediction.matrix,ties.method="first")]
   names(cluster.names) <- levels(query)
@@ -90,7 +90,7 @@ ReferenceMarkerMapping <- function(reference, query, dims, plots.format){
   umap.labelled <- DimPlot(query, reduction = "umap", group.by = "celltype", label = TRUE, alpha = 0.5) +
     ggtitle("UMAP Reference Labelled Clusters")
   PrintSave(umap.labelled, "integrated_umap_labelled", plots.format)
-  PrintSave(umap.labelled, "integrated_umap_labelled", "svg")
+  PrintSave(umap.labelled, "integrated_umap_labelled", "jpeg")
   
   p2 <- dittoBarPlot(
     object = query,
@@ -99,7 +99,7 @@ ReferenceMarkerMapping <- function(reference, query, dims, plots.format){
     retain.factor.levels=TRUE,
     main = "Percent of cells by Labelled Clusters")
   PrintSave(p2, "percent_cells_group_labelled", plots.format)
-  PrintSave(p2, "percent_cells_group_labelled", "svg")
+  PrintSave(p2, "percent_cells_group_labelled", "jpeg")
   
   reference$reference.cell.meta <- NULL
   

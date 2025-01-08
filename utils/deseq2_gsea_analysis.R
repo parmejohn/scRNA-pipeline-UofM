@@ -75,7 +75,7 @@ DESeq2ConditionPerCluster <-  function(se.integrated, species, plots.format){
                                           target[1], 
                                           target[2]
                                           )
-            PrintSaveAndSVG(p, paste0("deseq2_cluster_", cluster.name, "_", target[1], "_vs_", target[2]), plots.format)
+            PrintSaveAndJPEG(p, paste0("deseq2_cluster_", cluster.name, "_", target[1], "_vs_", target[2]), plots.format)
             
             GseaComparison(de_markers, cluster.name, target[1], target[2], fgsea_sets, plots.format)
           }
@@ -148,5 +148,5 @@ GseaComparison <- function(de.markers, cluster.name, ident.1, ident.2, fgsea.set
     ggtitle(paste0("GSEA: ", cluster.name, " ", ident.1, " vs ", ident.2))
   
   ggsave(paste0("gsea_cluster_", cluster.name, "_", ident.1, "_vs_", ident.2, ".", plots.format), p1, width = 8, height = 6)
-  ggsave(paste0("gsea_cluster_", cluster.name, "_", ident.1, "_vs_", ident.2, ".svg"), p1, width = 8, height = 6)
+  ggsave(paste0("gsea_cluster_", cluster.name, "_", ident.1, "_vs_", ident.2, ".jpeg"), p1, width = 8, height = 6)
 }

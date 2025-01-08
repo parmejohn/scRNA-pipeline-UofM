@@ -84,8 +84,8 @@ DifferentialAbundanceMilo <-
         geom_point() +
         geom_hline(yintercept = -log10(fdr.cutoff)) + ## Mark significance threshold (10% FDR)
         ggtitle(paste0("Significant Neighborhoods over ", condition))
-      PrintSaveAndSVG(p1, paste0("milo_pval_distribution_", condition), plots.format)
-      PrintSaveAndSVG(p2, paste0("milo_volcano_plot_", condition), plots.format)
+      PrintSaveAndJPEG(p1, paste0("milo_pval_distribution_", condition), plots.format)
+      PrintSaveAndJPEG(p2, paste0("milo_volcano_plot_", condition), plots.format)
       
       sc.integrated.milo.traj <-
         buildNhoodGraph(sc.integrated.milo.traj)
@@ -101,7 +101,7 @@ DifferentialAbundanceMilo <-
       p4 <- plotDAbeeswarm_fixed(da.results, group.by = "da.clusters", alpha = fdr.cutoff) # gives a distribution view instead of UMAP
       if (is.ggplot(p4)) {
         p4 <- p4 + ggtitle(paste0("DA FC Distribution: ", condition))
-        PrintSaveAndSVG(p4, paste0("milo_DA_fc_distribution_", condition), plots.format)
+        PrintSaveAndJPEG(p4, paste0("milo_DA_fc_distribution_", condition), plots.format)
       }
       
       # print("Finding DEGs for DA neighborhoods, this may take a while") https://marionilab.github.io/miloR/articles/milo_gastrulation.html
@@ -185,7 +185,7 @@ DifferentialAbundanceMilo <-
                     alpha = fdr.cutoff
                   )
               
-               #PrintSaveAndSVG(p5, paste0("milo_DA_DE_heatmap_", i, "_", condition), plots.format)
+               #PrintSaveAndJPEG(p5, paste0("milo_DA_DE_heatmap_", i, "_", condition), plots.format)
               }
             }
           } else {
@@ -211,7 +211,7 @@ DifferentialAbundanceMilo <-
         ggtitle(paste0("DA Analysis UMAP for ", condition))
       
       print("recalc da.results")
-      PrintSaveAndSVG(p3, paste0("milo_DA_umap_", condition), plots.format)
+      PrintSaveAndJPEG(p3, paste0("milo_DA_umap_", condition), plots.format)
       
       saveRDS(sc.integrated.milo.traj, paste0("sc_integrated_milo_traj_", condition, ".rds"))
     }

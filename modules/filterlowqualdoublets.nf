@@ -17,7 +17,7 @@ process FILTERLOWQUALDOUBLETS {
         path: "$params.outdir/analysis/plots/qc",
         mode: 'copy',
         overwrite: true,
-        pattern: "*.svg"
+        pattern: "*.jpeg"
     )
 
     containerOptions "--bind $params.bind"
@@ -37,7 +37,7 @@ process FILTERLOWQUALDOUBLETS {
     path "se_filtered_doublets_list.rds"
     path "se_filtered_list.rds"
     path "se_list_raw.rds"
-    path "*.svg"
+    path "*.jpeg"
     
     script:
        """

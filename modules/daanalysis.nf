@@ -26,7 +26,7 @@ process DAANALYSIS {
         path: "$params.outdir/analysis/plots/da",
         mode: 'copy',
         overwrite: true,
-        pattern: "*.svg"
+        pattern: "*.jpeg"
     )
 
     containerOptions "--bind $params.bind"
@@ -43,7 +43,7 @@ process DAANALYSIS {
     path "*.pdf"
     path "*.txt"
     val true, emit: report
-    path "*.svg"
+    path "*.jpeg"
 
     
     script:

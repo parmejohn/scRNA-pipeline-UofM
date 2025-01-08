@@ -13,7 +13,7 @@ TrajectoryInferenceSlingshot <- function(se.integrated, start.clus=NULL, plots.f
     plot_function(paste0('ti_no_start_not_smooth.', plots.format), width = 8, height = 6)
     UmapLineagePredictionNotSmooth(clustering, pal, dim.red)
     graphics.off()
-    svg('ti_no_start_not_smooth.svg', width = 8, height = 6)
+    jpeg('ti_no_start_not_smooth.jpeg', width = 8, height = 6)
     UmapLineagePredictionNotSmooth(clustering)
     graphics.off()
 
@@ -55,7 +55,7 @@ TrajectoryInferenceSlingshotCurved <- function(se.integrated, start.clus, plots.
   UmapLineagePredictionSmooth(dim.red, pal, clustering, sce)
   graphics.off()
   
-  svg('ti_start_smooth.svg', width = 8, height = 6)
+  jpeg('ti_start_smooth.jpeg', width = 8, height = 6)
   UmapLineagePredictionSmooth(dim.red, pal, clustering, sce)
   graphics.off()
   
@@ -134,7 +134,7 @@ TrajectoryInferenceSlingshotCurved <- function(se.integrated, start.clus, plots.
     do.call("grid.arrange", c(mainconditions.list.filt, ncol=length(mainconditions.list.filt), top="Temporally DEGs across Main Grouping"))
     graphics.off()
     
-    svg(paste0('ti_deg_between_', "group", ".svg"), width = 8, height = 6)
+    jpeg(paste0('ti_deg_between_', "group", ".jpeg"), width = 8, height = 6)
     do.call("grid.arrange", c(mainconditions.list.filt, ncol=length(mainconditions.list.filt), top="Temporally DEGs across Main Grouping"))
     graphics.off()
     
@@ -216,7 +216,7 @@ TrajectoryInferenceSlingshotCurved <- function(se.integrated, start.clus, plots.
                   row_names_gp = gpar(fontsize = 6),
                   height = 8,
                   width = 8)
-    PrintSaveAndSVG(p2, paste0('ti_de_', ptime.str), plots.format, width = 8, height = 8)
+    PrintSaveAndJPEG(p2, paste0('ti_de_', ptime.str), plots.format, width = 8, height = 8)
     graphics.off()
     
     ## old method of seperating into clusters, but dont really need since cluster names are printed

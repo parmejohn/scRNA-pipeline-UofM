@@ -11,12 +11,12 @@ PrintSave <- function(plot, title, plots.format = "pdf", width=8, height=6){
 
 PrintSaveAndSVG <- function(plot, title, plots.format, width=8, height=6){
   PrintSave(plot, title, plots.format, width = width, height = height)
-  PrintSave(plot, title, "svg", width = width, height = height)
+  PrintSave(plot, title, "jpeg", width = width, height = height)
 }
 
 ggSaveAndSVG <- function(plot, title, plots.format, width=8, height=8){
   ggsave(paste0(title, ".", plots.format), plot, width = width, height = height)
-  ggsave(paste0(title, ".svg"), plot, width = width, height = height)
+  ggsave(paste0(title, ".jpeg"), plot, width = width, height = height)
   
 }
 

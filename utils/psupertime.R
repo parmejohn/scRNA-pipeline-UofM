@@ -25,25 +25,25 @@ RunPsuper <- function(se.integrated, main_time, plots.format){
       gene.comparison <- as.vector(levels(p4[["data"]][["symbol"]]))
       write.table(gene.comparison, paste0(data.dir, "psuper_top_20_genes_", j, ".txt"), quote = FALSE,row.names = F, sep = "\t", col.names = F)
       
-      ggSaveAndSVG(p1,
+      ggSaveAndJPEG(p1,
                    paste0(tar.dir, "psuper_train_results_", j),
                    plots.format,
                    width = 8,
                    height = 6
                    )
-      ggSaveAndSVG(p2,
+      ggSaveAndJPEG(p2,
                    paste0(tar.dir, "psuper_density_pseudotime_", j),
                    plots.format,
                    width = 8,
                    height = 6
                    )
-      ggSaveAndSVG(p3,
+      ggSaveAndJPEG(p3,
                    paste0(tar.dir, "psuper_gene_coefficients_", j),
                    plots.format,
                    width = 8,
                    height = 6
                    )
-      ggSaveAndSVG(p4,
+      ggSaveAndJPEG(p4,
                    paste0(tar.dir, "psuper_top_20_genes_over_pseudotime_", j),
                    plots.format,
                    width = 8,
@@ -77,25 +77,25 @@ RunPsuper <- function(se.integrated, main_time, plots.format){
           gene.comparison <- as.vector(levels(p4[["data"]][["symbol"]]))
           write.table(gene.comparison, paste0(data.dir, "psuper_top_20_genes_", i, "_", j, ".txt"), quote = FALSE,row.names = F, sep = "\t", col.names = F)
           
-          ggSaveAndSVG(p1,
+          ggSaveAndJPEG(p1,
                        paste0(tar.dir, "psuper_train_results_", j),
                        plots.format,
                        width = 8,
                        height = 6
           )
-          ggSaveAndSVG(p2,
+          ggSaveAndJPEG(p2,
                        paste0(tar.dir, "psuper_density_pseudotime_", j),
                        plots.format,
                        width = 8,
                        height = 6
           )
-          ggSaveAndSVG(p3,
+          ggSaveAndJPEG(p3,
                        paste0(tar.dir, "psuper_gene_coefficients_", j),
                        plots.format,
                        width = 8,
                        height = 6
           )
-          ggSaveAndSVG(p4,
+          ggSaveAndJPEG(p4,
                        paste0(tar.dir, "psuper_top_20_genes_over_pseudotime_", j),
                        plots.format,
                        width = 8,
@@ -118,13 +118,13 @@ RunPsuper <- function(se.integrated, main_time, plots.format){
               p3 <- plot_identified_gene_coefficients(psuper.obj2) + ggtitle(paste0(i, ": ", "Top Gene Coefficients ", j, " in ", k))
               p4 <- plot_identified_genes_over_psupertime(psuper.obj2, palette = "Dark2") + ggtitle(paste0(i, ": ", "Top 20 Genes over psupertime ", j, " in ", k))
               
-              ggSaveAndSVG(p3,
+              ggSaveAndJPEG(p3,
                            paste0(tar.dir, "psuper_gene_coefficients_", i, "_", j, "_", k, "_genes"),
                            plots.format,
                            width = 8,
                            height = 6
                            )
-              ggSaveAndSVG(p4,
+              ggSaveAndJPEG(p4,
                            paste0(tar.dir, "psuper_top_20_genes_over_pseudotime_", i, "_", j, "_", k, "_genes"),
                            plots.format,
                            width = 8,
@@ -159,7 +159,7 @@ RunPsuper <- function(se.integrated, main_time, plots.format){
           ylab("psupertime")
         
         p <- p + stat_pvalue_manual(stat.test, y.position = max(density.summary.bind.filt$psuper) + 0.1, label = "p.adj.signif", remove.bracket = T)
-        ggSaveAndSVG(p,
+        ggSaveAndJPEG(p,
                      paste0("psupertime_plots/", "psuper_boxplot_compare_dist_", i),
                      plots.format,
                      width = 8,
@@ -188,25 +188,25 @@ RunPsuper <- function(se.integrated, main_time, plots.format){
         gene.comparison <- as.vector(levels(p4[["data"]][["symbol"]]))
         write.table(gene.comparison, paste0(data.dir, "psuper_top_20_genes_", j, ".txt"), quote = FALSE,row.names = F, sep = "\t", col.names = F)
         
-        ggSaveAndSVG(p1,
+        ggSaveAndJPEG(p1,
                      paste0(tar.dir, "psuper_train_results_", j),
                      plots.format,
                      width = 8,
                      height = 6
         )
-        ggSaveAndSVG(p2,
+        ggSaveAndJPEG(p2,
                      paste0(tar.dir, "psuper_density_pseudotime_", j),
                      plots.format,
                      width = 8,
                      height = 6
         )
-        ggSaveAndSVG(p3,
+        ggSaveAndJPEG(p3,
                      paste0(tar.dir, "psuper_gene_coefficients_", j),
                      plots.format,
                      width = 8,
                      height = 6
         )
-        ggSaveAndSVG(p4,
+        ggSaveAndJPEG(p4,
                      paste0(tar.dir, "psuper_top_20_genes_over_pseudotime_", j),
                      plots.format,
                      width = 8,

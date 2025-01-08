@@ -24,7 +24,7 @@ process IDENTIFYMARKERS {
         path: "$params.outdir/analysis/plots/",
         mode: 'copy',
         overwrite: true,
-        pattern: "*.svg"
+        pattern: "*.jpeg"
     )
 
     containerOptions "--bind $params.bind"
@@ -37,7 +37,7 @@ process IDENTIFYMARKERS {
 
     output:
     path "*.pdf"
-    path "*.svg"
+    path "*.jpeg"
     path "se_markers_presto_integrated.txt"
     path "se_integrated_auto_label.rds", emit: se_integrated_auto_label, optional: true
     val true, emit: report
