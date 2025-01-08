@@ -69,8 +69,12 @@ AtacAnalyses <- function(se.integrated.atac, species, plots.format){
     
     print(paste0("on cluster ", cluster.name))
 
-    list.comparisons <- ListAllPossibleComparisons(se.integrated = se.integrated.atac,
+    results <- ListAllPossibleComparisons(se.integrated = se.integrated.atac,
                                                    seurat.subset = cluster.bulk)
+    
+    list.comparisons <- results$comparisons
+    cluster.bulk <-  results$subset
+    
     for (k in 1:length(list.comparisons)){
       Idents(se.integrated.atac.filt) <- list.comparisons[[k]]
       grouping <- list.comparisons[[k]]

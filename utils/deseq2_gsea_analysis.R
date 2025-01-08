@@ -37,8 +37,10 @@ DESeq2ConditionPerCluster <-  function(se.integrated, species, plots.format){
     }
     
     group.pairs <- NA
-    list.comparisons <- ListAllPossibleComparisons(se.integrated = se.integrated,
+    results <- ListAllPossibleComparisons(se.integrated = se.integrated,
                                                    seurat.subset = cluster.bulk)
+    list.comparisons <- results$comparisons
+    cluster.bulk <-  results$subset
     
     for (k in 1:length(list.comparisons)){
       Idents(cluster.bulk) <- list.comparisons[[k]]

@@ -33,7 +33,7 @@ ListAllPossibleComparisons <- function(se.integrated, seurat.subset) {
       list.comparisons <- append(list.comparisons, group.co)
     }
   }
-  return(list.comparisons)
+  return(list(subset = seurat.subset, comparisons = list.comparisons))
 }
 
 MatchCovariantGroupPairs <- function(seurat.subset, grouping, not.main.group) {
