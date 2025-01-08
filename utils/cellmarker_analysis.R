@@ -50,7 +50,7 @@ IdentifyCellMarkers <- function(se.integrated, plots.format){
   }
 }
 
-ReferenceMarkerMapping <- function(reference, query, dims){
+ReferenceMarkerMapping <- function(reference, query, dims, plots.format){
   DefaultAssay(reference) <- "RNA"
   DefaultAssay(query) <- "RNA"
   reference <- NormalizeData(reference)

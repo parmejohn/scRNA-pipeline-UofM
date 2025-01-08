@@ -80,7 +80,7 @@ if (args$clusters_optimal == 0) {
 
 if (args$resolution == 1) {
   se.integrated <-
-    SeuratDimReduction(se.integrated, opt.clusters, 'group', reduction = args$reduced_dim, args$plots_format)
+    SeuratDimReduction(se.integrated, opt.clusters, 'group', reduction = args$reduced_dim, plots.format = args$plots_format)
 } else {
   se.integrated <-
     SeuratDimReduction(se.integrated, opt.clusters, 'group', args$resolution, reduction = args$reduced_dim, args$plots_format)

@@ -185,7 +185,7 @@ DifferentialAbundanceMilo <-
                     alpha = fdr.cutoff
                   )
               
-               PrintSaveAndSVG(p5, paste0("milo_DA_DE_heatmap_", i, "_", condition), plots.format)
+               #PrintSaveAndSVG(p5, paste0("milo_DA_DE_heatmap_", i, "_", condition), plots.format)
               }
             }
           } else {

@@ -261,6 +261,11 @@ plotNhoodExpressionDA_fixed <-
     pl_both <- grid.arrange(pl_top, grob, nrow = 2, heights = c(1,4))
     graphics.off()
 
+    graphics.off()
+        svg(paste0("milo_DA_DE_heatmap_", group, "_", condition, ".svg"), width = 8, height = 6)
+        pl_both <- grid.arrange(pl_top, grob, nrow = 2, heights = c(1,4))
+	graphics.off()
+
     if(is.clustered){
     print("get row order")
     pl_bottom <- draw(pl_bottom)
