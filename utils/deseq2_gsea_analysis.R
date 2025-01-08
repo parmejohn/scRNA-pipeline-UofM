@@ -77,7 +77,8 @@ DESeq2ConditionPerCluster <-  function(se.integrated, species, plots.format){
                                           target[1], 
                                           target[2]
                                           )
-            PrintSaveAndJPEG(p, paste0("deseq2_cluster_", cluster.name, "_", target[1], "_vs_", target[2]), plots.format)
+	    ggSaveAndJPEG(p, paste0("deseq2_cluster_", cluster.name, "_", target[1], "_vs_", target[2]), plots.format)
+
             
             GseaComparison(de_markers, cluster.name, target[1], target[2], fgsea_sets, plots.format)
           }

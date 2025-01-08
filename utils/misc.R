@@ -1,5 +1,14 @@
 set.seed(333)
 
+jpeg <- function(filename, width, height, dpi = 300) {
+	  # Convert inches to pixels
+	  pixel_width <- width * dpi
+  pixel_height <- height * dpi
+    
+    # Call the original jpeg function
+    grDevices::jpeg(filename, width = pixel_width, height = pixel_height, res = dpi)
+}
+
 PrintSave <- function(plot, title, plots.format = "pdf", width=8, height=6){
   title.with.ext <- paste0(title, ".", plots.format)
   plot_function <- get(plots.format)
@@ -9,12 +18,12 @@ PrintSave <- function(plot, title, plots.format = "pdf", width=8, height=6){
   graphics.off()
 }
 
-PrintSaveAndSVG <- function(plot, title, plots.format, width=8, height=6){
+PrintSaveAndJPEG <- function(plot, title, plots.format, width=8, height=6){
   PrintSave(plot, title, plots.format, width = width, height = height)
   PrintSave(plot, title, "jpeg", width = width, height = height)
 }
 
-ggSaveAndSVG <- function(plot, title, plots.format, width=8, height=8){
+ggSaveAndJPEG <- function(plot, title, plots.format, width=8, height=8){
   ggsave(paste0(title, ".", plots.format), plot, width = width, height = height)
   ggsave(paste0(title, ".jpeg"), plot, width = width, height = height)
   
