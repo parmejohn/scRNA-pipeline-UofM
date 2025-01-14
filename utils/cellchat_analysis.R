@@ -186,15 +186,25 @@ CellChatAnalysis <- function(se.integrated, species, plots.format){
       # information flow = sum of communication prob among all pairs of cell groups
       # sig pathways -> based on diff in overall info flow
       # paired wilcox test is used to see if there is a sig diff of signalling info
-      gg1 <- rankNet(cellchat.merged, mode = "comparison", measure = "weight", sources.use = NULL, targets.use = NULL, stacked = T, do.stat = TRUE)
-      gg2 <- rankNet(cellchat.merged, mode = "comparison", measure = "weight", sources.use = NULL, targets.use = NULL, stacked = F, do.stat = TRUE)
+      gg1 <- rankNet(cellchat.merged, mode = "comparison", measure = "weight", sources.use = NULL, targets.use = NULL, stacked = T, do.stat = TRUE, return.data = T)
+      gg2 <- rankNet(cellchat.merged, mode = "comparison", measure = "weight", sources.use = NULL, targets.use = NULL, stacked = F, do.stat = TRUE, return.data = T)
       
-      p4 <- gg1 + gg2
-      ggsave(paste0(plots.dir, "cellchat_information_flow_compare.", plots.format), p4, width = 8, height = 8)
-      ggsave(paste0(plots.dir, "cellchat_information_flow_compare.jpeg"), p4, width = 8, height = 8)
+      p4 <- gg1[["gg.obj"]] + gg2[["gg.obj"]]
+      ggsave(paste0(plots.dir, "cellchat_information_flow_compare.", plots.format), p4, width = 8, height = 10)
+      ggsave(paste0(plots.dir, "cellchat_information_flow_compare.jpeg"), p4, width = 8, height = 10)
       
-      ##### get the top signalling pathways and plot out cirle plots #####
-      top.paths <- subset(gg1[["data"]], pvalues <= 0.05)
+      write_tsv(gg2[["signaling.contribution"]], paste0(data.dir, "information_flow_compare.tsv"))
+      
+      info_flow <- gg2[["signaling.contribution"]]
+      info_flow_sig <- subset(info_flow, pvalues < 0.05)
+      
+      info_flow_sig<- info_flow_sig %>%
+        group_by(name) %>%
+        filter(contribution == max(contribution)) %>%
+        ungroup()
+      
+      ##### get the top signalling pathways and plot out circle plots #####
+      top.paths <- subset(gg1[["signaling.contribution"]], pvalues < 0.05)
       top.paths <- filter(top.paths, contribution > 0)
       top.paths <- unique(top.paths$name)
       
@@ -247,10 +257,10 @@ CellChatAnalysis <- function(se.integrated, species, plots.format){
       #p7 <- draw(ht1 + ht2, ht_gap = unit(0.5, "cm"))
       #PrintSave(p7, "cellchat_compare_incoming_signal_heatmap.pdf", plots.dir, w = 8, h = 8)
       
-      ht1 = netAnalysis_signalingRole_heatmap(object.list[[i]], pattern = "all", signaling = pathway.union, title = names(object.list)[i], width = 5, height = 6)
-      ht2 = netAnalysis_signalingRole_heatmap(object.list[[i+1]], pattern = "all", signaling = pathway.union, title = names(object.list)[i+1], width = 5, height = 6)
+      ht1 = netAnalysis_signalingRole_heatmap(object.list[[i]], pattern = "all", signaling = pathway.union, title = names(object.list)[i], width = 8, height = 10)
+      ht2 = netAnalysis_signalingRole_heatmap(object.list[[i+1]], pattern = "all", signaling = pathway.union, title = names(object.list)[i+1], width = 8, height = 10)
       p8 <- draw(ht1 + ht2, ht_gap = unit(0.5, "cm"))
-      PrintSaveAndJPEG(p8, paste0(plots.dir, "/cellchat_compare_all_signal_heatmap"), plots.format, width =8, height = 8)
+      PrintSaveAndJPEG(p8, paste0(plots.dir, "/cellchat_compare_all_signal_heatmap"), plots.format, width = 8, height = 12)
       
       
       ##### identifying LR pairs #####
@@ -262,60 +272,76 @@ CellChatAnalysis <- function(se.integrated, species, plots.format){
       ## Graph is filtered by the missing prescence of the communication prob in the other condition, or if there is an abs(log2FC) >= 0.6 -> ~50% increase in prob
       ## Sometimes the dataset cannot be filtered (NA source targets after filtering), so print the unfiltered option in these situations
       dir.create(paste0(plots.dir, "commun_prob"))
-      for (i in 1:length(levels(se.integrated.group$ident))){
+      for (i in 1:length(levels(se.integrated$ident))){
         print(i)
-        if(any(grepl(levels(se.integrated.group$ident)[i], cellchat.merged@idents[[1]])) & 
-           any(grepl(levels(se.integrated.group$ident)[i], cellchat.merged@idents[[2]]))){
-          se.integrated.check <- subset(se.integrated.group, ident == levels(se.integrated.group$ident)[i])
+        if(any(grepl(levels(se.integrated$ident)[i], cellchat.merged@idents[[1]])) & 
+           any(grepl(levels(se.integrated$ident)[i], cellchat.merged@idents[[2]]))){
+          se.integrated.check <- subset(se.integrated, ident == levels(se.integrated$ident)[i])
           min.cells <- ncol(se.integrated.check@assays[["RNA"]])
           
           if (min.cells > 30){
             #subsetCommunication(object = cellchat.merged@net, cellchat.merged@LR, levels(cellchat.merged@idents[["joint"]])[14])
             
-            check.interactions <- subsetCommunication(cellchat.merged, sources.use = levels(se.integrated.group$ident)[i])
+            check.interactions <- subsetCommunication(cellchat.merged, sources.use = levels(se.integrated$ident)[i])
             if (all(nrow(check.interactions[[1]]) > 0 & nrow(check.interactions[[2]]) > 0)){
               
-              gg1 <- netVisual_bubble(cellchat.merged, sources.use = levels(se.integrated.group$ident)[i], 
+              gg1 <- netVisual_bubble(cellchat.merged, sources.use = levels(se.integrated$ident)[i], 
                                       comparison = c(1, 2), max.dataset = 2, title.name = "", angle.x = 45, remove.isolate = T, return.data = T)
               
-              gg1 <- filterLRPairsBubble(cellchat.merged, gg1, levels(se.integrated.group$ident)[i], 
+
+              gg2 <- netVisual_bubble(cellchat.merged, sources.use = levels(se.integrated$ident)[i],
+                                      comparison = c(1, 2), max.dataset = 1, title.name = "", angle.x = 45, remove.isolate = T, return.data = T)
+              
+              combined_unfiltered <- rbind(gg1[["communication"]], gg2[["communication"]])
+              write_tsv(combined_unfiltered, paste0(data.dir, "cellchat_commun_prob_", levels(se.integrated$ident)[i], "_unfiltered.tsv"))
+              
+              gg1 <- filterLRPairsBubble(cellchat.merged, 
+                                         gg1, 
+                                         levels(se.integrated$ident)[i], 
                                          max.dataset = 2, 
                                          title.name = paste0("Increased signaling in ", z[2]), 
                                          ident.1 = z[1], 
                                          ident.2 = z[2])
               
-              gg2 <- netVisual_bubble(cellchat.merged, sources.use = levels(se.integrated.group$ident)[i],
-                                      comparison = c(1, 2), max.dataset = 1, title.name = "", angle.x = 45, remove.isolate = T, return.data = T)
+              gg2 <- filterLRPairsBubble(cellchat.merged, 
+                                         gg2, 
+                                         levels(se.integrated$ident)[i], 
+                                         max.dataset = 1, 
+                                         title.name = paste0("Decreased signaling in ", z[2]), 
+                                         ident.1 = z[1], 
+                                         ident.2 = z[2])
               
-              gg2 <- filterLRPairsBubble(cellchat.merged, gg2, levels(se.integrated.group$ident)[i], max.dataset = 1, title.name = paste0("Decreased signaling in ", z[2]), ident.1 = z[1], ident.2 = z[2])
+              p9 <- gg1[["gg.obj"]] + gg2[["gg.obj"]]
+              ggsave(paste0(plots.dir, "commun_prob/cellchat_", levels(se.integrated$ident)[i], "_expression.", "pdf"), p9, width = 12, height = 12)
+              ggsave(paste0(plots.dir, "commun_prob/cellchat_", levels(se.integrated$ident)[i], "_expression.jpeg"), p9, width = 12, height = 12)
               
-              p9 <- gg1 + gg2
-              ggsave(paste0(plots.dir, "commun_prob/cellchat_", levels(se.integrated.group$ident)[i], "_expression.", "pdf"), p9, width = 12, height = 8)
-              ggsave(paste0(plots.dir, "commun_prob/cellchat_", levels(se.integrated.group$ident)[i], "_expression.jpeg"), p9, width = 12, height = 8)
+              combined_unfiltered <- rbind(gg1[["communication"]], gg2[["communication"]])
+              write_tsv(combined_unfiltered, paste0(data.dir, "cellchat_commun_prob_", levels(se.integrated$ident)[i], "_filtered.tsv"))
               
+              #write_tsv(gg1[["communication"]], paste0(data.dir, "cellchat_commun_prob_", levels(se.integrated$ident)[i], "_", z[2], ".tsv"))
+              #write_tsv(gg2[["communication"]], paste0(data.dir, "cellchat_commun_prob_", levels(se.integrated$ident)[i], "_", z[1], ".tsv"))
             }
           }
         }
       }
     }
   }
-
-
 }
 
 filterLRPairsBubble <- function(cellchat.merged, gg1, i, max.dataset, title.name, ident.1, ident.2){
   #gg1 <- netVisual_bubble(cellchat.merged, sources.use = i,  comparison = c(1, 2), max.dataset = 2, title.name = "Increased signaling in WT", angle.x = 45, remove.isolate = T, return.data = T)
   
   ## row numbers that are uniquely WT or MUT
-  unique_row_numbers <- gg1[["gg.obj"]][["data"]] %>%
+  unique_row_numbers <- gg1[["communication"]] %>%
     mutate(row_number = row_number()) %>%  # Add a column with row numbers
     group_by(interaction_name, group.names) %>%  # Group by columns that identify a pair
     filter(n_distinct(dataset) == 1) %>%  # Keep groups that have only one unique value in V16
     ungroup() %>%
     pull(row_number)  # Extract the row numbers
   
-  ## find those with a log2FC >= 1 in probability if the MUT and WT pair exists
-  log2fc_results_rows <- gg1[["gg.obj"]][["data"]] %>%
+  ## find those with a log2FC >= 0.58 (FC = 1.5x difference) in probability if the MUT and WT pair exists
+  log2fc_results_rows <- gg1[["communication"]] %>%
+    filter(pathway_name %in% info_flow_sig$name) %>%
     mutate(row_number = row_number()) %>%  # Add a column with row numbers
     group_by(interaction_name, group.names) %>%
     filter(n() == 2 & all(c(ident.2, ident.1) %in% dataset)) %>%  # Ensure both WT and MUT are present
@@ -331,21 +357,21 @@ filterLRPairsBubble <- function(cellchat.merged, gg1, i, max.dataset, title.name
   
   to_filter <- c(unique_row_numbers, log2fc_results_rows)
   
-  tmp <-  gg1[["gg.obj"]][["data"]]
-  gg1[["gg.obj"]][["data"]] <- gg1[["gg.obj"]][["data"]][to_filter,]
+  tmp <-  gg1[["communication"]]
+  gg1[["communication"]] <- gg1[["communication"]][to_filter,]
   
-  if (length(unique(gg1[["gg.obj"]][["data"]]$interaction_name)) != 0){
-    interaction_name.filtered <- as.data.frame(unique(gg1[["gg.obj"]][["data"]]$interaction_name))
+  if (length(unique(gg1[["communication"]]$interaction_name)) != 0){
+    interaction_name.filtered <- as.data.frame(unique(gg1[["communication"]]$interaction_name))
     colnames(interaction_name.filtered)[1] <- "interaction_name"
     check.interactions <- subsetCommunication(cellchat.merged, sources.use = i, pairLR.use = interaction_name.filtered)
-    if (length(which(is.na(as.character(gg1[["gg.obj"]][["data"]]$source.target)))) == 0 & 
-        length(gg1[["gg.obj"]][["data"]]$source.target) >= 4 &
+    if (length(which(is.na(as.character(gg1[["communication"]]$source.target)))) == 0 & 
+        length(gg1[["communication"]]$source.target) >= 4 &
         all(nrow(check.interactions[[1]]) > 0 & nrow(check.interactions[[2]]) > 0)){
       p1 <- netVisual_bubble(cellchat.merged, sources.use = i, pairLR.use = interaction_name.filtered, comparison = c(1, 2), 
-                               max.dataset = max.dataset, title.name = title.name, angle.x = 45, remove.isolate = T)
+                               max.dataset = max.dataset, title.name = title.name, angle.x = 45, remove.isolate = T, return.data = T)
       return(p1)
     } else {
-      p1 <- netVisual_bubble(cellchat.merged, sources.use = i, comparison = c(1, 2), max.dataset = max.dataset, title.name = paste0(title.name, ": Unfiltered"), angle.x = 45, remove.isolate = T)
+      p1 <- netVisual_bubble(cellchat.merged, sources.use = i, comparison = c(1, 2), max.dataset = max.dataset, title.name = paste0(title.name, ": Unfiltered"), angle.x = 45, remove.isolate = T, return.data = T)
       return(p1)
     }
   } 
