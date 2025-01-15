@@ -129,7 +129,8 @@ TrajectoryInferenceSlingshotCurved <- function(se.integrated, start.clus, plots.
       } 
     }
     mainconditions.list.filt <- mainconditions.list[-hm.coord]
-    
+
+ 	graphics.off()   
     plot_function(paste0('ti_deg_between_', "group", plots.format), width = 8, height = 6)
     do.call("grid.arrange", c(mainconditions.list.filt, ncol=length(mainconditions.list.filt), top="Temporally DEGs across Main Grouping"))
     graphics.off()

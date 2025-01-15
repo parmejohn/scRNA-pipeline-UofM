@@ -301,7 +301,8 @@ CellChatAnalysis <- function(se.integrated, species, plots.format){
                                          max.dataset = 2, 
                                          title.name = paste0("Increased signaling in ", z[2]), 
                                          ident.1 = z[1], 
-                                         ident.2 = z[2])
+                                         ident.2 = z[2],
+					 info_flow_sig = info_flow_sig)
               
               gg2 <- filterLRPairsBubble(cellchat.merged, 
                                          gg2, 
@@ -309,7 +310,8 @@ CellChatAnalysis <- function(se.integrated, species, plots.format){
                                          max.dataset = 1, 
                                          title.name = paste0("Decreased signaling in ", z[2]), 
                                          ident.1 = z[1], 
-                                         ident.2 = z[2])
+                                         ident.2 = z[2],
+					 info_flow_sig = info_flow_sig)
               
               p9 <- gg1[["gg.obj"]] + gg2[["gg.obj"]]
               ggsave(paste0(plots.dir, "commun_prob/cellchat_", levels(se.integrated$ident)[i], "_expression.", "pdf"), p9, width = 12, height = 12)
@@ -328,7 +330,7 @@ CellChatAnalysis <- function(se.integrated, species, plots.format){
   }
 }
 
-filterLRPairsBubble <- function(cellchat.merged, gg1, i, max.dataset, title.name, ident.1, ident.2){
+filterLRPairsBubble <- function(cellchat.merged, gg1, i, max.dataset, title.name, ident.1, ident.2, info_flow_sig){
   #gg1 <- netVisual_bubble(cellchat.merged, sources.use = i,  comparison = c(1, 2), max.dataset = 2, title.name = "Increased signaling in WT", angle.x = 45, remove.isolate = T, return.data = T)
   
   ## row numbers that are uniquely WT or MUT
