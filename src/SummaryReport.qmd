@@ -12,7 +12,7 @@ editor: visual
 toc: true
 date: today
 params:
-  data:
+  data: ""
 ---
 
 ```{r}
@@ -851,6 +851,8 @@ if (dropdown_26_exists) {
 ```{r}
 #| results: asis
 #| echo: false
+path_cellchat <- paste0(res.loc, "/plots/cellchat_plots/")
+
 if (dir.exists(path_cellchat)) {
   cat(paste('## Cell-cell communication'))
 }

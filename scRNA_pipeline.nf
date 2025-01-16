@@ -182,7 +182,6 @@ workflow {
         psupertime_ch,
         cellchat_ch,
         atac_ch,
-        "${params.outdir}/analysis/",
         new_opt_clust
         )
 }
