@@ -1,0 +1,1041 @@
+---
+title: "scRNA/Multiome Pipeline Analyses"
+format:
+  html:
+    toc_float: yes
+    toc-depth: 5
+    collapse: true
+    toc-location: left
+    self-contained: true
+    embed-resources: true
+editor: visual
+toc: true
+date: today
+params:
+  data:
+---
+
+```{r}
+#| echo: false
+#res.loc <- "/research/2024_scrnaseq_pipeline/summary_report_ex/"
+res.loc <- params$data
+```
+
+```{r}
+#| echo: false
+library(knitr)
+library(base64enc)
+```
+
+```{r}
+#| echo: false
+read_jpegs <- function(path, pattern) {
+  jpeg_files <- list.files(path = path, pattern = pattern, full.names = TRUE, recursive = T)
+  list(files = basename(jpeg_files), paths = jpeg_files)
+}
+
+generate_html <- function(jpeg_data) {
+  # Generate dropdown options
+  select_html <- paste0(
+    '<option value="', jpeg_data$files, '">', jpeg_data$files, '</option>',
+    collapse = "\n"
+  )
+  
+  # Generate divs with embedded JPEG content
+  divs_html <- paste0(
+    '<div id="', jpeg_data$files, '" style="display: none;">',
+    '<img src="', jpeg_data$paths, '" width="100%" height="100%" alt="', jpeg_data$files, '">',
+    '</div>',
+    collapse = "\n"
+  )
+  
+  list(select_html = select_html, divs_html = divs_html)
+}
+
+process_jpegs_conditional <- function(path, pattern) {
+  jpeg_files <- list.files(path = path, pattern = pattern, full.names = TRUE, recursive = T)
+  if (length(jpeg_files) == 0) {
+    return(NULL)
+  }
+  jpeg_data <- list(
+    files = basename(jpeg_files),
+    paths = jpeg_files
+  )
+  generate_html(jpeg_data)
+}
+
+generate_dropdown <- function(dropdown_id, dropdown_content) {
+  html <- glue::glue(
+    '<div>
+      <label for="{dropdown_id}">Select a Plot:</label>
+      <select id="{dropdown_id}">
+        {dropdown_content$select_html}
+      </select>
+    </div>
+    
+    <div id="container-{dropdown_id}">
+      {dropdown_content$divs_html}
+    </div>
+    
+    <script>setupDropdown("{dropdown_id}", "container-{dropdown_id}");</script>'
+  )
+  html
+}
+
+```
+
+```{=html}
+
+<script>
+  // Setup Dropdown Function
+  function setupDropdown(dropdownId, containerId) {
+    const selectElement = document.getElementById(dropdownId);
+    const container = document.getElementById(containerId);
+
+    // Add event listener for plot visibility toggle
+    selectElement.addEventListener('change', function() {
+      const selectedPlot = this.value;
+      const plots = container.querySelectorAll('div');
+      plots.forEach(plot => {
+        plot.style.display = plot.id === selectedPlot ? 'block' : 'none';
+      });
+    });
+
+    // Display the first plot by default
+    const plots = container.querySelectorAll('div');
+    if (plots.length > 0) {
+      selectElement.value = plots[0].id;
+      plots[0].style.display = 'block';
+    }
+  }
+</script>
+```
+```{r}
+#| echo: false
+# Define paths and patterns
+## QC plots
+path_qc <- paste0(res.loc,"/plots/qc/")
+pattern_1 <- "\\percent_mt.jpeg$"
+pattern_2 <- "\\UMI.jpeg$"
+pattern_3 <- "\\count_atac.jpeg$"
+pattern_4 <- "\\_tss.jpeg$"
+
+## Seurat processing
+path_seurat <- paste0(res.loc,"/plots/")
+pattern_5 <- "\\umap_unlabelled.jpeg$"
+pattern_6 <- "\\cells_group_unlabelled.jpeg$"
+pattern_7 <- "\\umap_labelled.jpeg$"
+pattern_8 <- "\\umap_split.jpeg$"
+
+## Cell marker
+pattern_9 <- "\\markers_expr_heatmap.jpeg$"
+pattern_10 <- "\\rved_marker_unlabelled.pdf.jpeg$"
+pattern_11 <- "\\marker_mapping_heatmap.jpeg$"
+pattern_12 <- "\\cent_cells_group_labelled.jpeg$"
+
+## DESeq2
+path_deseq2 <- paste0(res.loc,"/plots/deseq2/") 
+pattern_13 <- "^deseq2.*\\.jpeg$"
+
+## GSEA
+path_gsea <- paste0(res.loc,"/plots/gsea/comparative/") 
+pattern_14 <- "^gsea.*\\.jpeg$"
+
+## escape
+path_escape <- paste0(res.loc,"/plots/gsea/escape/") 
+pattern_15 <- "^escape_heatmap.*\\.jpeg$"
+pattern_16 <- "\\geyser.jpeg$"
+
+## slingshot
+path_slingshot <- paste0(res.loc,"/plots/ti/") 
+pattern_17 <- "\\_smooth.jpeg$"
+pattern_18 <- "\\_deg_between_group.jpeg$"
+pattern_19 <- "^ti_de_slingPseudotime.*\\.jpeg$"
+
+## psupertime
+path_psuper <- paste0(res.loc,"/plots/ti/psupertime_plots/") 
+pattern_20 <- "^psuper_density_pseudotime.*\\.jpeg$"
+pattern_21 <- "^psuper_gene_coefficients.*\\.jpeg$"
+pattern_22 <- "^psuper_top_20_genes.*\\.jpeg$"
+pattern_23 <- "^psuper_boxplot_compare_dist.*\\.jpeg$"
+
+## da
+path_da <- paste0(res.loc,"/plots/da/") 
+pattern_24 <- "^milo_pval_distribution.*\\.jpeg$"
+pattern_25 <- "^milo_volcano_plot.*\\.jpeg$"
+pattern_26 <- "^milo_DA_umap.*\\.jpeg$"
+pattern_27 <- "^milo_DA_fc_distribution.*\\.jpeg$"
+pattern_28 <- "^milo_DA_DE_heatmap.*\\.jpeg$"
+pattern_29 <- "^milo_gsea.*\\.jpeg$"
+
+# Generate dropdown and divs for two different sets of jpeg files
+## QC plots
+dropdown_1 <- process_jpegs_conditional(path_qc, pattern_1)
+dropdown_2 <- process_jpegs_conditional(path_qc, pattern_2)
+
+dropdown_3 <- process_jpegs_conditional(path_qc, pattern_3)
+dropdown_3_exists <- !is.null(dropdown_3)
+
+dropdown_4 <- process_jpegs_conditional(path_qc, pattern_4)
+dropdown_4_exists <- !is.null(dropdown_4)
+
+## Seurat processing plots
+dropdown_5 <- process_jpegs_conditional(path_seurat, pattern_5)
+dropdown_6 <- process_jpegs_conditional(path_seurat, pattern_6)
+dropdown_7 <- process_jpegs_conditional(path_seurat, pattern_7)
+dropdown_8 <- process_jpegs_conditional(path_seurat, pattern_8)
+
+## Cell marker plots
+dropdown_9 <- process_jpegs_conditional(path_seurat, pattern_9)
+dropdown_10 <- process_jpegs_conditional(path_seurat, pattern_10)
+dropdown_11 <- process_jpegs_conditional(path_seurat, pattern_11)
+dropdown_12 <- process_jpegs_conditional(path_seurat, pattern_12)
+
+## DESeq2
+dropdown_13 <- process_jpegs_conditional(path_deseq2, pattern_13)
+
+## GSEA
+dropdown_14 <- process_jpegs_conditional(path_gsea, pattern_14)
+
+## escape plots
+dropdown_15 <- process_jpegs_conditional(path_escape, pattern_15)
+dropdown_15_exists <- !is.null(dropdown_15)
+
+dropdown_16 <- process_jpegs_conditional(path_escape, pattern_16)
+dropdown_16_exists <- !is.null(dropdown_16)
+
+
+## slingshot plots
+dropdown_17 <- process_jpegs_conditional(path_slingshot, pattern_17)
+dropdown_17_exists <- !is.null(dropdown_17)
+
+dropdown_18 <- process_jpegs_conditional(path_slingshot, pattern_18)
+dropdown_18_exists <- !is.null(dropdown_18)
+
+dropdown_19 <- process_jpegs_conditional(path_slingshot, pattern_19)
+dropdown_19_exists <- !is.null(dropdown_19)
+
+
+## psupertime plots
+dropdown_20 <- process_jpegs_conditional(path_psuper, pattern_20)
+dropdown_21 <- process_jpegs_conditional(path_psuper, pattern_21)
+dropdown_22 <- process_jpegs_conditional(path_psuper, pattern_22)
+dropdown_23 <- process_jpegs_conditional(path_psuper, pattern_23)
+dropdown_23_exists <- !is.null(dropdown_23)
+
+## da plots
+dropdown_24 <- process_jpegs_conditional(path_da, pattern_24)
+dropdown_24_exists <- !is.null(dropdown_24)
+
+dropdown_25 <- process_jpegs_conditional(path_da, pattern_25)
+dropdown_25_exists <- !is.null(dropdown_25)
+
+dropdown_26 <- process_jpegs_conditional(path_da, pattern_26)
+dropdown_26_exists <- !is.null(dropdown_26)
+
+dropdown_27 <- process_jpegs_conditional(path_da, pattern_27)
+dropdown_27_exists <- !is.null(dropdown_27)
+
+dropdown_28 <- process_jpegs_conditional(path_da, pattern_28)
+dropdown_28_exists <- !is.null(dropdown_28)
+
+dropdown_29 <- process_jpegs_conditional(path_da, pattern_29)
+dropdown_29_exists <- !is.null(dropdown_29)
+```
+
+# QC
+
+## Ambient RNA Removal
+
+## Filtering Low Quality Cells
+
+### Percent mitochondrial
+
+```{=html}
+<div>
+  <label for="dropdown-1">Select a Plot:</label>
+  <select id="dropdown-1">
+    `r dropdown_1$select_html`
+  </select>
+</div>
+
+<div id="container-1">
+  `r dropdown_1$divs_html`
+</div>
+
+<script>setupDropdown('dropdown-1', 'container-1');</script>
+```
+### Genes and nUMI
+
+```{=html}
+<div>
+  <label for="dropdown-2">Select a Plot:</label>
+  <select id="dropdown-2">
+    `r dropdown_2$select_html`
+  </select>
+</div>
+
+<div id="container-2">
+  `r dropdown_2$divs_html`
+</div>
+
+<script>setupDropdown('dropdown-2', 'container-2');</script>
+```
+```{r}
+#| results: asis
+#| echo: false
+if (dropdown_3_exists && dropdown_4_exists) {
+  cat(paste('### scATAC'))
+}
+```
+
+```{r}
+#| results: asis
+#| echo: false
+if (dropdown_3_exists) {
+  cat(paste('#### nCount ATAC'))
+}
+```
+
+```{=html}
+<div id="dropdown-3-container" style="`r if (dropdown_3_exists) "display: block;" else "display: none;"`">
+  <label for="dropdown-3">Select a Special Plot:</label>
+  <select id="dropdown-3">
+    `r if (dropdown_3_exists) dropdown_3$select_html else ""`
+  </select>
+</div>
+
+<div id="container-3" style="`r if (dropdown_3_exists) "display: block;" else "display: none;"`">
+  `r if (dropdown_3_exists) dropdown_3$divs_html else ""`
+</div>
+
+<script>
+    setupDropdown('dropdown-3', 'container-3');
+</script>
+```
+```{r}
+#| results: asis
+#| echo: false
+if (dropdown_4_exists) {
+  cat(paste('#### TSS'))
+}
+```
+
+```{=html}
+<div id="dropdown-4-container" style="`r if (dropdown_4_exists) "display: block;" else "display: none;"`">
+  <label for="dropdown-4">Select a Special Plot:</label>
+  <select id="dropdown-4">
+    `r if (dropdown_4_exists) dropdown_4$select_html else ""`
+  </select>
+</div>
+
+<div id="container-4" style="`r if (dropdown_4_exists) "display: block;" else "display: none;"`">
+  `r if (dropdown_4_exists) dropdown_4$divs_html else ""`
+</div>
+
+<script>
+    setupDropdown('dropdown-4', 'container-4');
+</script>
+```
+# Seurat processing
+
+## Integration
+
+```{r}
+knitr::include_graphics(paste0(path_seurat, "integrated_umap_unlabelled.jpeg"))
+```
+
+```{r}
+knitr::include_graphics(paste0(path_seurat, "integrated_umap_grouped.jpeg"))
+```
+
+```{r}
+knitr::include_graphics(paste0(path_seurat, "integrated_umap_split.jpeg"))
+```
+
+```{r}
+knitr::include_graphics(paste0(path_seurat, "percent_cells_group_unlabelled.jpeg"))
+```
+
+### Identifying cell markers
+
+```{r}
+knitr::include_graphics(paste0(path_seurat, "top3_markers_expr_heatmap.jpeg"))
+```
+
+```{r}
+knitr::include_graphics(paste0(path_seurat, "conserved_marker_unlabelled.jpeg"))
+```
+
+```{r}
+#| results: asis
+#| echo: false
+if (file.exists(paste0(path_seurat,"reference_marker_mapping_heatmap.jpeg"))) {
+  cat(paste('### Automatic cell-labelling'))
+}
+```
+
+```{r}
+#| results: asis
+#| echo: false
+if(file.exists(paste0(path_seurat,"reference_marker_mapping_heatmap.jpeg"))) {
+  cat(paste('#### Automatic clustering labelling'))
+}
+```
+
+```{r}
+if(file.exists(paste0(path_seurat,"reference_marker_mapping_heatmap.jpeg"))) {
+  knitr::include_graphics(paste0(path_seurat, "reference_marker_mapping_heatmap.jpeg"))
+}
+```
+
+```{r}
+if(file.exists(paste0(path_seurat,"integrated_umap_labelled.jpeg"))) {
+  knitr::include_graphics(paste0(path_seurat, "integrated_umap_labelled.jpeg"))
+}
+```
+
+```{r}
+if(file.exists(paste0(path_seurat,"percent_cells_group_labelled.jpeg"))) {
+  knitr::include_graphics(paste0(path_seurat, "percent_cells_group_labelled.jpeg"))
+}
+```
+
+# Downstream analyses
+
+## Pseudo-bulk analyses
+
+### Differential gene expression analysis
+
+Need to replace with pretty volcano package
+
+```{=html}
+<div>
+  <label for="dropdown-13">Select a Plot:</label>
+  <select id="dropdown-13">
+    `r dropdown_13$select_html`
+  </select>
+</div>
+
+<div id="container-13">
+  `r dropdown_13$divs_html`
+</div>
+
+<script>setupDropdown('dropdown-13', 'container-13');</script>
+```
+### Gene-set enrichment analysis
+
+Need to fix
+
+```{=html}
+<div>
+  <label for="dropdown-14">Select a Plot:</label>
+  <select id="dropdown-14">
+    `r dropdown_14$select_html`
+  </select>
+</div>
+
+<div id="container-14">
+  `r dropdown_14$divs_html`
+</div>
+
+<script>setupDropdown('dropdown-14', 'container-14');</script>
+```
+```{r}
+#| results: asis
+#| echo: false
+if(TRUE) {
+  cat(paste('## scATAC analyses'))
+}
+cat("\n")
+print("R")
+```
+
+```{r}
+#| echo: false
+
+# Base directory
+path_scatac <- paste0(res.loc, "/plots/dap_plots/")
+
+# Patterns
+patterns <- list(
+  closest_genes_coverage = "^scatac_closest_genes_dap_coverage.*\\.jpeg$",
+  closest_genes_gex = "^scatac_closest_genes_dap_gex.*\\.jpeg$",
+  closest_genes_gsea = "^scatac_closest_genes_dap_gsea.*\\.jpeg$",
+  scatac_motif = "^scatac_motif.*\\.jpeg$",
+  scatac_volcano = "^scatac_volcano.*\\.jpeg$"
+)
+
+# Function to encode image as Base64
+encode_image_to_base64 <- function(file_path) {
+  image_data <- base64enc::dataURI(file = file_path, mime = "image/jpeg")
+  return(image_data)
+}
+
+# Get all subfolders
+subfolders <- list.dirs(path_scatac, recursive = FALSE)
+
+# Initialize markdown content
+quarto_content <- ""
+
+# Loop through subfolders
+for (subfolder in subfolders) {
+  folder_name <- basename(subfolder)
+  quarto_content <- paste0(quarto_content, "\n### ", folder_name, "\n\n")
+  
+  # Loop through patterns
+  for (pattern_name in names(patterns)) {
+    pattern <- patterns[[pattern_name]]
+    files <- list.files(subfolder, pattern = pattern, full.names = TRUE, recursive = TRUE)
+    
+    if (length(files) > 0) {
+      if (pattern_name == "closest_genes_coverage" || pattern_name == "closest_genes_gex" || pattern_name == "closest_genes_gsea") {
+        files <- files[grepl("/closest_gene_plots/", files)]
+        
+        # Generate dropdown HTML for each subfolder
+        select_options <- paste0(
+          lapply(seq_along(files), function(i) {
+            paste0("<option value='plot_", folder_name, "_", i, "'>", basename(files[i]), "</option>")
+          }),
+          collapse = "\n"
+        )
+        
+        divs_content <- paste0(
+          lapply(seq_along(files), function(i) {
+            paste0(
+              "<div id='plot_", folder_name, "_", i, "' style='display:none;'>",
+              "<img src='", files[i], "' style='max-width:100%; height:auto;'>",
+              "</div>"
+            )
+          }),
+          collapse = "\n"
+        )
+        
+        # Generate dropdown HTML and container with images
+        dropdown_html <- paste0(
+          "<div>\n",
+          "  <label for='dropdown-", folder_name, "_", pattern_name, "'>Select a Plot:</label>\n",
+          "  <select id='dropdown-", folder_name, "_", pattern_name, "'>\n",
+          select_options,
+          "\n  </select>\n",
+          "</div>\n",
+          "<div id='container-", folder_name, "_", pattern_name, "'>\n",
+          divs_content,
+          "\n</div>\n",
+          "<script>\n",
+          "  setupDropdown('dropdown-", folder_name, "_", pattern_name, "', 'container-", folder_name, "_", pattern_name, "');\n",
+          "</script>\n"
+        )
+        
+        quarto_content <- paste0(quarto_content, dropdown_html, "\n")
+      } else if (pattern_name == "scatac_motif") {
+        files <- files[grepl("/motif_plots/", files)]
+        
+        # Generate dropdown HTML for each subfolder
+        select_options <- paste0(
+          lapply(seq_along(files), function(i) {
+            paste0("<option value='plot_", folder_name, "_", i, "'>", basename(files[i]), "</option>")
+          }),
+          collapse = "\n"
+        )
+        
+        divs_content <- paste0(
+          lapply(seq_along(files), function(i) {
+            paste0(
+              "<div id='plot_", folder_name, "_", i, "' style='display:none;'>",
+              "<img src='", files[i], "' style='max-width:100%; height:auto;'>",
+              "</div>"
+            )
+          }),
+          collapse = "\n"
+        )
+        
+        # Generate dropdown HTML and container with images
+        dropdown_html <- paste0(
+          "<div>\n",
+          "  <label for='dropdown-", folder_name, "_", pattern_name, "'>Select a Plot:</label>\n",
+          "  <select id='dropdown-", folder_name, "_", pattern_name, "'>\n",
+          select_options,
+          "\n  </select>\n",
+          "</div>\n",
+          "<div id='container-", folder_name, "_", pattern_name, "'>\n",
+          divs_content,
+          "\n</div>\n",
+          "<script>\n",
+          "  setupDropdown('dropdown-", folder_name, "_", pattern_name, "', 'container-", folder_name, "_", pattern_name, "');\n",
+          "</script>\n"
+        )
+        
+        quarto_content <- paste0(quarto_content, dropdown_html, "\n")
+      } else if (pattern_name == "scatac_volcano"){
+        files <- files[grepl("/volcano_plots/", files)]
+        
+        # Generate dropdown HTML for each subfolder
+        select_options <- paste0(
+          lapply(seq_along(files), function(i) {
+            paste0("<option value='plot_", folder_name, "_", i, "'>", basename(files[i]), "</option>")
+          }),
+          collapse = "\n"
+        )
+        
+        divs_content <- paste0(
+          lapply(seq_along(files), function(i) {
+            paste0(
+              "<div id='plot_", folder_name, "_", i, "' style='display:none;'>",
+              "<img src='", files[i], "' style='max-width:100%; height:auto;'>",
+              "</div>"
+            )
+          }),
+          collapse = "\n"
+        )
+        
+        # Generate dropdown HTML and container with images
+        dropdown_html <- paste0(
+          "<div>\n",
+          "  <label for='dropdown-", folder_name, "_", pattern_name, "'>Select a Plot:</label>\n",
+          "  <select id='dropdown-", folder_name, "_", pattern_name, "'>\n",
+          select_options,
+          "\n  </select>\n",
+          "</div>\n",
+          "<div id='container-", folder_name, "_", pattern_name, "'>\n",
+          divs_content,
+          "\n</div>\n",
+          "<script>\n",
+          "  setupDropdown('dropdown-", folder_name, "_", pattern_name, "', 'container-", folder_name, "_", pattern_name, "');\n",
+          "</script>\n"
+        )
+        
+        quarto_content <- paste0(quarto_content, dropdown_html, "\n")
+      } else {
+        # For other patterns, simply add the image
+        quarto_content <- paste0(quarto_content, "#### ", pattern_name, "\n\n")
+        for (file in files) {
+          quarto_content <- paste0(
+            quarto_content,
+            "<img src='", file, "' alt='", pattern_name, "' style='max-width:100%; height:auto;'>\n\n"
+          )
+        }
+      }
+    }
+  }
+}
+```
+
+```{r}
+#| results: asis
+#| echo: false
+
+# files <- files[grepl("/commun_prob/", files)]
+
+cat(quarto_content)
+```
+
+```{r}
+#| results: asis
+#| echo: false
+if (dropdown_15_exists) {
+  cat(paste('## Single-cell GSEA'))
+}
+```
+
+```{=html}
+<div id="dropdown-15-container" style="`r if (dropdown_15_exists) "display: block;" else "display: none;"`">
+  <label for="dropdown-15">Select a Special Plot:</label>
+  <select id="dropdown-15">
+  `r if (dropdown_15_exists) dropdown_15$select_html else ""`
+</select>
+  </div>
+  
+  <div id="container-15" style="`r if (dropdown_15_exists) "display: block;" else "display: none;"`">
+  `r if (dropdown_15_exists) dropdown_15$divs_html else ""`
+</div>
+  
+  <script>
+  setupDropdown('dropdown-15', 'container-15');
+</script>
+```
+```{=html}
+<div id="dropdown-16-container" style="`r if (dropdown_16_exists) "display: block;" else "display: none;"`">
+  <label for="dropdown-16">Select a Special Plot:</label>
+  <select id="dropdown-16">
+  `r if (dropdown_16_exists) dropdown_16$select_html else ""`
+</select>
+  </div>
+  
+  <div id="container-16" style="`r if (dropdown_16_exists) "display: block;" else "display: none;"`">
+  `r if (dropdown_16_exists) dropdown_16$divs_html else ""`
+</div>
+  
+  <script>
+  setupDropdown('dropdown-16', 'container-16');
+</script>
+```
+```{r}
+#| results: asis
+#| echo: false
+if (dropdown_19_exists || dropdown_23_exists) {
+  cat(paste('## Trajectory inference'))
+}
+```
+
+```{r}
+#| results: asis
+#| echo: false
+if (dropdown_19_exists) {
+  cat(paste('### slingshot'))
+}
+```
+
+```{r}
+#| results: asis
+#| echo: false
+if (file.exists(paste0(path_slingshot,"ti_no_start_not_smooth.jpeg"))) {
+  knitr::include_graphics(paste0(path_slingshot, "ti_no_start_not_smooth.jpeg"))
+} else if (file.exists(paste0(path_slingshot,"ti_start_smooth.jpeg"))) {
+  knitr::include_graphics(paste0(path_slingshot, "ti_start_smooth.jpeg"))
+}
+```
+
+```{r}
+#| results: asis
+#| echo: false
+if(file.exists(paste0(path_slingshot,"ti_deg_between_group.jpeg"))) {
+  knitr::include_graphics(paste0(path_slingshot, "ti_deg_between_group.jpeg"))
+}
+```
+
+```{=html}
+<div id="dropdown-19-container" style="`r if (dropdown_19_exists) "display: block;" else "display: none;"`">
+  <label for="dropdown-19">Select a Special Plot:</label>
+  <select id="dropdown-19">
+  `r if (dropdown_19_exists) dropdown_19$select_html else ""`
+</select>
+  </div>
+  
+  <div id="container-19" style="`r if (dropdown_19_exists) "display: block;" else "display: none;"`">
+  `r if (dropdown_19_exists) dropdown_19$divs_html else ""`
+</div>
+  
+  <script>
+  setupDropdown('dropdown-19', 'container-19');
+</script>
+```
+```{r}
+#| results: asis
+#| echo: false
+if (dropdown_23_exists) {
+  cat(paste('### psupertime'))
+}
+```
+
+```{=html}
+<div id="dropdown-23-container" style="`r if (dropdown_23_exists) "display: block;" else "display: none;"`">
+  <label for="dropdown-23">Select a Special Plot:</label>
+  <select id="dropdown-23">
+  `r if (dropdown_23_exists) dropdown_23$select_html else ""`
+</select>
+  </div>
+  
+  <div id="container-23" style="`r if (dropdown_23_exists) "display: block;" else "display: none;"`">
+  `r if (dropdown_23_exists) dropdown_23$divs_html else ""`
+</div>
+  
+  <script>
+  setupDropdown('dropdown-23', 'container-23');
+</script>
+```
+```{r}
+#| results: asis
+#| echo: false
+if (dropdown_26_exists) {
+  cat(paste('## Differential Abundance'))
+}
+```
+
+```{=html}
+<div id="dropdown-24-container" style="`r if (dropdown_24_exists) "display: block;" else "display: none;"`">
+  <label for="dropdown-24">Select a Special Plot:</label>
+  <select id="dropdown-24">
+  `r if (dropdown_24_exists) dropdown_24$select_html else ""`
+</select>
+  </div>
+  
+  <div id="container-24" style="`r if (dropdown_24_exists) "display: block;" else "display: none;"`">
+  `r if (dropdown_24_exists) dropdown_24$divs_html else ""`
+</div>
+  
+  <script>
+  setupDropdown('dropdown-24', 'container-24');
+</script>
+```
+```{=html}
+<div id="dropdown-25-container" style="`r if (dropdown_25_exists) "display: block;" else "display: none;"`">
+  <label for="dropdown-25">Select a Special Plot:</label>
+  <select id="dropdown-25">
+  `r if (dropdown_25_exists) dropdown_25$select_html else ""`
+</select>
+  </div>
+  
+  <div id="container-25" style="`r if (dropdown_25_exists) "display: block;" else "display: none;"`">
+  `r if (dropdown_25_exists) dropdown_25$divs_html else ""`
+</div>
+  
+  <script>
+  setupDropdown('dropdown-25', 'container-25');
+</script>
+```
+```{=html}
+<div id="dropdown-26-container" style="`r if (dropdown_26_exists) "display: block;" else "display: none;"`">
+  <label for="dropdown-26">Select a Special Plot:</label>
+  <select id="dropdown-26">
+  `r if (dropdown_26_exists) dropdown_26$select_html else ""`
+</select>
+  </div>
+  
+  <div id="container-26" style="`r if (dropdown_26_exists) "display: block;" else "display: none;"`">
+  `r if (dropdown_26_exists) dropdown_26$divs_html else ""`
+</div>
+  
+  <script>
+  setupDropdown('dropdown-26', 'container-26');
+</script>
+```
+```{=html}
+<div id="dropdown-27-container" style="`r if (dropdown_27_exists) "display: block;" else "display: none;"`">
+  <label for="dropdown-27">Select a Special Plot:</label>
+  <select id="dropdown-27">
+  `r if (dropdown_27_exists) dropdown_27$select_html else ""`
+</select>
+  </div>
+  
+  <div id="container-27" style="`r if (dropdown_27_exists) "display: block;" else "display: none;"`">
+  `r if (dropdown_27_exists) dropdown_27$divs_html else ""`
+</div>
+  
+  <script>
+  setupDropdown('dropdown-27', 'container-27');
+</script>
+```
+```{=html}
+<div id="dropdown-28-container" style="`r if (dropdown_28_exists) "display: block;" else "display: none;"`">
+  <label for="dropdown-28">Select a Special Plot:</label>
+  <select id="dropdown-28">
+  `r if (dropdown_28_exists) dropdown_28$select_html else ""`
+</select>
+  </div>
+  
+  <div id="container-28" style="`r if (dropdown_28_exists) "display: block;" else "display: none;"`">
+  `r if (dropdown_28_exists) dropdown_28$divs_html else ""`
+</div>
+  
+  <script>
+  setupDropdown('dropdown-28', 'container-28');
+</script>
+```
+```{=html}
+<div id="dropdown-29-container" style="`r if (dropdown_29_exists) "display: block;" else "display: none;"`">
+  <label for="dropdown-29">Select a Special Plot:</label>
+  <select id="dropdown-29">
+  `r if (dropdown_29_exists) dropdown_29$select_html else ""`
+</select>
+  </div>
+  
+  <div id="container-29" style="`r if (dropdown_29_exists) "display: block;" else "display: none;"`">
+  `r if (dropdown_29_exists) dropdown_29$divs_html else ""`
+</div>
+  
+  <script>
+  setupDropdown('dropdown-29', 'container-29');
+</script>
+```
+```{r}
+#| results: asis
+#| echo: false
+if (dir.exists(path_cellchat)) {
+  cat(paste('## Cell-cell communication'))
+}
+```
+
+```{r}
+#| echo: false
+
+# Base directory
+path_cellchat <- paste0(res.loc, "/plots/cellchat_plots/")
+
+# Patterns
+patterns <- list(
+  interaction_summary_bar = "\\_interaction_summary_bar.jpeg$",
+  differential_interaction_circle = "\\_differential_interaction_circle.jpeg$",
+  differential_interaction_heatmap = "\\_differential_interaction_heatmap.jpeg$",
+  num_interactions_circle = "\\_num_interactions_circle.jpeg$",
+  population_send_receive = "\\_population_send_receive.jpeg$",
+  compare_all_signal_heatmap = "\\_compare_all_signal_heatmap.jpeg$",
+  info_flow = "\\_information_flow_compare.jpeg$", 
+  signaling_pathways_expression = "\\_expression.jpeg$",
+  signal_path = "\\_signal_path.jpeg$",
+  commun_prob_expression = "\\_expression.jpeg$"
+)
+
+# Function to encode image as Base64
+encode_image_to_base64 <- function(file_path) {
+  image_data <- base64enc::dataURI(file = file_path, mime = "image/jpeg")
+  return(image_data)
+}
+
+# Get all subfolders
+subfolders <- list.dirs(path_cellchat, recursive = FALSE)
+
+# Initialize markdown content
+quarto_content <- ""
+
+# Loop through subfolders
+for (subfolder in subfolders) {
+  folder_name <- basename(subfolder)
+  quarto_content <- paste0(quarto_content, "\n### ", folder_name, "\n\n")
+  
+  # Loop through patterns
+  for (pattern_name in names(patterns)) {
+    pattern <- patterns[[pattern_name]]
+    files <- list.files(subfolder, pattern = pattern, full.names = TRUE, recursive = TRUE)
+    
+    if (length(files) > 0) {
+      if (pattern_name == "commun_prob_expression") {
+        files <- files[grepl("/commun_prob/", files)]
+        
+        # Generate dropdown HTML for each subfolder
+        select_options <- paste0(
+          lapply(seq_along(files), function(i) {
+            paste0("<option value='plot_", folder_name, "_", i, "'>", basename(files[i]), "</option>")
+          }),
+          collapse = "\n"
+        )
+        
+        divs_content <- paste0(
+          lapply(seq_along(files), function(i) {
+            paste0(
+              "<div id='plot_", folder_name, "_", i, "' style='display:none;'>",
+              "<img src='", files[i], "' style='max-width:100%; height:auto;'>",
+              "</div>"
+            )
+          }),
+          collapse = "\n"
+        )
+        
+        # Generate dropdown HTML and container with images
+        dropdown_html <- paste0(
+          "<div>\n",
+          "  <label for='dropdown-", folder_name, "_", pattern_name, "'>Select a Plot:</label>\n",
+          "  <select id='dropdown-", folder_name, "_", pattern_name, "'>\n",
+          select_options,
+          "\n  </select>\n",
+          "</div>\n",
+          "<div id='container-", folder_name, "_", pattern_name, "'>\n",
+          divs_content,
+          "\n</div>\n",
+          "<script>\n",
+          "  setupDropdown('dropdown-", folder_name, "_", pattern_name, "', 'container-", folder_name, "_", pattern_name, "');\n",
+          "</script>\n"
+        )
+        
+        quarto_content <- paste0(quarto_content, dropdown_html, "\n")
+      } else if (pattern_name == "signaling_pathways_expression") {
+        files <- files[grepl("/signaling_pathways/", files)]
+        
+        # Generate dropdown HTML for each subfolder
+        select_options <- paste0(
+          lapply(seq_along(files), function(i) {
+            paste0("<option value='plot_", folder_name, "_", i, "'>", basename(files[i]), "</option>")
+          }),
+          collapse = "\n"
+        )
+        
+        divs_content <- paste0(
+          lapply(seq_along(files), function(i) {
+            paste0(
+              "<div id='plot_", folder_name, "_", i, "' style='display:none;'>",
+              "<img src='", files[i], "' style='max-width:100%; height:auto;'>",
+              "</div>"
+            )
+          }),
+          collapse = "\n"
+        )
+        
+        # Generate dropdown HTML and container with images
+        dropdown_html <- paste0(
+          "<div>\n",
+          "  <label for='dropdown-", folder_name, "_", pattern_name, "'>Select a Plot:</label>\n",
+          "  <select id='dropdown-", folder_name, "_", pattern_name, "'>\n",
+          select_options,
+          "\n  </select>\n",
+          "</div>\n",
+          "<div id='container-", folder_name, "_", pattern_name, "'>\n",
+          divs_content,
+          "\n</div>\n",
+          "<script>\n",
+          "  setupDropdown('dropdown-", folder_name, "_", pattern_name, "', 'container-", folder_name, "_", pattern_name, "');\n",
+          "</script>\n"
+        )
+        
+        quarto_content <- paste0(quarto_content, dropdown_html, "\n")
+      } else if (pattern_name == "signal_path"){
+        files <- files[grepl("/signaling_pathways/", files)]
+        
+        # Generate dropdown HTML for each subfolder
+        select_options <- paste0(
+          lapply(seq_along(files), function(i) {
+            paste0("<option value='plot_", folder_name, "_", i, "'>", basename(files[i]), "</option>")
+          }),
+          collapse = "\n"
+        )
+        
+        divs_content <- paste0(
+          lapply(seq_along(files), function(i) {
+            paste0(
+              "<div id='plot_", folder_name, "_", i, "' style='display:none;'>",
+              "<img src='", files[i], "' style='max-width:100%; height:auto;'>",
+              "</div>"
+            )
+          }),
+          collapse = "\n"
+        )
+        
+        # Generate dropdown HTML and container with images
+        dropdown_html <- paste0(
+          "<div>\n",
+          "  <label for='dropdown-", folder_name, "_", pattern_name, "'>Select a Plot:</label>\n",
+          "  <select id='dropdown-", folder_name, "_", pattern_name, "'>\n",
+          select_options,
+          "\n  </select>\n",
+          "</div>\n",
+          "<div id='container-", folder_name, "_", pattern_name, "'>\n",
+          divs_content,
+          "\n</div>\n",
+          "<script>\n",
+          "  setupDropdown('dropdown-", folder_name, "_", pattern_name, "', 'container-", folder_name, "_", pattern_name, "');\n",
+          "</script>\n"
+        )
+        
+        quarto_content <- paste0(quarto_content, dropdown_html, "\n")
+      } else {
+        # For other patterns, simply add the image
+        quarto_content <- paste0(quarto_content, "#### ", pattern_name, "\n\n")
+        for (file in files) {
+          quarto_content <- paste0(
+            quarto_content,
+            "<img src='", file, "' alt='", pattern_name, "' style='max-width:100%; height:auto;'>\n\n"
+          )
+        }
+      }
+    }
+  }
+}
+```
+
+```{r}
+#| results: asis
+#| echo: false
+
+# files <- files[grepl("/commun_prob/", files)]
+
+cat(quarto_content)
+```

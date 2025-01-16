@@ -16,17 +16,18 @@ process SUMMARYREPORT{
     val tempora_signal
     val psupertime_signal
     val cellchat_signal
-    val analysis_dir
+    val atac_signal
+    path analysis_dir
     val opt_clusters
+    path output
 
     output:
     path "*.html"
 
     script:
         """
-        #!/usr/local/bin/Rscript
-
-        rmarkdown::render("${projectDir}/src/SummaryReport.R", params = list(data = "$analysis_dir", opt_c = "$opt_clusters"), output_dir = ".")
+        cp ${projectDir}/src/SummaryReport.qmd $analysis_dir/SummaryReport.qmd
+        quarto render $analysis_dir/SummaryReport.qmd -P data:$analysis_dir --to html
+        rm $analysis_dir/SummaryReport.qmd
         """
-
 }

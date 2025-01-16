@@ -172,7 +172,7 @@ workflow {
 	}
 	//println atac_ch
 
-/*    SUMMARYREPORT(
+    SUMMARYREPORT(
         comparative_ch,
         identified_report,
         sling_ch,
@@ -181,7 +181,8 @@ workflow {
         tempora_ch,
         psupertime_ch,
         cellchat_ch,
+        atac_ch,
         "${params.outdir}/analysis/",
         new_opt_clust
-        )*/
+        )
 }
