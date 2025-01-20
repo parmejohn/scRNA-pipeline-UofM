@@ -1,7 +1,7 @@
 ##### fxns for QC #####
 AmbientRNARemoval <- function(pair_list, test){
 
-    print(paste("Loading ", pair_list[1], " and ", pair_list[2], sep=''))
+  print(paste("Loading ", pair_list[1], " and ", pair_list[2], sep=''))
   
   # check if it is a multiome experiment format
   filt.matrix <- Read10X_h5(pair_list[1],use.names = T)

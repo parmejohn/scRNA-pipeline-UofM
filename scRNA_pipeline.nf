@@ -21,6 +21,7 @@ params.run_trajectory_inference = false
 params.run_da = false
 params.run_escape = false
 params.run_cellchat = false
+params.run_neuroestimator = false
 
 //customizing parameters for different analyses
 params.clusters_optimal = 0
@@ -41,6 +42,8 @@ include {TEMPORAANALYSIS} from './modules/temporaanalysis.nf'
 include {PSUPERTIME} from './modules/psupertime.nf'
 include {CELLCHAT} from './modules/cellchat.nf'
 include {ATACANALYSES} from './modules/atacanalyses.nf'
+include {NEUROESTIMATOR} from './modules/neuroestimator.nf'
+include {NEUROESTIMATORPLOT} from './modules/neuroestimator.nf'
 include {SUMMARYREPORT} from './modules/summaryreport.nf'
 
 process INITIALIZEFOLDERS {
@@ -61,6 +64,40 @@ process INITIALIZEFOLDERS {
 
         mkdir ${params.outdir}/analysis/plots
     fi
+    """ 
+}
+
+process CONVERTSEURAT {
+    debug true
+    cache 'deep'
+    
+    publishDir (
+        path: "$params.outdir/analysis/data/",
+        mode: 'copy',
+        overwrite: true,
+        pattern: "*.rds"
+    )
+    
+    input:
+    path integrated
+    
+    output:
+    path "*.rds"
+
+    """
+    #!/opt/R/4.3.2/bin/Rscript
+    
+    library(Seurat)
+    library(SeuratObject)
+    
+    se.integrated <- readRDS(se.object)
+    se.integrated[["RNA3"]] <- as(object = se.integrated[["RNA"]], Class = "Assay")
+    se.integrated <- RenameAssays(se.integrated, "RNA", "RNA5")
+    se.integrated <- RenameAssays(se.integrated, "RNA3", "RNA")
+    DefaultAssay(object = se.integrated) <- "RNA"
+    se.integrated[["RNA5"]] <- NULL
+    
+    saveRDS(se.integrated, "se_integrated_v3.rds")
     """ 
 }
 
@@ -162,7 +199,6 @@ workflow {
 	} else {
 		escape_ch = "SKIPPING ESCAPE ANALYSIS, RERUN WITH '--run_escape true' if you desired those results"
 	}
-	//println escape_ch
 
 	if (params.sc_atac){
 		ATACANALYSES(identified_ch, params.species, params.plot_format)
@@ -170,7 +206,15 @@ workflow {
 	} else {
 		atac_ch = "no atac-seq info provided"
 	}
-	//println atac_ch
+
+  seurat3_ch = CONVERTSEURAT(identified_ch)
+  
+  if (params.run_neuroestimator){
+    neuroestimator_ch = NEUROESTIMATOR(seurat3_ch, params.species)
+    NEUROESTIMATORPLOT(seurat3_ch, neuroestimator_ch)
+  } else {
+    neuroestimator_ch = "run_neuroestimator false"
+  }
 
     SUMMARYREPORT(
         comparative_ch,
@@ -182,6 +226,7 @@ workflow {
         psupertime_ch,
         cellchat_ch,
         atac_ch,
+        neuroestimator_ch,
         new_opt_clust
         )
 }

@@ -23,8 +23,13 @@ res.loc <- params$data
 
 ```{r}
 #| echo: false
+#| output: false
 library(knitr)
 library(base64enc)
+library(data.table)
+library(dplyr)
+library(tidyverse)
+library(Seurat)
 ```
 
 ```{r}
@@ -168,6 +173,10 @@ pattern_27 <- "^milo_DA_fc_distribution.*\\.jpeg$"
 pattern_28 <- "^milo_DA_DE_heatmap.*\\.jpeg$"
 pattern_29 <- "^milo_gsea.*\\.jpeg$"
 
+## neuroestimator
+path_neuro <- paste0(res.loc,"/plots/neuroestimator/") 
+pattern_30 <- "^neuroestimator.*\\.jpeg$"
+
 # Generate dropdown and divs for two different sets of jpeg files
 ## QC plots
 dropdown_1 <- process_jpegs_conditional(path_qc, pattern_1)
@@ -241,11 +250,46 @@ dropdown_28_exists <- !is.null(dropdown_28)
 
 dropdown_29 <- process_jpegs_conditional(path_da, pattern_29)
 dropdown_29_exists <- !is.null(dropdown_29)
+
+dropdown_30 <- process_jpegs_conditional(path_neuro, pattern_30)
+dropdown_30_exists <- !is.null(dropdown_30)
 ```
 
 # QC
 
-## Ambient RNA Removal
+The original amount of cells and the amount after QC is shown in the table below. Please view each analyis in the QC section for more info on how they were selected
+
+```{r}
+#| echo: false
+
+qc.table <- data.frame()
+
+# loading in raw list -> get the original cell count
+se.raw <- readRDS(paste0(res.loc, "/data/se_list_raw.rds"))
+
+# loading in list after all QC steps are done
+se.filtered.singlets <- readRDS(paste0(res.loc, "/data/se_filtered_singlets_list.rds"))
+
+for (i in 1:length(se.filtered.singlets)) {
+  filtered <- nrow(se.filtered.singlets[[i]]@meta.data)
+  raw <- nrow(se.raw[[i]]@meta.data)
+  
+  # Add a row for the current dataset
+  current_ident <- unique(se.filtered.singlets[[i]]@meta.data[["ident"]])
+  qc.table <- rbind(qc.table, data.frame(ident = current_ident, raw = raw, filtered = filtered))
+}
+
+# Set 'ident' as the row names and drop the column
+rownames(qc.table) <- qc.table$ident
+qc.table <- qc.table[, -1]
+
+# Display the table
+kable(qc.table, caption = "Total filtered cells from QC metrics")
+```
+
+## Ambient RNA Correction
+
+Ambient RNA is corrected for using soupX
 
 ## Filtering Low Quality Cells
 
@@ -281,6 +325,37 @@ dropdown_29_exists <- !is.null(dropdown_29)
 
 <script>setupDropdown('dropdown-2', 'container-2');</script>
 ```
+### Doublet removal
+
+```{r}
+#| label: tbl-doublets
+#| tbl-cap: "Doublet identification"
+#| tbl-colwidths: [60,40]
+#| echo: false
+
+# Initialize an empty data frame to store results
+doub.table <- data.frame()
+
+# Populate the table
+se.filtered.doublets.list <- readRDS(paste0(res.loc, "/data/se_filtered_doublets_list.rds"))
+for (i in 1:length(se.filtered.doublets.list)) {
+  singlets <- subset(se.filtered.doublets.list[[i]], subset = scDblFinder.class == "singlet") %>% colnames() %>% length()
+  doublets <- subset(se.filtered.doublets.list[[i]], subset = scDblFinder.class == "doublet") %>% colnames() %>% length()
+  
+  # Add a row for the current dataset
+  current_ident <- unique(se.filtered.doublets.list[[i]]@meta.data[["ident"]])
+  doub.table <- rbind(doub.table, data.frame(ident = current_ident, singlet = singlets, doublet = doublets))
+}
+
+# Set 'ident' as the row names and drop the column
+rownames(doub.table) <- doub.table$ident
+doub.table <- doub.table[, -1]
+
+# Display the table
+kable(doub.table, caption = "Number of Doublets Detected with scDblFinder")
+
+```
+
 ```{r}
 #| results: asis
 #| echo: false
@@ -444,18 +519,15 @@ Need to fix
 ```{r}
 #| results: asis
 #| echo: false
-if(TRUE) {
+path_scatac <- paste0(res.loc, "/plots/dap_plots/")
+
+if (dir.exists(path_scatac)) {
   cat(paste('## scATAC analyses'))
 }
-cat("\n")
-print("R")
 ```
 
 ```{r}
 #| echo: false
-
-# Base directory
-path_scatac <- paste0(res.loc, "/plots/dap_plots/")
 
 # Patterns
 patterns <- list(
@@ -1032,12 +1104,34 @@ for (subfolder in subfolders) {
   }
 }
 ```
-
 ```{r}
 #| results: asis
 #| echo: false
 
-# files <- files[grepl("/commun_prob/", files)]
-
 cat(quarto_content)
 ```
+
+```{r}
+#| results: asis
+#| echo: false
+if (dropdown_30_exists) {
+  cat(paste('## Neuroestimator'))
+}
+```
+```{=html}
+<div id="dropdown-30-container" style="`r if (dropdown_30_exists) "display: block;" else "display: none;"`">
+  <label for="dropdown-30">Select a Special Plot:</label>
+  <select id="dropdown-30">
+  `r if (dropdown_30_exists) dropdown_30$select_html else ""`
+</select>
+  </div>
+  
+  <div id="container-30" style="`r if (dropdown_30_exists) "display: block;" else "display: none;"`">
+  `r if (dropdown_30_exists) dropdown_30$divs_html else ""`
+</div>
+  
+  <script>
+  setupDropdown('dropdown-30', 'container-30');
+</script>
+```
+

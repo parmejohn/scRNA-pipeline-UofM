@@ -12,6 +12,7 @@ process SUMMARYREPORT{
     val psupertime_signal
     val cellchat_signal
     val atac_signal
+    val neuroestimator_signal
     val opt_clusters
 
     script:
