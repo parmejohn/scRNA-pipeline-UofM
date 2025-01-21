@@ -1,5 +1,6 @@
-NeuroestimatorPlot <- function(se.integrated, neuroestimator.results){
-
+NeuroestimatorPlot <- function(se.integrated, neuroestimator.results, plots.format){
+	
+	se.integrated <- readRDS(se.integrated)
   neuroestimator.results <- read.table(neuroestimator.results)
   metadata <- se.integrated@meta.data
 
@@ -25,14 +26,14 @@ NeuroestimatorPlot <- function(se.integrated, neuroestimator.results){
       co.variant <- select(neuroestimator.results.meta, 'predicted_activity', 'group', anno, i)
       extra_column <- i
       stat.test <- KSTestOverGroups(anno, extra_column, co.variant)
-      PlotNeuroestimatorResults(stat.test, co.variant, extra_column, anno)
+      PlotNeuroestimatorResults(stat.test, co.variant, extra_column, anno, plots.format)
       graphics.off()
     }
   } else {
     co.variant <- neuroestimator.results.meta
     extra_column <- ""
     stat.test <- KSTestOverGroups(anno, extra_column, co.variant)
-    PlotNeuroestimatorResults(stat.test, co.variant, extra_column, anno)
+    PlotNeuroestimatorResults(stat.test, co.variant, extra_column, anno, plots.format)
     graphics.off()
   }
 }
@@ -66,9 +67,9 @@ KSTestOverGroups <- function(anno, extra_column, co.variant) {
     )
 }
 
-PlotNeuroestimatorResults <- function(stat.test, co.variant, extra_column, anno) {
-  ident.1 <- unique(co.variant)[1]
-  ident.2 <- unique(co.variant)[2]
+PlotNeuroestimatorResults <- function(stat.test, co.variant, extra_column, anno, plots.format) {
+  ident.1 <- unique(co.variant$group)[1]
+  ident.2 <- unique(co.variant$group)[2]
   
   if (extra_column != ""){
     for (i in unique(stat.test[,2])[[1]]) {
@@ -97,7 +98,7 @@ PlotNeuroestimatorResults <- function(stat.test, co.variant, extra_column, anno)
       
       p <- p + stat_pvalue_manual(stat.test.filtered, y.position = 1, label = "significance", remove.bracket = T)
       
-      ggSaveAndJPEG(paste0("neuroestimator_boxplot_", ident.1, "_vs_", ident.2, "_", i, ".pdf"), plot = p, width = 8, height = 6)
+      ggSaveAndJPEG(plot = p, paste0("neuroestimator_boxplot_", ident.1, "_vs_", ident.2, "_", i), plots.format, width = 8, height = 8)
     }
   } else {
     p <- co.variant %>% 
@@ -121,6 +122,6 @@ PlotNeuroestimatorResults <- function(stat.test, co.variant, extra_column, anno)
     
     p <- p + stat_pvalue_manual(stat.test, y.position = 1, label = "significance", remove.bracket = T)
     
-    ggSaveAndJPEG(paste0("neuroestimator_boxplot_", ident.1, "_vs_", ident.2, ".pdf"), plot = p, width = 8, height = 6)
+    ggSaveAndJPEG(plot = p, paste0("neuroestimator_boxplot_", ident.1, "_vs_", ident.2), plots.format,width = 8, height = 8)
   }
 }

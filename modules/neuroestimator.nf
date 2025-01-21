@@ -6,7 +6,7 @@ process NEUROESTIMATOR{
     label 'neuroestimator'
         
     publishDir (
-      path: "$params.outdir/data/",
+      path: "$params.outdir/analysis/data/",
       mode: 'copy',
       overwrite: true,
       pattern:'*'
@@ -33,7 +33,7 @@ process NEUROESTIMATORPLOT{
     label 'neuroestimator_plot'
     
     publishDir (
-      path: "$params.outdir/plots/neuroestimator/",
+      path: "$params.outdir/analysis/plots/neuroestimator/",
       mode: 'copy',
       overwrite: true,
       pattern:'*'
@@ -42,6 +42,7 @@ process NEUROESTIMATORPLOT{
     input:
     path integrated_ch
     path neuroestimator_results
+	val plots_format
 
     output:
     path "*.pdf"
@@ -49,6 +50,6 @@ process NEUROESTIMATORPLOT{
     
     script:
     """
-	  ${projectDir}/src/NeuroestimatorPlot.R $integrated_ch $neuroestimator_results
+	  ${projectDir}/src/NeuroestimatorPlot.R $integrated_ch $neuroestimator_results $plots_format
     """
 }

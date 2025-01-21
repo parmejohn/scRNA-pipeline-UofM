@@ -70,7 +70,8 @@ process INITIALIZEFOLDERS {
 process CONVERTSEURAT {
     debug true
     cache 'deep'
-    
+	containerOptions "--bind $params.bind"	    
+
     publishDir (
         path: "$params.outdir/analysis/data/",
         mode: 'copy',
@@ -82,22 +83,12 @@ process CONVERTSEURAT {
     path integrated
     
     output:
-    path "*.rds"
+    path "se_integrated_v3.rds", emit: se_integrated_obj
+	path "se_integrated_v3_counts_matrix.rds", emit: se_integrated_cnts
 
+	script:
     """
-    #!/opt/R/4.3.2/bin/Rscript
-    
-    library(Seurat)
-    library(SeuratObject)
-    
-    se.integrated <- readRDS(se.object)
-    se.integrated[["RNA3"]] <- as(object = se.integrated[["RNA"]], Class = "Assay")
-    se.integrated <- RenameAssays(se.integrated, "RNA", "RNA5")
-    se.integrated <- RenameAssays(se.integrated, "RNA3", "RNA")
-    DefaultAssay(object = se.integrated) <- "RNA"
-    se.integrated[["RNA5"]] <- NULL
-    
-    saveRDS(se.integrated, "se_integrated_v3.rds")
+	 ${projectDir}/src/ConvertSeurat5.R $integrated
     """ 
 }
 
@@ -207,11 +198,13 @@ workflow {
 		atac_ch = "no atac-seq info provided"
 	}
 
-  seurat3_ch = CONVERTSEURAT(identified_ch)
+  CONVERTSEURAT(identified_ch)
+	seurat3_ch = CONVERTSEURAT.out.se_integrated_cnts
+	seurat3_obj_ch = CONVERTSEURAT.out.se_integrated_obj
   
   if (params.run_neuroestimator){
     neuroestimator_ch = NEUROESTIMATOR(seurat3_ch, params.species)
-    NEUROESTIMATORPLOT(seurat3_ch, neuroestimator_ch)
+    NEUROESTIMATORPLOT(seurat3_obj_ch, neuroestimator_ch, params.plot_format)
   } else {
     neuroestimator_ch = "run_neuroestimator false"
   }

@@ -36,4 +36,5 @@ source(paste0(file.path(dirname(dirname(thisFile()))),
 
 # args[1]=neuroestimator results
 # args[2]=sample table
-NeuroestimatorPlot(args[1], args[2])
+# args[3]=plots format
+NeuroestimatorPlot(args[1], args[2], args[3])
