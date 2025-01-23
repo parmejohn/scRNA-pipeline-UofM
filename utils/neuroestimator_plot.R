@@ -14,7 +14,7 @@ NeuroestimatorPlot <- function(se.integrated, neuroestimator.results, plots.form
   if (length(se.integrated@misc[["co.conditions"]]) > 0) {
     metadata_subset <- metadata[, c("group", anno, se.integrated@misc[["co.conditions"]]), drop = FALSE]  # Replace with your column names
   } else {
-    metadata_subset <- metadata[, c("group"), anno, drop = FALSE]  # Replace with your column names
+    metadata_subset <- metadata[, c("group", anno), drop = FALSE]  # Replace with your column names
   }
   metadata_subset <- metadata_subset[rownames(neuroestimator.results), , drop = FALSE]  # Match barcodes
   

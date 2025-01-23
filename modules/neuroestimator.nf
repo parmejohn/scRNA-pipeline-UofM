@@ -45,7 +45,7 @@ process NEUROESTIMATORPLOT{
 	val plots_format
 
     output:
-    path "*.pdf"
+    path "*.pdf", emit: plot
     path "*.jpeg"
     
     script:

@@ -205,8 +205,9 @@ workflow {
   if (params.run_neuroestimator){
     neuroestimator_ch = NEUROESTIMATOR(seurat3_ch, params.species)
     NEUROESTIMATORPLOT(seurat3_obj_ch, neuroestimator_ch, params.plot_format)
+	neuroestimatorplot_ch = NEUROESTIMATORPLOT.out.plot
   } else {
-    neuroestimator_ch = "run_neuroestimator false"
+    neuroestimatorplot_ch = "run_neuroestimator false"
   }
 
     SUMMARYREPORT(
@@ -219,7 +220,7 @@ workflow {
         psupertime_ch,
         cellchat_ch,
         atac_ch,
-        neuroestimator_ch,
+        neuroestimatorplot_ch,
         new_opt_clust
         )
 }
