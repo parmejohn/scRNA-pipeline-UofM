@@ -56,7 +56,8 @@ source(paste0(file.path(dirname(dirname(
   thisFile()
 ))), "/utils/misc.R"))
 
-se.integrated <- IntegrateSamples(se.filtered.singlets.list, args$reduced_dim)
+se.integrated <- IntegrateSamples(se.filtered.singlets.list, 
+                                  args$reduced_dim)
 if (args$coconditions[1] != 'none'){
   Misc(se.integrated, slot = "co.conditions") <- args$coconditions
 }

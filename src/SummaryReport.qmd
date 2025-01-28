@@ -1104,6 +1104,7 @@ for (subfolder in subfolders) {
   }
 }
 ```
+
 ```{r}
 #| results: asis
 #| echo: false
@@ -1118,6 +1119,7 @@ if (dropdown_30_exists) {
   cat(paste('## Neuroestimator'))
 }
 ```
+
 ```{=html}
 <div id="dropdown-30-container" style="`r if (dropdown_30_exists) "display: block;" else "display: none;"`">
   <label for="dropdown-30">Select a Special Plot:</label>
@@ -1134,4 +1136,3 @@ if (dropdown_30_exists) {
   setupDropdown('dropdown-30', 'container-30');
 </script>
 ```
-

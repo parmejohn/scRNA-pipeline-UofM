@@ -226,12 +226,20 @@ saveRDS(se.list, "se_list_raw.rds")
 ##### Basic QC #####
 print("Basic QC")
 se.filtered.list <-
-  lapply(se.list, BasicQC, species = species, atac = args$atac, mito.cutoff = args$mito_cutoff, plots.format = args$plots_format) # removal of low quality cells by percentage of mitochondrial reads, number of genes, and number of UMIs
+  lapply(se.list, 
+         BasicQC, 
+         species = species, 
+         atac = args$atac, 
+         mitoCutoff = args$mito_cutoff, 
+         plotsFormat = args$plots_format
+         ) # removal of low quality cells by percentage of mitochondrial reads, number of genes, and number of UMIs
 saveRDS(se.filtered.list, "se_filtered_list.rds")
 
 ##### Doublet Removal #####
 print("Doublet removal")
-se.filtered.doublets.list <- lapply(se.filtered.list, DoubletQC, atac = args$atac)
+se.filtered.doublets.list <- lapply(se.filtered.list, 
+                                    DoubletQC, 
+                                    atac = args$atac)
 saveRDS(se.filtered.doublets.list, "se_filtered_doublets_list.rds")
 
 se.filtered.singlets.list <- lapply(se.filtered.doublets.list, subset, subset = scDblFinder.class  == "singlet")

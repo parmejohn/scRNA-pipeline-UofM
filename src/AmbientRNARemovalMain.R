@@ -71,4 +71,7 @@ for (i in 1:length(filenames)) {
   }
 }
 
-lapply(list_of_pairs, AmbientRNARemoval, test=args$test_data)
+lapply(list_of_pairs, 
+       AmbientRNARemoval, 
+       downsampleNum=args$test_data
+       )
