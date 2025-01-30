@@ -1,5 +1,10 @@
 ---
 title: "scRNA/Multiome Pipeline Analyses"
+author:   
+  - John Pham   
+  - Deanne Nixie Miao
+  - Dr. Britt Drögemöller
+  - Dr. Galen Wright
 format:
   html:
     toc_float: yes
@@ -8,6 +13,8 @@ format:
     toc-location: left
     self-contained: true
     embed-resources: true
+    code-fold: true
+    code-tools: true
 editor: visual
 toc: true
 date: today
@@ -17,11 +24,12 @@ params:
 
 ```{r}
 #| echo: false
-#res.loc <- "/research/2024_scrnaseq_pipeline/summary_report_ex/"
-res.loc <- params$data
+res.loc <- "/research/2024_scrnaseq_pipeline/summary_report_ex/"
+#res.loc <- params$data
 ```
 
 ```{r}
+#| label: r-libraries
 #| echo: false
 #| output: false
 library(knitr)
@@ -33,6 +41,7 @@ library(Seurat)
 ```
 
 ```{r}
+#| label: r-functions
 #| echo: false
 read_jpegs <- function(path, pattern) {
   jpeg_files <- list.files(path = path, pattern = pattern, full.names = TRUE, recursive = T)
@@ -117,6 +126,8 @@ generate_dropdown <- function(dropdown_id, dropdown_content) {
 ```
 ```{r}
 #| echo: false
+#| label: r-plotlocations-setup
+
 # Define paths and patterns
 ## QC plots
 path_qc <- paste0(res.loc,"/plots/qc/")
@@ -255,11 +266,14 @@ dropdown_30 <- process_jpegs_conditional(path_neuro, pattern_30)
 dropdown_30_exists <- !is.null(dropdown_30)
 ```
 
-# QC
+# Quality Control
 
-The original amount of cells and the amount after QC is shown in the table below. Please view each analyis in the QC section for more info on how they were selected
+Quality control (QC) is the process of evaluating and filtering data to ensure accuracy and reliability for downstream analyses. It involves identifying and removing low-quality nuclei/cells, doublets, and contamination from ambient RNA while addressing technical artifacts like batch effects.
+
+The original amount of cells and the amount after (QC) is shown in the table below. Please view each analysis in the QC section for more info on how they were selected.
 
 ```{r}
+#| label: r-total-cells-table
 #| echo: false
 
 qc.table <- data.frame()
@@ -289,9 +303,81 @@ kable(qc.table, caption = "Total filtered cells from QC metrics")
 
 ## Ambient RNA Correction
 
-Ambient RNA is corrected for using soupX
+Ambient RNA refers to RNA molecules present in the extracellular environment that do not originate from the nuclei/cells being analyzed. This RNA is often introduced during sample preparation, typically from lysed cells or other cellular debris, and can be inadvertently captured during sequencing.
+
+soupX is the tool used in this pipeline to remove the ambient RNA.
+
+```{r}
+#| label: r-ambient-code
+#| echo: true
+#| eval: false
+
+#' Perform ambient RNA correction using soupX over
+#' 
+#' @param matriceList List that contains the filtered and raw matrices from 
+#' Cellranger data
+#' @param downsampleNum Denotes the number to downsample the counts matrix
+#'
+#' @return Folder with the given sample name, with the corrected counts
+#' 
+AmbientRNARemoval <- function(matriceList, 
+                              downsampleNum
+                              ) {
+
+  print(paste("Loading ", matriceList[1], " and ", matriceList[2], sep=''))
+  
+  # check if it is a multiome experiment format
+  filt.matrix <- Read10X_h5(matriceList[1],use.names = T)
+  raw.matrix <- Read10X_h5(matriceList[2],use.names = T)
+  
+  if (!is.list(filt.matrix)){
+    se <- CreateSeuratObject(counts = filt.matrix) # create seurat object
+    
+    print("Providing Soup")
+    soup.channel <- SoupChannel(raw.matrix, filt.matrix)   # soup channel stpres all info related to a single 10X channel
+  } else {
+    se <- CreateSeuratObject(counts = filt.matrix$`Gene Expression`) # create seurat object
+    
+    print("Providing Soup multiome")
+    soup.channel <- SoupChannel(raw.matrix$`Gene Expression`, filt.matrix$`Gene Expression`)   # soup channel stpres all info related to a single 10X channel
+  }
+  
+  # Quickly perform clustering -> not looking for optimal clustering since this is a filtering step
+  # Reports to have better results if some basic clustering is provided, even with basic seurat clustering
+  print("Clustering")
+  se <- SCTransform(se, verbose = F) # replaces NormalizeData, ScaleData, and FindVariableFeatures
+  se <- RunPCA(se, verbose = F) # dimensional reduction
+  se <- RunUMAP(se, dims = 1:30, verbose = F)
+  se <- FindNeighbors(se, dims = 1:30, verbose = F)
+  se <- FindClusters(se, verbose = T)
+  
+  meta  <- se@meta.data
+  umap  <- se@reductions$umap@cell.embeddings
+  soup.channel <- setClusters(soup.channel, setNames(meta$seurat_clusters, rownames(meta)))
+  soup.channel <- setDR(soup.channel, umap) # used for visualizations if wanted; could remove
+  
+  print("Writing")
+  soup.channel  <- autoEstCont(soup.channel, doPlot=FALSE)   # automatically estimates the contamination fraction
+  adj.matrix  <- adjustCounts(soup.channel, roundToInt = T)   # calculate the resulting corrected count matrix with background contamination removed
+  
+  if(downsampleNum != 0){
+    rand =  sample(1:ncol(adj.matrix), downsampleNum)
+    adj.matrix = adj.matrix[, rand]
+  }
+  
+  # should work with cellranger outputs -> just back tracks a set amount of times, so as long as folder struc is correct
+  sample.name <- sub(".*\\/(.*)\\/.*\\/.*", "\\1", matriceList[1])
+  group.name <- sub(".*\\/(.*)\\/.*\\/.*\\/.*", "\\1", matriceList[1])
+  dir.create(paste0("./qc/"))
+  dir.create(paste0("./qc/", group.name))
+  
+  print(paste("Saving under ./qc/", group.name, '/', sample.name, "_soupx",sep=''))
+  DropletUtils:::write10xCounts(paste('./qc/', group.name, '/', sample.name, "_soupx",sep=''), adj.matrix, overwrite = TRUE) # name will be the fo;der before the /outs/ folder
+}
+```
 
 ## Filtering Low Quality Cells
+Low quality nuclei/cells were identified based on their mitochondrial 
 
 ### Percent mitochondrial
 
