@@ -38,6 +38,7 @@ library(data.table)
 library(dplyr)
 library(tidyverse)
 library(Seurat)
+library(glue)
 ```
 
 ```{r}
@@ -135,6 +136,7 @@ pattern_1 <- "\\percent_mt.jpeg$"
 pattern_2 <- "\\UMI.jpeg$"
 pattern_3 <- "\\count_atac.jpeg$"
 pattern_4 <- "\\_tss.jpeg$"
+pattern_4_1 <- "\\_nucleosome_signal.jpeg$"
 
 ## Seurat processing
 path_seurat <- paste0(res.loc,"/plots/")
@@ -198,6 +200,9 @@ dropdown_3_exists <- !is.null(dropdown_3)
 
 dropdown_4 <- process_jpegs_conditional(path_qc, pattern_4)
 dropdown_4_exists <- !is.null(dropdown_4)
+
+dropdown_4_1 <- process_jpegs_conditional(path_qc, pattern_4_1)
+dropdown_4_1_exists <- !is.null(dropdown_4_1)
 
 ## Seurat processing plots
 dropdown_5 <- process_jpegs_conditional(path_seurat, pattern_5)
@@ -377,9 +382,14 @@ AmbientRNARemoval <- function(matriceList,
 ```
 
 ## Filtering Low Quality Cells
-Low quality nuclei/cells were identified based on their mitochondrial 
+
+Low quality nuclei/cells were identified based on their mitochondrial
 
 ### Percent mitochondrial
+
+Filtered by the percentage of mitochondrial reads in the cell. A high amount usually denotes a lysed cell. Also, in single-nuclei experiment, the cutoff is expected to be much lower.
+
+The minimum cutoff is set at 1% and can manually be set using `--mitochondrial_percent_cutoff [INT]`
 
 ```{=html}
 <div>
@@ -397,6 +407,8 @@ Low quality nuclei/cells were identified based on their mitochondrial
 ```
 ### Genes and nUMI
 
+Filtering by the number of genes and number of UMIs. A high amount of either/both signifies a possible multiplet, and a low amount shows lysed or ambient RNA that was caught in a droplet.
+
 ```{=html}
 <div>
   <label for="dropdown-2">Select a Plot:</label>
@@ -413,8 +425,36 @@ Low quality nuclei/cells were identified based on their mitochondrial
 ```
 ### Doublet removal
 
+Doublet identification and removal is important because they can be easily mistaken as singlets, but with just high gene expression. To remove them, we use scDblFinder which uses a clustering method to separate doublets and singlets
+
 ```{r}
-#| label: tbl-doublets
+#| label: r-code-doublets
+#| eval: false
+#| echo: true
+
+#' Identify doublets using scDblFinder
+#' 
+#' @param seuratObj A seurat object  
+#' @param atac Boolean true or false if data is multiomic
+#'
+#' @return Seurat object with metadata denoting singlets or doublets for each cell
+#' 
+DoubletQC <- function(seuratObj, atac){
+  sce <- as.SingleCellExperiment(seuratObj)
+  sce <- scDblFinder(sce, clusters=FALSE) # generates random doublets -> generates a new PCA -> creates a kNN network
+  # training an iterative classifier on the neighborhood of real cells and artificial doublets
+
+  se <- as.Seurat(sce, counts = "counts", data = NULL)
+  
+  if (atac == "yes"){
+    se[["ATAC"]] <- seuratObj[["ATAC"]]
+  }
+  return(se)
+}
+```
+
+```{r}
+#| label: r-tbl-doublets
 #| tbl-cap: "Doublet identification"
 #| tbl-colwidths: [60,40]
 #| echo: false
@@ -443,18 +483,22 @@ kable(doub.table, caption = "Number of Doublets Detected with scDblFinder")
 ```
 
 ```{r}
+#| label: r-check-atacqc
 #| results: asis
 #| echo: false
 if (dropdown_3_exists && dropdown_4_exists) {
-  cat(paste('### scATAC'))
+  cat(glue("
+    ### scATAC
+    
+    There are additional QC steps for multiome experiments, to ensure that the scATAC-seq data is also of high-quality
+  "))
 }
-```
-
-```{r}
-#| results: asis
-#| echo: false
 if (dropdown_3_exists) {
-  cat(paste('#### nCount ATAC'))
+  cat(glue("
+    #### nCount ATAC
+    
+    If there are to few reads, they should be excluded due to low sequencing depth. If there are too many reads, it can represent doublets, nuclei clumps, etc. and should be removed as well
+  "))
 }
 ```
 
@@ -478,7 +522,15 @@ if (dropdown_3_exists) {
 #| results: asis
 #| echo: false
 if (dropdown_4_exists) {
-  cat(paste('#### TSS'))
+  cat(glue("
+  #### Transcriptional start site (TSS) enrichment score
+
+  Based on the ENCODE project's ATAC-seq scores. This is calculated by the 
+  fragment ratio at the center of the TSS compared to the flanking regions.
+
+  Higher enrichment scores are expected to be around the TSS, and a good 
+  experiment is expected to have a high score overall.
+  "))
 }
 ```
 
@@ -498,33 +550,75 @@ if (dropdown_4_exists) {
     setupDropdown('dropdown-4', 'container-4');
 </script>
 ```
+```{r}
+#| results: asis
+#| echo: false
+if (dropdown_4_1_exists) {
+  cat(glue("
+  #### Nucleosome signal
+  
+  Filters the ratio of mono-nucleosomal to nucleosome-free fragments, also known as a signal-to-noise ratio. Expect to see general decrease in peaks.
+  "))
+}
+```
+
+```{=html}
+<div id="dropdown-4_1-container" style="`r if (dropdown_4_1_exists) "display: block;" else "display: none;"`">
+  <label for="dropdown-4_1">Select a Special Plot:</label>
+  <select id="dropdown-4_1">
+    `r if (dropdown_4_1_exists) dropdown_4_1$select_html else ""`
+  </select>
+</div>
+
+<div id="container-4_1" style="`r if (dropdown_4_1_exists) "display: block;" else "display: none;"`">
+  `r if (dropdown_4_1_exists) dropdown_4_1$divs_html else ""`
+</div>
+
+<script>
+    setupDropdown('dropdown-4_1', 'container-4_1');
+</script>
+```
 # Seurat processing
 
 ## Integration
 
+The UMAPs below are unlabeled but should be checked for proper integration or by your expectations.
+
+Is it strictly clustered by condition? Are the cells clustered by sample?
+
 ```{r}
+#| echo: false
 knitr::include_graphics(paste0(path_seurat, "integrated_umap_unlabelled.jpeg"))
 ```
 
 ```{r}
+#| echo: false
 knitr::include_graphics(paste0(path_seurat, "integrated_umap_grouped.jpeg"))
 ```
 
 ```{r}
+#| echo: false
 knitr::include_graphics(paste0(path_seurat, "integrated_umap_split.jpeg"))
 ```
 
 ```{r}
+#| echo: false
 knitr::include_graphics(paste0(path_seurat, "percent_cells_group_unlabelled.jpeg"))
 ```
 
 ### Identifying cell markers
 
+Top 3 differentially expressed genes (DEGs) from each cluster from the FindAllMarkers call in seurat. The wilcox rank sum test implementation from presto is used. Please visit the seurat documentation for more information.
+
 ```{r}
+#| echo: false
 knitr::include_graphics(paste0(path_seurat, "top3_markers_expr_heatmap.jpeg"))
 ```
 
+Conserved markers between your main condition that is being test.
+
 ```{r}
+#| echo: false
 knitr::include_graphics(paste0(path_seurat, "conserved_marker_unlabelled.jpeg"))
 ```
 
@@ -532,7 +626,11 @@ knitr::include_graphics(paste0(path_seurat, "conserved_marker_unlabelled.jpeg"))
 #| results: asis
 #| echo: false
 if (file.exists(paste0(path_seurat,"reference_marker_mapping_heatmap.jpeg"))) {
-  cat(paste('### Automatic cell-labelling'))
+  cat(glue("
+  ### Automatic cell-labelling
+  
+  If you provided a reference seurat object via `--reference_seurat` (.rds), the unlabeled clusters will be labeled accordingly with the TransferData function in Seurat. Please ensure that your seurat object's active.ident is set to the desired celltype metadata.
+  "))
 }
 ```
 
@@ -544,19 +642,24 @@ if(file.exists(paste0(path_seurat,"reference_marker_mapping_heatmap.jpeg"))) {
 }
 ```
 
+This heatmap shows the prediction scores that was found using the FindTransferAnchors function in Seurat, displaying which of your unlabeled clusters have the highest similarity to the reference.
+
 ```{r}
+#| echo: false
 if(file.exists(paste0(path_seurat,"reference_marker_mapping_heatmap.jpeg"))) {
   knitr::include_graphics(paste0(path_seurat, "reference_marker_mapping_heatmap.jpeg"))
 }
 ```
 
 ```{r}
+#| echo: false
 if(file.exists(paste0(path_seurat,"integrated_umap_labelled.jpeg"))) {
   knitr::include_graphics(paste0(path_seurat, "integrated_umap_labelled.jpeg"))
 }
 ```
 
 ```{r}
+#| echo: false
 if(file.exists(paste0(path_seurat,"percent_cells_group_labelled.jpeg"))) {
   knitr::include_graphics(paste0(path_seurat, "percent_cells_group_labelled.jpeg"))
 }
