@@ -111,6 +111,9 @@ AtacAnalyses <- function(se.integrated.atac, species, plots.format){
           closest_gene_plots <- paste0(plots.dir, "closest_gene_plots/")
           dir.create(closest_gene_plots)
           
+          motif_data <- paste0(data.dir, "motif_data/")
+          dir.create(motif_data)
+          
           motif_plots <- paste0(plots.dir, "motif_plots/")
           dir.create(motif_plots)
           
@@ -151,7 +154,12 @@ AtacAnalyses <- function(se.integrated.atac, species, plots.format){
             colnames(all.closest)[7] <- "gene"
             all.closest <- merge(all.closest, da.peaks.all, by = "gene")
             
-            p1 <- GseaAtac(all.closest, fgsea.sets, cluster.name = cluster.name, ident.1 = target[1], ident.2 = target[2], plots.dir = closest_gene_plots)
+            p1 <- GseaAtac(all.closest, 
+                           fgsea.sets, 
+                           cluster.name = cluster.name, 
+                           ident.1 = target[1], 
+                           ident.2 = target[2], 
+                           plots.dir = closest_gene_plots)
             ggSaveAndJPEG(p1, paste0(plots.dir, "scatac_closest_genes_dap_gsea_", "cluster_", cluster.name), plots.format, width = 8, height = 8)
             print("gsea")
             
@@ -179,7 +187,8 @@ AtacAnalyses <- function(se.integrated.atac, species, plots.format){
                                                        group = target[1], 
                                                        cluster.name = cluster.name,
                                                        plots.dir = motif_plots,
-                                                       plots.format = plots.format
+                                                       plots.format = plots.format,
+                                                       data.dir = motif_data
                                                        )
             enriched.motifs.down <- find_enriched_motifs(se.integrated.atac.filt = se.integrated.atac.filt, 
                                                          da.peaks.all = da.peaks.all,
@@ -188,7 +197,8 @@ AtacAnalyses <- function(se.integrated.atac, species, plots.format){
                                                          group = target[2], 
                                                          cluster.name = cluster.name,
                                                          plots.dir = motif_plots,
-                                                         plots.format = plots.format
+                                                         plots.format = plots.format,
+                                                         data.dir = motif_data
                                                          )
             print("motifs")
             
@@ -315,8 +325,7 @@ FindTopDAPGenes <- function(da.peaks.all,
   }
   if (nrow(da.peaks.top) > 0) {
     closest.gene.dap <- ClosestFeature(se.integrated.atac, regions = da.peaks.top$gene)
-    print(closest.gene.dap)
-    print("filter genes")
+
     for (v in 1:nrow(closest.gene.dap)){
       if(!(closest.gene.dap$gene_name[v] %in% rownames(se.integrated.atac@assays[["RNA"]]@features) & 
            closest.gene.dap$gene_name[v] %in% Annotation(se.integrated.atac)$gene_name)){
@@ -431,7 +440,7 @@ CoveragePlotDAP <- function(se.integrated.atac, closest.gene.dap, cluster.name, 
   }
 }
 
-find_enriched_motifs <- function(se.integrated.atac.filt, da.peaks.all, p_val_adj_cutoff = 0.05, cutoff = 0.2, pos, group, cluster.name, plots.dir, plots.format){
+find_enriched_motifs <- function(se.integrated.atac.filt, da.peaks.all, p_val_adj_cutoff = 0.05, cutoff = 0.2, pos, group, cluster.name, plots.dir, plots.format, data.dir){
   if (pos){
     da.peaks.sub <- subset(da.peaks.all, p_val_adj < p_val_adj_cutoff & 
                              pct.1 > cutoff & 
@@ -459,6 +468,7 @@ find_enriched_motifs <- function(se.integrated.atac.filt, da.peaks.all, p_val_ad
       object = se.integrated.atac.filt,
       motifs = head(rownames(enriched.motifs.sub), 6)
     )
+    write.table(data.dir, paste0("scatac_motif_", "cluster_", cluster.name, "_", group, ".txt"), row.names = F, quote = F)
     ggsave(paste0(plots.dir, "scatac_motif_", "cluster_", cluster.name, "_", group, ".", plots.format), plot = p, width = 8, height = 8)
     ggsave(paste0(plots.dir, "scatac_motif_", "cluster_", cluster.name, "_", group, ".jpeg"), plot = p, width = 8, height = 8)
   } else {

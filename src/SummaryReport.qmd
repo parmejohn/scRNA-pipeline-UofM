@@ -13,7 +13,6 @@ format:
     toc-location: left
     self-contained: true
     embed-resources: true
-    code-fold: true
     code-tools: true
 editor: visual
 toc: true
@@ -316,6 +315,7 @@ soupX is the tool used in this pipeline to remove the ambient RNA.
 #| label: r-ambient-code
 #| echo: true
 #| eval: false
+#| code-fold: true
 
 #' Perform ambient RNA correction using soupX over
 #' 
@@ -431,6 +431,7 @@ Doublet identification and removal is important because they can be easily mista
 #| label: r-code-doublets
 #| eval: false
 #| echo: true
+#| code-fold: true
 
 #' Identify doublets using scDblFinder
 #' 
@@ -582,8 +583,9 @@ if (dropdown_4_1_exists) {
 
 ## Integration
 
-The UMAPs below are unlabeled but should be checked for proper integration or by your expectations.
+The data undergoes typical seurat processing, following this [workflow](https://satijalab.org/seurat/articles/pbmc3k_tutorial). This involves normalization, identifying highly variable features, and scaling the data. Afterwards, linear dimensional reduction is performed (RunPCA), the data is clustered (FindClusters), and visualized using a UMAP (RunUMAP).
 
+The UMAPs below are unlabeled but should be checked for proper integration or by your expectations.
 Is it strictly clustered by condition? Are the cells clustered by sample?
 
 ```{r}
@@ -605,6 +607,8 @@ knitr::include_graphics(paste0(path_seurat, "integrated_umap_split.jpeg"))
 #| echo: false
 knitr::include_graphics(paste0(path_seurat, "percent_cells_group_unlabelled.jpeg"))
 ```
+
+The number of clusters can vary depending on the resolution parameter set during analysis (default value is 1). Further, clusters can be further sub-clustered to determine if cells within a cluster can be classified into more specific sub-populations.
 
 ### Identifying cell markers
 
@@ -642,7 +646,7 @@ if(file.exists(paste0(path_seurat,"reference_marker_mapping_heatmap.jpeg"))) {
 }
 ```
 
-This heatmap shows the prediction scores that was found using the FindTransferAnchors function in Seurat, displaying which of your unlabeled clusters have the highest similarity to the reference.
+This heatmap shows the prediction scores that was found using the FindTransferAnchors function in Seurat, displaying which of your unlabeled clusters have the highest similarity to the reference that you provided.
 
 ```{r}
 #| echo: false
@@ -671,7 +675,10 @@ if(file.exists(paste0(path_seurat,"percent_cells_group_labelled.jpeg"))) {
 
 ### Differential gene expression analysis
 
-Need to replace with pretty volcano package
+Tool(s): DESeq2
+Todo: Need to use pretty volcano plots package instead like the one used in the bulk pipeline
+
+Differential gene expression analysis identifies genes that are expressed differently between experimental conditions. The volcano plots below show genes that are upregulated (red), downregulated (blue), or that are non-significant (gray). Remember that these statements are always relative to the conditions listed.
 
 ```{=html}
 <div>
@@ -687,9 +694,12 @@ Need to replace with pretty volcano package
 
 <script>setupDropdown('dropdown-13', 'container-13');</script>
 ```
-### Gene-set enrichment analysis
+### Gene-set enrichment analysis (GSEA)
 
-Need to fix
+Tool(s): fgsea
+Todo:Need to fix titles and sizing issues
+
+GSEA involves identifying biological pathways or functional gene sets. The approach taken here uses a ranked-list, so we take all DESeq2 results above (including the non-significant) sort it by the log2FC values. 
 
 ```{=html}
 <div>
@@ -706,25 +716,49 @@ Need to fix
 <script>setupDropdown('dropdown-14', 'container-14');</script>
 ```
 ```{r}
+#| label: r-scatac-descriptions
 #| results: asis
 #| echo: false
 path_scatac <- paste0(res.loc, "/plots/dap_plots/")
 
 if (dir.exists(path_scatac)) {
-  cat(paste('## scATAC analyses'))
+  cat(glue("
+  ## scATAC analyses
+  
+  There are several scATAC analyses that are referenced from [Signac](https://stuartlab.org/signac/). Below is a description of each plot.
+  
+  <ins>Differentially accessible peaks (DAPs) volcano plot:</ins>
+  Similar to finding differentially expressed genes; uses the Wilcoxon rank sum test.
+  
+  In the next plots that state the closest genes, this is determined by taking the top 5 up- or down-regulated DAPs from the volcano plot and finding the closest genes to these them. 
+  
+  <ins>Closest genes to the DAPs, gene expression:</ins>
+  Displays the normalized gene expression distribution.
+  
+  <ins>Closest genes to the DAPs, gene-set enrichment analysis:</ins>
+  Again, similar to the GSEA done on the differentially expressed genes, will take all the genes and rank them by their logFC values.
+  
+  <ins>Closest genes to the DAPs, coverage:</ins>
+  Displays the signal, expression, peaks, and peak linkages in a genome browser like view.
+  
+  <ins>Overrepresented Motifs:</ins>
+  Signac can identify overrepresented motifs by filtering for significant DAPs (adjusted p-value < 0.05) and for each given condition (based off logFC and percentage expressed). Only the top 6 are plotted, and the full list can be found in the data directory.
+  
+  "))
 }
 ```
 
 ```{r}
+#| label: r-scatac-plots
 #| echo: false
 
 # Patterns
 patterns <- list(
-  closest_genes_coverage = "^scatac_closest_genes_dap_coverage.*\\.jpeg$",
+  scatac_volcano = "^scatac_volcano.*\\.jpeg$",
   closest_genes_gex = "^scatac_closest_genes_dap_gex.*\\.jpeg$",
   closest_genes_gsea = "^scatac_closest_genes_dap_gsea.*\\.jpeg$",
-  scatac_motif = "^scatac_motif.*\\.jpeg$",
-  scatac_volcano = "^scatac_volcano.*\\.jpeg$"
+  closest_genes_coverage = "^scatac_closest_genes_dap_coverage.*\\.jpeg$",
+  scatac_motif = "^scatac_motif.*\\.jpeg$"
 )
 
 # Function to encode image as Base64
@@ -895,7 +929,15 @@ cat(quarto_content)
 #| results: asis
 #| echo: false
 if (dropdown_15_exists) {
-  cat(paste('## Single-cell GSEA'))
+  cat(glue('
+  ## Single-cell GSEA
+  Rather than using a pseudobulk method, escape can be used to leverage the heterigeneity of the single-cell data to perform GSEA. [UCell](https://pubmed.ncbi.nlm.nih.gov/34285779/) was used which uses a Mann-Whitney U statistic on a gene rank list. This will result in each cell getting an enrichment score for each pathway, which is why the pipeline will take much longer when this option is run.
+  
+  Right now the plots do not have associated statistics, but more can be found on their [vignette](https://www.borch.dev/uploads/screpertoire/articles/running_escape)
+  
+  ### Heatmap summary
+  If the `--pathway` option was not used, it will default to choosing the top 5 pathways average normalized enrichment score, else it will show a heatmap for each of your associated pathway patterns.
+  '))
 }
 ```
 
@@ -915,6 +957,18 @@ if (dropdown_15_exists) {
   setupDropdown('dropdown-15', 'container-15');
 </script>
 ```
+
+```{r}
+#| results: asis
+#| echo: false
+if (dropdown_16_exists) {
+  cat(glue('
+  ### Geyser plots
+  
+  Displays the single-cell resolution of the specific pathways. The dot shows the median enrichment value, thick lines is the 66% interval summary, and the thinnest is the 95% interval summary. 
+  '))
+}
+```
 ```{=html}
 <div id="dropdown-16-container" style="`r if (dropdown_16_exists) "display: block;" else "display: none;"`">
   <label for="dropdown-16">Select a Special Plot:</label>
@@ -931,11 +985,15 @@ if (dropdown_15_exists) {
   setupDropdown('dropdown-16', 'container-16');
 </script>
 ```
+
 ```{r}
 #| results: asis
 #| echo: false
 if (dropdown_19_exists || dropdown_23_exists) {
-  cat(paste('## Trajectory inference'))
+  cat(glue('
+  ## Trajectory inference
+  Assigns prediction to how cells may undergo maturation/differentiation/cellular dynamics based on their gene expression similarity
+  '))
 }
 ```
 
@@ -943,7 +1001,15 @@ if (dropdown_19_exists || dropdown_23_exists) {
 #| results: asis
 #| echo: false
 if (dropdown_19_exists) {
-  cat(paste('### slingshot'))
+
+  cat(glue('
+  ### slingshot
+  Uses a minimum spanning tree (MST) on a given UMAP to form the initial cluster connections.
+  
+  Depending on whether there is a starting celltype specified (--beginning_cluster NAME), it will run in 2 different ways
+  - No start: No pseudotimes are calculated, since the direction is unknown
+  - Start: The MST will be smoothed using principal curves and then each cell will have a pseudotime calculated based on their orthogonal distance from the curve
+  '))
 }
 ```
 
@@ -957,6 +1023,7 @@ if (file.exists(paste0(path_slingshot,"ti_no_start_not_smooth.jpeg"))) {
 }
 ```
 
+Trajectory inference of differentially expressed genes between the given condition. Rows are genes, columns are cells, and the columns can also be split by each predicted lineage. |Log2FC| >= 2 and padj < 0.05 
 ```{r}
 #| results: asis
 #| echo: false
@@ -964,6 +1031,8 @@ if(file.exists(paste0(path_slingshot,"ti_deg_between_group.jpeg"))) {
   knitr::include_graphics(paste0(path_slingshot, "ti_deg_between_group.jpeg"))
 }
 ```
+
+Differentially expressed genes for across pseudotime values calculated by slingshot. Only the 50 genes are listed max in the heatmap. |Log2FC| >= 2 and padj < 0.05
 
 ```{=html}
 <div id="dropdown-19-container" style="`r if (dropdown_19_exists) "display: block;" else "display: none;"`">
@@ -985,10 +1054,14 @@ if(file.exists(paste0(path_slingshot,"ti_deg_between_group.jpeg"))) {
 #| results: asis
 #| echo: false
 if (dropdown_23_exists) {
-  cat(paste('### psupertime'))
+  cat(glue('
+  ### psupertime
+  Identifies ordering coefficients for each genes, where the value is equal to the contribution the gene has to cell ordering (based on their sequential expression). This coefficient is multipled with the gene expression matrix to get the pseudotime values for each cell. It requires to have a time condition/variable via `--main_time true` or `--co_conditions time`
+  '))
 }
 ```
 
+Showing distribution of psupertimes for a given cluster label for each timepoint. T-test performed for significance test
 ```{=html}
 <div id="dropdown-23-container" style="`r if (dropdown_23_exists) "display: block;" else "display: none;"`">
   <label for="dropdown-23">Select a Special Plot:</label>
@@ -1009,10 +1082,14 @@ if (dropdown_23_exists) {
 #| results: asis
 #| echo: false
 if (dropdown_26_exists) {
-  cat(paste('## Differential Abundance'))
+  cat(glue('
+  ## Differential Abundance
+  Detects changes in compositions between multicondition scRNA-seq datasets.
+  '))
 }
 ```
 
+Uncorrected P-value distribution, should have a right skew (anti-conservative) distribution
 ```{=html}
 <div id="dropdown-24-container" style="`r if (dropdown_24_exists) "display: block;" else "display: none;"`">
   <label for="dropdown-24">Select a Special Plot:</label>
@@ -1029,6 +1106,8 @@ if (dropdown_26_exists) {
   setupDropdown('dropdown-24', 'container-24');
 </script>
 ```
+
+Visualizes the the SpatialFDR values to quickly see if any neighbourhoods make the cutoff
 ```{=html}
 <div id="dropdown-25-container" style="`r if (dropdown_25_exists) "display: block;" else "display: none;"`">
   <label for="dropdown-25">Select a Special Plot:</label>
@@ -1045,6 +1124,8 @@ if (dropdown_26_exists) {
   setupDropdown('dropdown-25', 'container-25');
 </script>
 ```
+
+Single-cell clustered UMAP from Seurat, where each point is now gathered into neighbourhoods, edges show shared cells between neighrbourhoods, and colour is the logFC value from testNhoods
 ```{=html}
 <div id="dropdown-26-container" style="`r if (dropdown_26_exists) "display: block;" else "display: none;"`">
   <label for="dropdown-26">Select a Special Plot:</label>
@@ -1061,6 +1142,8 @@ if (dropdown_26_exists) {
   setupDropdown('dropdown-26', 'container-26');
 </script>
 ```
+
+Beeswarm plot showing fold-change distribution 
 ```{=html}
 <div id="dropdown-27-container" style="`r if (dropdown_27_exists) "display: block;" else "display: none;"`">
   <label for="dropdown-27">Select a Special Plot:</label>
@@ -1077,6 +1160,8 @@ if (dropdown_26_exists) {
   setupDropdown('dropdown-27', 'container-27');
 </script>
 ```
+
+Differentially expressed genes that meet a differential abundance cutoff between conditions; logFC used to determine if a gene is differentially expressed is from using da_CLUSTER_markers_avg_logfc_GROUPING 'avg_logFC' value
 ```{=html}
 <div id="dropdown-28-container" style="`r if (dropdown_28_exists) "display: block;" else "display: none;"`">
   <label for="dropdown-28">Select a Special Plot:</label>
@@ -1093,6 +1178,8 @@ if (dropdown_26_exists) {
   setupDropdown('dropdown-28', 'container-28');
 </script>
 ```
+
+GSEA results that uses the da_CLUSTER_markers_avg_logfc_GROUPING 'avg_logFC' values as a ranked list.
 ```{=html}
 <div id="dropdown-29-container" style="`r if (dropdown_29_exists) "display: block;" else "display: none;"`">
   <label for="dropdown-29">Select a Special Plot:</label>
@@ -1109,13 +1196,35 @@ if (dropdown_26_exists) {
   setupDropdown('dropdown-29', 'container-29');
 </script>
 ```
+
 ```{r}
 #| results: asis
 #| echo: false
 path_cellchat <- paste0(res.loc, "/plots/cellchat_plots/")
 
 if (dir.exists(path_cellchat)) {
-  cat(paste('## Cell-cell communication'))
+  cat(glue('
+  ## Cellchat
+  CellChat identifies and quantifies interatctions between cells based on the expression of ligands and their corresponding receptors
+  
+  Finding over-expressed ligand-receptor pairs and pathways using a communication probability
+  - https://htmlpreview.github.io/?https://github.com/jinworks/CellChat/blob/master/tutorial/CellChat-vignette.html
+  - Communication probability is built off gene expression, the ligand-receptor interactions from the curated CellChat database, and law of mass action
+    - Genes are chosen if they are overexpressed ligands and/or receptors
+  - Significant cell-cell communication is calculated by performing a permutation test on the communication probability
+  
+  ### Plot descriptions
+  - <ins>interaction_summary_bar:</ins> Compares total number of interactions and strength of the cell-cell communication networks
+  - <ins>differential_interaction_circle:</ins> Red colored edges show increased signaling in the second dataset (Sorted it lexicographical order). Size of the edge represents the differential number of interactions/strength
+  - <ins>differential_interaction_heatmap:</ins> Red show increased signaling in the second dataset (Sorted it lexicographical order). Top bar plot = Incoming signal for the given cell group; Right bar plot = Outgoing signal for the given cell group
+  - <ins>num_interactions_circle:</ins> Shows the number of interactions between the different cell groups
+  - <ins>population_send_receive:</ins> Identifying cell populations with significant changes in sending/receiving signals
+  - <ins>compare_all_signal_heatmap:</ins> Aggregated heatmap of outgoing and incoming signals
+  - <ins>information_flow_compare:</ins> Information flow = sum of the communication probability amoung all pairs of cell groups in the pathway, or known as total weight of the network. Highlighted pathways display the significant pathways according to a paired Wilcoxon test.
+    - <ins>expression:</ins> Shows the different expression of genes involved in the given pathway, if found in the dataset
+    - <ins>signal_path:</ins> Shows which cells are involved in the given PATHWAY. The inner thinner bars reprsent the target cell that receive the signal, and the size is proportional to the signal strength received
+  - <ins>commun_prob_expression:</ins> Comparing communication probabilities from different ligand-receptor pairs. Each column is cell-cell specific, and the different colors represent the condition. If the title of the plot does not show "Unfiltered" that means the communication probability difference between two cell-cell for the two different conditions is ~50%
+  '))
 }
 ```
 
@@ -1186,6 +1295,7 @@ for (subfolder in subfolders) {
         
         # Generate dropdown HTML and container with images
         dropdown_html <- paste0(
+          "#### ", pattern_name, "\n\n",
           "<div>\n",
           "  <label for='dropdown-", folder_name, "_", pattern_name, "'>Select a Plot:</label>\n",
           "  <select id='dropdown-", folder_name, "_", pattern_name, "'>\n",
@@ -1225,6 +1335,7 @@ for (subfolder in subfolders) {
         
         # Generate dropdown HTML and container with images
         dropdown_html <- paste0(
+          "#### ", pattern_name, "\n\n",
           "<div>\n",
           "  <label for='dropdown-", folder_name, "_", pattern_name, "'>Select a Plot:</label>\n",
           "  <select id='dropdown-", folder_name, "_", pattern_name, "'>\n",
@@ -1264,6 +1375,7 @@ for (subfolder in subfolders) {
         
         # Generate dropdown HTML and container with images
         dropdown_html <- paste0(
+          "#### ", pattern_name, "\n\n",
           "<div>\n",
           "  <label for='dropdown-", folder_name, "_", pattern_name, "'>Select a Plot:</label>\n",
           "  <select id='dropdown-", folder_name, "_", pattern_name, "'>\n",
@@ -1305,7 +1417,10 @@ cat(quarto_content)
 #| results: asis
 #| echo: false
 if (dropdown_30_exists) {
-  cat(paste('## Neuroestimator'))
+  cat(glue('
+  ## Neuroestimator
+  Predicts a neural activty score using an autoencoder (neural network) based off 22 well-established neuronal activity markers. Kolmogorov–Smirnov (KS) test was used to compare distributions. 
+  '))
 }
 ```
 
