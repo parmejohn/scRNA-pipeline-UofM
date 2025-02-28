@@ -23,8 +23,8 @@ params:
 
 ```{r}
 #| echo: false
-res.loc <- "/research/2024_scrnaseq_pipeline/summary_report_ex/"
-#res.loc <- params$data
+#res.loc <- "/research/2024_scrnaseq_pipeline/summary_report_ex/"
+res.loc <- params$data
 ```
 
 ```{r}
