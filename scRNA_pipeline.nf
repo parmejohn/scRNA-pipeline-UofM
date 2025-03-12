@@ -142,14 +142,16 @@ workflow {
   if (m && params.run_trajectory_inference){
     //TEMPORAANALYSIS(identified_ch, "no",  params.species, params.plot_format)
     //tempora_ch = TEMPORAANALYSIS.out.report
-    
+	tempora_ch = "SKIPPING TEMPORA, no time condition set, or --params.run_trajectory_inference false"    
+
     PSUPERTIME(identified_ch, "no", params.plot_format)
     psupertime_ch = PSUPERTIME.out.report
     
   } else if (params.main_time && params.run_trajectory_inference) {
     //TEMPORAANALYSIS(identified_ch, "yes", params.species, params.plot_format)
     //tempora_ch = TEMPORAANALYSIS.out.report
-    
+	tempora_ch = "SKIPPING TEMPORA, no time condition set, or --params.run_trajectory_inference false"    
+
     PSUPERTIME(identified_ch, "yes", params.plot_format)
     psupertime_ch = PSUPERTIME.out.report
     
