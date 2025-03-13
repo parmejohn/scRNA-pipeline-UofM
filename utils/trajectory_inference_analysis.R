@@ -14,7 +14,7 @@ TrajectoryInferenceSlingshot <- function(se.integrated, start.clus=NULL, plots.f
     UmapLineagePredictionNotSmooth(clustering, pal, dim.red)
     graphics.off()
     jpeg('ti_no_start_not_smooth.jpeg', width = 8, height = 6)
-    #UmapLineagePredictionNotSmooth(clustering)
+    UmapLineagePredictionNotSmooth(clustering, pal, dim.red)
     graphics.off()
 
   } else {
