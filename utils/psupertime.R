@@ -30,6 +30,13 @@ RunPsuper <- function(se.integrated, main_time, plots.format){
   
         gene.comparison <- as.vector(levels(p4[["data"]][["symbol"]]))
         write.table(gene.comparison, paste0(data.dir, "psuper_top_20_genes_", j, ".txt"), quote = FALSE,row.names = F, sep = "\t", col.names = F)
+        
+        ggSaveAndJPEG(p4,
+                      paste0(tar.dir, "psuper_top_20_genes_over_pseudotime_", j),
+                      plots.format,
+                      width = 8,
+                      height = 6
+        )
       }
       
       ggSaveAndJPEG(p1,
@@ -50,12 +57,7 @@ RunPsuper <- function(se.integrated, main_time, plots.format){
                    width = 8,
                    height = 6
                    )
-      ggSaveAndJPEG(p4,
-                   paste0(tar.dir, "psuper_top_20_genes_over_pseudotime_", j),
-                   plots.format,
-                   width = 8,
-                   height = 6
-                   )
+
     }
   } else {
     if(length(unique(se.integrated@meta.data[["group"]])) >= 2){
