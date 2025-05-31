@@ -196,23 +196,50 @@ BasicQC <- function(seuratObj,
     
     # TSS score graph
     seuratObj$high.tss <- ifelse(seuratObj$TSS.enrichment > min.TSS.thr, 'High', 'Low')
-    p3 <- TSSPlot(seuratObj, group.by = 'high.tss') + NoLegend() +
-      ggtitle(paste0(seuratObj@misc[[1]], " QC: \nTranscriptional start site (TSS) enrichment score")) +
-      labs(tag = paste0(as.numeric(table(Cell.QC.Stat$TSS.enrichment < min.TSS.thr)[2])," cells removed\n",
-                        as.numeric(table(Cell.QC.Stat$TSS.enrichment < min.TSS.thr)[1])," cells remain")) +
-      theme(plot.tag.position = c(0, 0))
+	unique_tss <- unique(seuratObj$high.tss) 	
+   
+    if (length(unique_tss) == 1) {
+  # If all High or all Low, plot without group.by and add label for that status
+  p3 <- TSSPlot(seuratObj) + NoLegend() +
+    ggtitle(paste0(seuratObj@misc[[1]], " QC: \nTranscriptional start site (TSS) enrichment score")) +
+    labs(tag = paste0("All cells have TSS status: ", unique_tss)) +
+    theme(plot.tag.position = c(0, 0))
+} else {
+  # If both High and Low present, plot with group.by and normal labels
+  p3 <- TSSPlot(seuratObj, group.by = 'high.tss') + NoLegend() +
+    ggtitle(paste0(seuratObj@misc[[1]], " QC: \nTranscriptional start site (TSS) enrichment score")) +
+    labs(tag = paste0(as.numeric(table(Cell.QC.Stat$TSS.enrichment < min.TSS.thr)[2]), " cells removed\n",
+                       as.numeric(table(Cell.QC.Stat$TSS.enrichment < min.TSS.thr)[1]), " cells remain")) +
+    theme(plot.tag.position = c(0, 0))
+}
     ggsave(paste0(seuratObj@misc[[1]], "_tss.", plotsFormat), plot=p3)
     ggsave(paste0(seuratObj@misc[[1]], "_tss.jpeg"), plot=p3)
     
     # Nucleosome signal graph
-    seuratObj$nucleosome_group <- ifelse(seuratObj$nucleosome_signal > max.nuc.thr, 
-                                    paste0('NS >', max.nuc.thr), 
-                                    paste0('NS <', max.nuc.thr))
-    p4 <- FragmentHistogram(object = seuratObj, group.by = 'nucleosome_group') + 
-      ggtitle(paste0(seuratObj@misc[[1]], " QC: \nNucleosome banding pattern")) +
-      labs(tag = paste0(as.numeric(table(Cell.QC.Stat$nucleosome_signal > max.nuc.thr)[2])," cells removed\n",
-                        as.numeric(table(Cell.QC.Stat$nucleosome_signal > max.nuc.thr)[1])," cells remain")) +  
-      theme(plot.tag.position = c(0, 0))
+	# Create the nucleosome_group column
+seuratObj$nucleosome_group <- ifelse(seuratObj$nucleosome_signal > max.nuc.thr,
+                                     paste0('NS >', max.nuc.thr),
+                                     paste0('NS <', max.nuc.thr))
+
+# Identify the unique value if there’s only one
+unique_nuc_group <- unique(seuratObj$nucleosome_group)
+
+# Check if there’s only one unique group
+if (length(unique_nuc_group) == 1) {
+  # If all NS above or below the threshold, plot without group.by and add label
+  p4 <- FragmentHistogram(object = seuratObj) +
+    ggtitle(paste0(seuratObj@misc[[1]], " QC: \nNucleosome banding pattern")) +
+    labs(tag = paste0("All cells have nucleosome group: ", unique_nuc_group)) +
+    theme(plot.tag.position = c(0, 0))
+} else {
+  # If both groups are present, plot with group.by and normal labels
+  p4 <- FragmentHistogram(object = seuratObj, group.by = 'nucleosome_group') +
+    ggtitle(paste0(seuratObj@misc[[1]], " QC: \nNucleosome banding pattern")) +
+    labs(tag = paste0(as.numeric(table(Cell.QC.Stat$nucleosome_signal > max.nuc.thr)[2]), " cells removed\n",
+                       as.numeric(table(Cell.QC.Stat$nucleosome_signal > max.nuc.thr)[1]), " cells remain")) +
+    theme(plot.tag.position = c(0, 0))
+}
+
     ggsave(paste0(seuratObj@misc[[1]], "_nucleosome_signal.", plotsFormat), plot=p4)
     ggsave(paste0(seuratObj@misc[[1]], "_nucleosome_signal.jpeg"), plot=p4)
     
