@@ -1,0 +1,139 @@
+# Start with CentOS 8 base image
+FROM centos:centos8
+
+# Update the repository to use the vault
+RUN sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-* && \
+    sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*
+
+# Install necessary packages and locale settings
+RUN yum install -y epel-release && \
+    yum install -y dnf-plugins-core && \
+    yum config-manager --set-enabled powertools && \
+    yum install -y \
+        python3 \
+        fftw-devel \
+        cairo-devel \
+        libaec-devel \
+        hdf5-devel \
+        cmake \
+        openssl \
+        openssl-devel \
+        libxml2-devel \
+        fontconfig-devel \
+        harfbuzz-devel \
+        fribidi-devel \
+        freetype-devel \
+        libpng-devel \
+        libtiff-devel \
+        libjpeg-devel \
+        glpk \
+        glpk-devel \
+        pandoc \
+        poppler-cpp-devel \
+        ImageMagick-c++-devel \
+        glibc-locale-source \
+        glibc-langpack-en && \
+    curl -O https://cdn.rstudio.com/r/centos-8/pkgs/R-4.3.2-1-1.x86_64.rpm && \
+    yum -y install R-4.3.2-1-1.x86_64.rpm && \
+    ln -s /opt/R/4.3.2/bin/R /usr/local/bin/R && \
+    ln -s /opt/R/4.3.2/bin/Rscript /usr/local/bin/Rscript && \
+    localedef -i en_US -f UTF-8 en_US.UTF-8
+
+# Set locale environment variables
+ENV LANG=en_US.UTF-8 \
+    LANGUAGE=en_US.UTF-8 \
+    LC_ALL=en_US.UTF-8
+
+# Install main R packages
+RUN R -e 'install.packages("rlang", repos="https://cloud.r-project.org/")' && \
+    R -e 'install.packages("remotes", repos="https://cloud.r-project.org/")' && \
+    R -e 'install.packages("R.utils", repos="https://cloud.r-project.org/")' && \
+    R -e 'install.packages("devtools", repos="https://cloud.r-project.org/")' && \
+    R -e 'devtools::install_version("Matrix", version = "1.6-5", repos="https://cloud.r-project.org/")' && \
+    R -e 'install.packages("dplyr", repos="https://cloud.r-project.org/")' && \
+    R -e 'install.packages("ggplot2", repos="https://cloud.r-project.org/")' && \
+    R -e 'install.packages("ggpubr", repos="https://cloud.r-project.org/")' && \
+    R -e 'install.packages("ggrepel", repos="https://cloud.r-project.org/")' && \
+    R -e 'devtools::install_version("SeuratObject", version = "5.0.1", repos="https://cloud.r-project.org/")' && \
+    R -e 'install.packages("tidyverse", repos="https://cloud.r-project.org/")' && \
+    R -e 'install.packages("assertr", repos="https://cloud.r-project.org/")' && \
+    R -e 'install.packages("rmarkdown", repos="https://cloud.r-project.org/")' && \
+    R -e 'install.packages("pdftools", repos="https://cloud.r-project.org/")' && \
+    R -e 'devtools::install_version("SoupX", version = "1.6.2", repos="https://cloud.r-project.org/")' && \
+    R -e 'install.packages("hdf5r", repos="https://cloud.r-project.org/")' && \
+    R -e 'devtools::install_version("scCustomize", version = "2.1.2", repos="https://cloud.r-project.org/")' && \
+    R -e 'install.packages("pheatmap", repos="https://cloud.r-project.org/")' && \
+    R -e 'devtools::install_version("msigdbr", version = "7.5.1", repos="https://cloud.r-project.org/")' && \
+    R -e 'install.packages("gam", repos="https://cloud.r-project.org/")' && \
+    R -e 'install.packages("RColorBrewer", repos="https://cloud.r-project.org/")' && \
+    R -e 'devtools::install_version("NbClust", version = "3.0.1", repos="https://cloud.r-project.org/")' && \
+    R -e 'install.packages("argparse", repos="https://cloud.r-project.org/")' && \
+    R -e 'install.packages("extrafont", repos="https://cloud.r-project.org/")' && \
+    R -e 'devtools::install_version("Seurat", version = "5.0.3", repos="https://cloud.r-project.org/")' && \
+    R -e 'Sys.setenv(GITHUB_PAT = "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")' && \
+    R -e 'remotes::install_github("satijalab/seurat-wrappers@8d46d6c47c089e193fe5c02a8c23970715918aa9", auth_token="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")' && \
+    R -e 'devtools::install_github("immunogenomics/presto@7636b3d0465c468c35853f82f1717d3a64b3c8f6", auth_token="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")' && \
+    R -e 'devtools::install_github("rcastelo/GSVA@1bfb02abaacfdb106e3607411f06a215badf9b85", auth_token="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")' && \
+    R -e 'devtools::install_github("ncborcherding/escape@4b75c160ed185913ac6e4b3389c29ce5870387d6", auth_token="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")' && \
+    R -e 'devtools::install_version("BiocManager", version = "1.30.22", repos="https://cloud.r-project.org/")' && \
+    R -e 'BiocManager::install(version = "3.18")' && \
+    R -e 'BiocManager::install("scDblFinder", version = "3.18")' && \
+    R -e 'BiocManager::install("org.Hs.eg.db", version = "3.18")' && \
+    R -e 'BiocManager::install("DropletUtils", version = "3.18")' && \
+    R -e 'BiocManager::install("fgsea", version = "3.18")' && \
+    R -e 'BiocManager::install("slingshot", version = "3.18")' && \
+    R -e 'BiocManager::install("tradeSeq", version = "3.18")' && \
+    R -e 'BiocManager::install("ComplexHeatmap", version = "3.18")' && \
+    R -e 'BiocManager::install("miloR", version = "3.18")' && \
+    R -e 'BiocManager::install("batchelor", version = "3.18")' && \
+    R -e 'BiocManager::install("dittoSeq", version = "3.18")' && \
+    R -e 'BiocManager::install("multtest", version = "3.18")' && \
+    R -e 'install.packages("metap", repos="https://cloud.r-project.org/")' && \
+    R -e 'BiocManager::install("glmGamPoi", version = "3.18")' && \
+    R -e 'BiocManager::install("DESeq2", version = "3.18")' && \
+    R -e 'devtools::install_version("harmony", version = "1.2.0",repos="https://cloud.r-project.org/")' && \
+    R -e 'BiocManager::install("EnsDb.Mmusculus.v79", force = TRUE, version = "3.18")' && \
+    R -e 'BiocManager::install("EnsDb.Hsapiens.v86", version = "3.18")' && \
+    R -e 'install.packages("magick", repos="https://cloud.r-project.org/")' && \
+    R -e 'devtools::install_github("BaderLab/Tempora@e1706a13e78808444158016415ad486ad3776d24", auth_token="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")' && \
+    R -e 'BiocManager::install("topGO", version = "3.18")' && \
+    R -e 'devtools::install_github("wmacnair/psupertime@73825a28d3bd9bc881c15ee0c4c218eec1c9c207", auth_token="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")' && \
+    R -e 'devtools::install_github("jinworks/CellChat@08a58120a72c13afa5c8415c5c4e46bb162c876c", auth_tken="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")' && \
+    R -e 'BiocManager::install("apeglm", version = "3.18")' && \
+    R -e 'setRepositories(ind=1:3)' && \
+    R -e 'devtools::install_version(package = "Signac", version = package_version("1.14.0"), repos="https://cloud.r-project.org/")' && \
+    R -e 'BiocManager::install("biovizBase", version = "3.18")' && \
+    R -e 'BiocManager::install("JASPAR2020", version = "3.18")' && \
+    R -e 'BiocManager::install("BSgenome.Hsapiens.UCSC.hg38", version = "3.18")' && \
+    R -e 'BiocManager::install("BSgenome.Mmusculus.UCSC.mm10", version = "3.18")' && \
+    R -e 'devtools::install_github("omarwagih/ggseqlogo@6658a39b6ea6e817b46150b85a913f6cadc65e3f", auth_token="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")'
+    
+# Buggy R dependecies for scATAC; run in separate
+RUN yum install -y gsl gsl-devel && \
+	R -e 'BiocManager::install("TFBSTools", version = "3.18")' && \
+	R -e 'BiocManager::install("motifmatchr", version = "3.18")' && \
+	R -e 'BiocManager::install("DirichletMultinomial", version = "3.18")' && \
+	R -e 'BiocManager::install("chromVAR", version = "3.18")'
+	
+# Packages needed to create summary report
+RUN R -e 'install.packages("svglite", repos="https://cloud.r-project.org/")' && \
+	R -e 'install.packages("quarto", repos="https://cloud.r-project.org/")' && \
+	yum install -y gnupg2 && \
+	curl -LO https://github.com/quarto-dev/quarto-cli/releases/download/v1.6.39/quarto-1.6.39-linux-amd64.tar.gz && \
+	tar -xvzf quarto-1.6.39-linux-amd64.tar.gz && \
+	rm /quarto-1.6.39-linux-amd64.tar.gz && \
+	ln -s /quarto-1.6.39/bin/quarto /usr/local/bin/quarto
+
+# misc packages
+RUN R -e 'install.packages("rstatix", repos="https://cloud.r-project.org/")'
+
+# Clean up
+RUN yum clean all && \
+    rm -rf /var/cache/yum
+
+# Set R environment variables
+ENV R_HOME=/opt/R/4.3.2 \
+    LD_LIBRARY_PATH=/opt/R/4.3.2/lib:/usr/lib64/R/lib:$LD_LIBRARY_PATH
+
+
+RUN echo 'options(future.globals.maxSize = 2 * 1024^3)' > /opt/R/4.3.2/lib/R/etc/Rprofile.site
